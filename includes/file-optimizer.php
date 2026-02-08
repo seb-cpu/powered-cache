@@ -12,15 +12,15 @@
  *
  * It will also replace the relative paths in CSS files with absolute paths.
  *
- * @package PoweredCache
+ * @package SwiftPress
  */
 
-namespace PoweredCache\FileOptimizer;
+namespace SwiftPress\FileOptimizer;
 
 // phpcs:disable
 
-use PoweredCache\Dependencies\MatthiasMullie\Minify\CSS;
-use PoweredCache\Dependencies\MatthiasMullie\Minify\JS;
+use SwiftPress\Dependencies\MatthiasMullie\Minify\CSS;
+use SwiftPress\Dependencies\MatthiasMullie\Minify\JS;
 
 /**
  * PSR-4-ish autoloading
@@ -30,7 +30,7 @@ use PoweredCache\Dependencies\MatthiasMullie\Minify\JS;
 spl_autoload_register(
 	function ( $class ) {
 		// project-specific namespace prefix.
-		$prefix = 'PoweredCache\\';
+		$prefix = 'SwiftPress\\';
 
 		// base directory for the namespace prefix.
 		$base_dir = __DIR__ . '/classes/';
@@ -74,15 +74,15 @@ $current_dir = file_optimizer_normalize_path( realpath( dirname( __DIR__ ) ) );
 /* Constants */
 // By default determine the document root from this scripts path in the plugins dir (you can hardcode this define)
 define( 'CONCAT_FILES_ROOT', substr( $current_dir, 0, strpos( $current_dir, $wp_content_base ) ) );
-define( 'POWERED_CACHE_FO_CACHE_DIR', CONCAT_FILES_ROOT . $wp_content_base.'/cache/min/' );
-define( 'POWERED_CACHE_FO_DEBUG', false );
+define( 'SWIFTPRESS_FO_CACHE_DIR', CONCAT_FILES_ROOT . $wp_content_base.'/cache/min/' );
+define( 'SWIFTPRESS_FO_DEBUG', false );
 
-if ( ! defined( 'POWERED_CACHE_FO_DISABLE_CACHE_HEADERS' ) ) {
-	define( 'POWERED_CACHE_FO_DISABLE_CACHE_HEADERS', false );
+if ( ! defined( 'SWIFTPRESS_FO_DISABLE_CACHE_HEADERS' ) ) {
+	define( 'SWIFTPRESS_FO_DISABLE_CACHE_HEADERS', false );
 }
 
-if ( ! file_exists( POWERED_CACHE_FO_CACHE_DIR ) ) {
-	mkdir( POWERED_CACHE_FO_CACHE_DIR, 0775, true );
+if ( ! file_exists( SWIFTPRESS_FO_CACHE_DIR ) ) {
+	mkdir( SWIFTPRESS_FO_CACHE_DIR, 0775, true );
 }
 
 function concat_http_status_exit( $status ) {
@@ -229,7 +229,7 @@ $do_minify   = (bool) stripos( $_SERVER['REQUEST_URI'], 'minify=1' );
 $hash        = sha1( $_SERVER['REQUEST_URI'] );
 $latest_file = end( $args );
 
-$cache_file_name = POWERED_CACHE_FO_CACHE_DIR . $hash;
+$cache_file_name = SWIFTPRESS_FO_CACHE_DIR . $hash;
 if ( 'application/javascript' == concat_get_mtype( $latest_file ) ) {
 	$cache_file_name .= '.js';
 } elseif ( 'text/css' == concat_get_mtype( $latest_file ) ) {
@@ -371,7 +371,7 @@ header( "Content-Type: $mime_type" );
 
 echo $pre_output . $output;
 
-$cache_file_name = POWERED_CACHE_FO_CACHE_DIR . $hash;
+$cache_file_name = SWIFTPRESS_FO_CACHE_DIR . $hash;
 if ( 'application/javascript' == $mime_type ) {
 	$cache_file_name .= '.js';
 } elseif ( 'text/css' == $mime_type ) {
@@ -420,7 +420,7 @@ function file_optimizer_normalize_path( $path ) {
  * @since 2.3
  */
 function maybe_add_debug_log( $message ) {
-	if ( defined( 'POWERED_CACHE_FO_DEBUG' ) && POWERED_CACHE_FO_DEBUG ) {
+	if ( defined( 'SWIFTPRESS_FO_DEBUG' ) && SWIFTPRESS_FO_DEBUG ) {
 		error_log( $message );
 	}
 }
@@ -433,7 +433,7 @@ function maybe_add_debug_log( $message ) {
  * @since 2.5.3
  */
 function set_cache_headers() {
-	if ( defined( 'POWERED_CACHE_FO_DISABLE_CACHE_HEADERS' ) && POWERED_CACHE_FO_DISABLE_CACHE_HEADERS ) {
+	if ( defined( 'SWIFTPRESS_FO_DISABLE_CACHE_HEADERS' ) && SWIFTPRESS_FO_DISABLE_CACHE_HEADERS ) {
 		return;
 	}
 

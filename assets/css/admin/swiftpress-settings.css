@@ -1,0 +1,187 @@
+/**
+ * SwiftPress Settings Page — minimal custom CSS
+ * Only for progress bar, section toggles, and layout helpers.
+ * All other styling uses native WordPress admin CSS classes.
+ *
+ * @package SwiftPress
+ * @since   3.8
+ */
+
+/* ── Header ───────────────────────────────────────────── */
+.sp-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-bottom: 20px;
+	padding: 15px 0;
+	border-bottom: 1px solid #c3c4c7;
+}
+
+.sp-header h1 {
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.sp-header h1 .sp-version {
+	font-size: 13px;
+	font-weight: 400;
+	color: #646970;
+	background: #f0f0f1;
+	padding: 2px 8px;
+	border-radius: 3px;
+}
+
+.sp-header-actions {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.sp-description {
+	color: #646970;
+	font-size: 13px;
+	margin: -10px 0 15px;
+}
+
+/* ── Collapsible Sections ─────────────────────────────── */
+.sp-section {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	margin-bottom: 20px;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.sp-section-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 15px;
+	margin: 0;
+	font-size: 14px;
+	font-weight: 600;
+	cursor: pointer;
+	user-select: none;
+	background: #fff;
+	border-bottom: 1px solid #c3c4c7;
+	transition: background 0.15s;
+}
+
+.sp-section-header:hover {
+	background: #f6f7f7;
+}
+
+.sp-section-header .dashicons {
+	transition: transform 0.2s;
+	color: #646970;
+}
+
+.sp-section.collapsed .sp-section-header {
+	border-bottom-color: transparent;
+}
+
+.sp-section.collapsed .sp-section-header .dashicons {
+	transform: rotate(-90deg);
+}
+
+.sp-section-body {
+	padding: 15px;
+}
+
+.sp-section.collapsed .sp-section-body {
+	display: none;
+}
+
+/* ── Sub-options indentation ──────────────────────────── */
+.sp-sub-options {
+	margin-left: 25px;
+	padding-left: 15px;
+	border-left: 3px solid #f0f0f1;
+}
+
+.sp-sub-options.disabled {
+	opacity: 0.5;
+	pointer-events: none;
+}
+
+/* ── Progress Bar ─────────────────────────────────────── */
+.sp-progress-wrap {
+	margin-top: 15px;
+	padding: 15px;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+}
+
+.sp-progress-bar-outer {
+	width: 100%;
+	height: 22px;
+	background: #dcdcde;
+	border-radius: 3px;
+	overflow: hidden;
+	margin: 10px 0;
+}
+
+.sp-progress-bar-inner {
+	height: 100%;
+	background: #2271b1;
+	border-radius: 3px;
+	transition: width 0.4s ease;
+	min-width: 0;
+}
+
+.sp-progress-stats {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 15px;
+	font-size: 13px;
+	color: #50575e;
+}
+
+.sp-progress-stats strong {
+	color: #1d2327;
+}
+
+.sp-progress-stats .sp-stat-failed strong {
+	color: #d63638;
+}
+
+/* ── Import/Export ─────────────────────────────────────── */
+.sp-import-export {
+	display: flex;
+	gap: 15px;
+	align-items: flex-start;
+	flex-wrap: wrap;
+}
+
+.sp-import-export .sp-import-group,
+.sp-import-export .sp-export-group {
+	flex: 1;
+	min-width: 250px;
+}
+
+/* ── Footer ───────────────────────────────────────────── */
+.sp-footer {
+	padding: 20px 0;
+	border-top: 1px solid #c3c4c7;
+	margin-top: 10px;
+}
+
+/* ── Responsive ───────────────────────────────────────── */
+@media screen and (max-width: 782px) {
+	.sp-header {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.sp-progress-stats {
+		flex-direction: column;
+		gap: 5px;
+	}
+
+	.sp-import-export {
+		flex-direction: column;
+	}
+}

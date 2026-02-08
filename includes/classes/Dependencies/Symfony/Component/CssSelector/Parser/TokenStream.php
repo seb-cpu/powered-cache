@@ -9,10 +9,10 @@
  * file that was distributed with this source code.
  */
 
-namespace PoweredCache\Dependencies\Symfony\Component\CssSelector\Parser;
+namespace SwiftPress\Dependencies\Symfony\Component\CssSelector\Parser;
 
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Exception\InternalErrorException;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Exception\SyntaxErrorException;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Exception\InternalErrorException;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Exception\SyntaxErrorException;
 
 /**
  * CSS selector token stream.

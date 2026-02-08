@@ -2,21 +2,21 @@
 /**
  * Background process for cache purging
  *
- * @package PoweredCache
+ * @package SwiftPress
  */
 
-namespace PoweredCache\Async;
+namespace SwiftPress\Async;
 
-use \Powered_Cache_WP_Background_Process as Powered_Cache_WP_Background_Process;
-use function PoweredCache\Utils\clean_page_cache_dir;
-use function PoweredCache\Utils\clean_site_cache_dir;
-use function PoweredCache\Utils\delete_page_cache;
-use function PoweredCache\Utils\powered_cache_flush;
+use \SwiftPress_WP_Background_Process as SwiftPress_WP_Background_Process;
+use function SwiftPress\Utils\clean_page_cache_dir;
+use function SwiftPress\Utils\clean_site_cache_dir;
+use function SwiftPress\Utils\delete_page_cache;
+use function SwiftPress\Utils\swiftpress_flush;
 
 /**
  * Class CachePurger
  */
-class CachePurger extends Powered_Cache_WP_Background_Process {
+class CachePurger extends SwiftPress_WP_Background_Process {
 
 	/**
 	 * Plugin settings
@@ -30,7 +30,7 @@ class CachePurger extends Powered_Cache_WP_Background_Process {
 	 *
 	 * @var $action
 	 */
-	protected $action = 'powered_cache_purger';
+	protected $action = 'swiftpress_purger';
 
 	/**
 	 * Task
@@ -42,17 +42,17 @@ class CachePurger extends Powered_Cache_WP_Background_Process {
 	 * @return mixed
 	 */
 	protected function task( $item ) {
-		$this->settings = \PoweredCache\Utils\get_settings();
+		$this->settings = \SwiftPress\Utils\get_settings();
 
 		if ( empty( $item['call'] ) ) {
 			return;
 		}
 
-		\PoweredCache\Utils\log( sprintf( 'Call: %s', $item['call'] ) );
+		\SwiftPress\Utils\log( sprintf( 'Call: %s', $item['call'] ) );
 
 		switch ( $item['call'] ) {
-			case 'powered_cache_flush':
-				powered_cache_flush();
+			case 'swiftpress_flush':
+				swiftpress_flush();
 				break;
 			case 'clean_page_cache_dir':
 				clean_page_cache_dir();
@@ -61,8 +61,8 @@ class CachePurger extends Powered_Cache_WP_Background_Process {
 				clean_site_cache_dir();
 				break;
 			case 'clean_site_cache_for_language':
-				if ( function_exists( '\PoweredCache\Compat\WPML\clean_site_cache_for_language' ) ) {
-					\PoweredCache\Compat\WPML\clean_site_cache_for_language( $item['lang_code'] );
+				if ( function_exists( '\SwiftPress\Compat\WPML\clean_site_cache_for_language' ) ) {
+					\SwiftPress\Compat\WPML\clean_site_cache_for_language( $item['lang_code'] );
 				}
 
 				break;
@@ -70,7 +70,7 @@ class CachePurger extends Powered_Cache_WP_Background_Process {
 				$urls = $item['urls'];
 				if ( ! empty( $urls ) ) {
 					foreach ( $urls as $url ) {
-						\PoweredCache\Utils\log( sprintf( 'delete_page_cache - URL: %s', $url ) );
+						\SwiftPress\Utils\log( sprintf( 'delete_page_cache - URL: %s', $url ) );
 						delete_page_cache( $url );
 					}
 				}
@@ -88,7 +88,7 @@ class CachePurger extends Powered_Cache_WP_Background_Process {
 	 * performed, or, call parent::complete().
 	 */
 	protected function complete() { // phpcs:ignore Generic.CodeAnalysis.UselessOverridingMethod.Found
-		\PoweredCache\Utils\log( 'Async cache purge has been completed!' );
+		\SwiftPress\Utils\log( 'Async cache purge has been completed!' );
 		parent::complete();
 	}
 

@@ -2,19 +2,15 @@
 /**
  * Configurator Class of the plugin
  *
- * @package PoweredCache
+ * @package SwiftPress
  */
 
-namespace PoweredCache;
+namespace SwiftPress;
 
-use function PoweredCache\Utils\can_configure_htaccess;
-use function PoweredCache\Utils\can_configure_object_cache;
-use function PoweredCache\Utils\get_cache_dir;
-use function PoweredCache\Utils\get_object_cache_dropins;
-use function PoweredCache\Utils\mobile_browsers;
-use function PoweredCache\Utils\mobile_prefixes;
-use function PoweredCache\Utils\permalink_structure_has_trailingslash;
-use function PoweredCache\Utils\remove_dir;
+use function SwiftPress\Utils\can_configure_htaccess;
+use function SwiftPress\Utils\get_cache_dir;
+use function SwiftPress\Utils\permalink_structure_has_trailingslash;
+use function SwiftPress\Utils\remove_dir;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
@@ -56,91 +52,6 @@ class Config {
 		return $instance;
 	}
 
-
-	/**
-	 * Setup object-cache.php
-	 *
-	 * @param string $backend Persistent object cache backend. (memcached, redis etc..)
-	 *
-	 * @return bool
-	 * @since 1.0
-	 */
-	public function setup_object_cache( $backend = 'off' ) {
-		$file = untrailingslashit( WP_CONTENT_DIR ) . '/object-cache.php';
-
-		/**
-		 * Since object cache has impact on the entire network
-		 * It only allowed by the network admin
-		 */
-		if ( is_multisite() && ! current_user_can( 'manage_network' ) ) {
-			return false;
-		}
-
-		if ( 'off' === $backend && file_exists( $file ) && false !== strpos( file_get_contents( $file ), 'POWERED_OBJECT_CACHE' ) ) {
-			/**
-			 * Remove object-cache.php file only when the created file belongs to PoweredCache
-			 */
-			unlink( $file );
-
-			return true;
-		}
-
-		if ( 'off' === $backend ) {
-			return true;
-		}
-
-		$file_string = $this->object_cache_file_content( $backend );
-
-		if ( ! file_put_contents( $file, $file_string, LOCK_EX ) ) {
-			return false;
-		}
-
-		return true;
-	}
-
-	/**
-	 * object-cache.php contents
-	 *
-	 * @param string $backend Persistent object cache backend
-	 *
-	 * @return mixed|void
-	 * @since 1.0
-	 * @see   Powered_Cache_Admin_Helper::object_cache_dropins
-	 *
-	 * @since 1.1 supports `POWERED_CACHE_OBJECT_CACHE_DROPIN`
-	 */
-	public function object_cache_file_content( $backend ) {
-		$string  = '<?php ' . "\n";
-		$string .= "defined( 'ABSPATH' ) || exit;" . PHP_EOL;
-		$string .= "define( 'POWERED_OBJECT_CACHE', true );" . PHP_EOL;
-		$string .= "if ( ! defined( 'WP_CACHE_KEY_SALT' ) && defined( 'DB_NAME') ) {" . PHP_EOL;
-		$string .= "\t" . "define( 'WP_CACHE_KEY_SALT', DB_NAME );" . PHP_EOL;
-		$string .= '}' . PHP_EOL;
-
-		$object_caches = get_object_cache_dropins();
-
-		$string .= 'if ( defined( \'POWERED_CACHE_OBJECT_CACHE_DROPIN\') && @file_exists( POWERED_CACHE_OBJECT_CACHE_DROPIN ) ) {' . PHP_EOL;
-		$string .= "\t" . 'include( POWERED_CACHE_OBJECT_CACHE_DROPIN );' . PHP_EOL;
-		$string .= '} elseif ( @file_exists( \'' . $object_caches[ $backend ] . '\' ) ) {' . PHP_EOL;
-		$string .= "\t" . 'include( \'' . $object_caches[ $backend ] . '\' );' . PHP_EOL;
-		$string .= '} else {' . PHP_EOL;
-		$string .= "\t" . 'define( \'POWERED_OBJECT_CACHE_HAS_PROBLEM\', true );' . PHP_EOL;
-		$string .= '}' . PHP_EOL;
-
-		/**
-		 * Filters object-cache.php file contents.
-		 *
-		 * @hook   powered_cache_object_cache_file_content
-		 *
-		 * @param  {string} $string The content of the object-cache.php file
-		 *
-		 * @return {string} New value.
-		 *
-		 * @since  1.0
-		 */
-		return apply_filters( 'powered_cache_object_cache_file_content', $string );
-	}
-
 	/**
 	 * Generate advanced-cache.php and define WP_CACHE
 	 *
@@ -154,7 +65,7 @@ class Config {
 		/**
 		 * Forcing multisite settings always true
 		 */
-		if ( is_multisite() && ! POWERED_CACHE_IS_NETWORK ) {
+		if ( is_multisite() && ! SWIFTPRESS_IS_NETWORK ) {
 			$status = true;
 		}
 
@@ -180,7 +91,7 @@ class Config {
 	 */
 	public function generate_advanced_cache_file() {
 		$file     = untrailingslashit( WP_CONTENT_DIR ) . '/advanced-cache.php';
-		$settings = \PoweredCache\Utils\get_settings();
+		$settings = \SwiftPress\Utils\get_settings();
 
 		$file_string = '';
 
@@ -203,24 +114,24 @@ class Config {
 	 * Prepare advanced-cache.php contents
 	 *
 	 * @return mixed|void
-	 * @since 1.1 supports `POWERED_CACHE_ADVANCED_CACHE_DROPIN`
+	 * @since 1.1 supports `SWIFTPRESS_ADVANCED_CACHE_DROPIN`
 	 * @since 1.0
 	 */
 	public function advanced_cache_file_content() {
 		$string  = '<?php ' . PHP_EOL;
 		$string .= "defined( 'ABSPATH' ) || exit;" . PHP_EOL;
-		$string .= "define( 'POWERED_CACHE_PAGE_CACHING', true );" . PHP_EOL . PHP_EOL;
+		$string .= "define( 'SWIFTPRESS_PAGE_CACHING', true );" . PHP_EOL . PHP_EOL;
 		// lookup order 1) network-wide , 2) subdomain specific (if any) 3) domain specific
-		$string .= "\$config_locations[] = WP_CONTENT_DIR . '/pc-config/config-network.php';" . PHP_EOL;
+		$string .= "\$config_locations[] = WP_CONTENT_DIR . '/sp-config/config-network.php';" . PHP_EOL;
 		$string .= "\$host = isset( \$_SERVER['HTTP_HOST'] ) ? \$_SERVER['HTTP_HOST'] : '';" . PHP_EOL . PHP_EOL;
 		$string .= "if ( is_multisite() && defined( 'SUBDOMAIN_INSTALL' ) && ! SUBDOMAIN_INSTALL ) {" . PHP_EOL;
 		$string .= "\t" . "\$request_uri = explode( '/', ltrim( \$_SERVER['REQUEST_URI'], '/' ) );" . PHP_EOL;
 		$string .= "\t" . 'if ( ! empty( $request_uri[0] ) ) {' . PHP_EOL;
-		$string .= "\t" . "\t" . "\$config_locations[] = WP_CONTENT_DIR . '/pc-config/config-' . \$host . '-' . \$request_uri[0] . '.php';" . PHP_EOL;
+		$string .= "\t" . "\t" . "\$config_locations[] = WP_CONTENT_DIR . '/sp-config/config-' . \$host . '-' . \$request_uri[0] . '.php';" . PHP_EOL;
 		$string .= "\t" . '}' . PHP_EOL;
 		$string .= '}' . PHP_EOL;
 
-		$string .= "\$config_locations[] = WP_CONTENT_DIR . '/pc-config/config-' . \$host . '.php';" . PHP_EOL . PHP_EOL;
+		$string .= "\$config_locations[] = WP_CONTENT_DIR . '/sp-config/config-' . \$host . '.php';" . PHP_EOL . PHP_EOL;
 
 		$string .= 'foreach ( $config_locations as $config_file ) {' . PHP_EOL;
 		$string .= "\t" . 'if ( @file_exists( $config_file ) ) {' . PHP_EOL;
@@ -229,22 +140,22 @@ class Config {
 		$string .= "\t" . '}' . PHP_EOL;
 		$string .= '}' . PHP_EOL . PHP_EOL;
 
-		$string .= "if ( ! isset( \$GLOBALS['powered_cache_options'] ) ) {" . PHP_EOL;
+		$string .= "if ( ! isset( \$GLOBALS['swiftpress_options'] ) ) {" . PHP_EOL;
 		$string .= "\t" . 'return;' . PHP_EOL;
 		$string .= '}' . PHP_EOL . PHP_EOL;
 
-		$string .= 'if ( defined( \'POWERED_CACHE_ADVANCED_CACHE_DROPIN\') && @file_exists( POWERED_CACHE_ADVANCED_CACHE_DROPIN ) ) {' . PHP_EOL;
-		$string .= "\t" . 'include( POWERED_CACHE_ADVANCED_CACHE_DROPIN );' . PHP_EOL;
-		$string .= '} elseif ( @file_exists( \'' . POWERED_CACHE_DROPIN_DIR . 'page-cache.php' . '\' ) ) {' . PHP_EOL;
-		$string .= "\t" . 'include( \'' . POWERED_CACHE_DROPIN_DIR . 'page-cache.php' . '\' );' . PHP_EOL;
+		$string .= 'if ( defined( \'SWIFTPRESS_ADVANCED_CACHE_DROPIN\') && @file_exists( SWIFTPRESS_ADVANCED_CACHE_DROPIN ) ) {' . PHP_EOL;
+		$string .= "\t" . 'include( SWIFTPRESS_ADVANCED_CACHE_DROPIN );' . PHP_EOL;
+		$string .= '} elseif ( @file_exists( \'' . SWIFTPRESS_DROPIN_DIR . 'page-cache.php' . '\' ) ) {' . PHP_EOL;
+		$string .= "\t" . 'include( \'' . SWIFTPRESS_DROPIN_DIR . 'page-cache.php' . '\' );' . PHP_EOL;
 		$string .= '} else {' . PHP_EOL;
-		$string .= "\t" . 'define( \'POWERED_CACHE_PAGE_CACHING_HAS_PROBLEM\', true );' . PHP_EOL;
+		$string .= "\t" . 'define( \'SWIFTPRESS_PAGE_CACHING_HAS_PROBLEM\', true );' . PHP_EOL;
 		$string .= '}';
 
 		/**
 		 * Filters advanced-cache.php file contents.
 		 *
-		 * @hook   powered_cache_advanced_cache_file_content
+		 * @hook   swiftpress_advanced_cache_file_content
 		 *
 		 * @param  {string} $string The content of the advanced-cache.php file
 		 *
@@ -252,7 +163,7 @@ class Config {
 		 *
 		 * @since  1.0
 		 */
-		return apply_filters( 'powered_cache_advanced_cache_file_content', $string );
+		return apply_filters( 'swiftpress_advanced_cache_file_content', $string );
 	}
 
 
@@ -302,7 +213,7 @@ class Config {
 		$status_string = ( $status ) ? 'true' : 'false';
 
 		array_shift( $config_file );
-		array_unshift( $config_file, '<?php', "define( 'WP_CACHE', $status_string ); // Powered Cache" );
+		array_unshift( $config_file, '<?php', "define( 'WP_CACHE', $status_string ); // SwiftPress" );
 
 		if ( ! @file_put_contents( $config_path, implode( PHP_EOL, $config_file ) ) ) {  // phpcs:ignore
 			return false;
@@ -352,12 +263,12 @@ class Config {
 		}
 
 		$htaccess_file = get_home_path() . '.htaccess';
-		$settings      = \PoweredCache\Utils\get_settings();
+		$settings      = \SwiftPress\Utils\get_settings();
 
 		/**
 		 * Filters whether automatically update or not update .htaccess file
 		 *
-		 * @hook   powered_cache_auto_htaccess_update
+		 * @hook   swiftpress_auto_htaccess_update
 		 *
 		 * @param  {boolean} true to automatic update.
 		 *
@@ -365,7 +276,7 @@ class Config {
 		 *
 		 * @since  1.1.1
 		 */
-		if ( true !== apply_filters( 'powered_cache_auto_htaccess_update', true ) ) {
+		if ( true !== apply_filters( 'swiftpress_auto_htaccess_update', true ) ) {
 			return false;
 		}
 
@@ -376,7 +287,7 @@ class Config {
 		 */
 		$automatic_configuration = $settings['auto_configure_htaccess'];
 
-		if ( is_multisite() && ! POWERED_CACHE_IS_NETWORK ) {
+		if ( is_multisite() && ! SWIFTPRESS_IS_NETWORK ) {
 			$automatic_configuration = false; // individual sites shouldn't use .htaccess on multisite
 		}
 
@@ -388,7 +299,7 @@ class Config {
 			$contents = file_get_contents( $htaccess_file );
 
 			// clean up
-			$contents = preg_replace( '/# BEGIN POWERED CACHE(.*)# END POWERED CACHE\s*?/isU', '', $contents );
+			$contents = preg_replace( '/# BEGIN SWIFTPRESS(.*)# END SWIFTPRESS\s*?/isU', '', $contents );
 
 			if ( false === $enable ) {
 				return file_put_contents( $htaccess_file, $contents );
@@ -413,7 +324,7 @@ class Config {
 	 *
 	 * @return string $rules
 	 * @since      1.1
-	 * @deprecated 2.5.0 Use the {@see '\PoweredCache\Htaccess::factory()->htaccess_rules()'} instead.
+	 * @deprecated 2.5.0 Use the {@see '\SwiftPress\Htaccess::factory()->htaccess_rules()'} instead.
 	 */
 	public function htaccess_rules() {
 		$rules = Htaccess::factory()->htaccess_rules();
@@ -448,10 +359,10 @@ class Config {
 		 *
 		 * @param {string} $file_string Default configuration
 		 *
-		 * @hook  powered_cache_cache_dir_htaccess_file_content
+		 * @hook  swiftpress_cache_dir_htaccess_file_content
 		 * @since 3.5.3
 		 */
-		$file_string = apply_filters( 'powered_cache_cache_dir_htaccess_file_content', $file_string );
+		$file_string = apply_filters( 'swiftpress_cache_dir_htaccess_file_content', $file_string );
 
 		if ( ! file_put_contents( $file, $file_string ) ) {
 			return false;
@@ -498,7 +409,7 @@ class Config {
 	 * @since 1.0
 	 */
 	public function save_to_file( $configuration, $network_wide = false ) {
-		$config_dir       = WP_CONTENT_DIR . '/pc-config';
+		$config_dir       = WP_CONTENT_DIR . '/sp-config';
 		$config_file_name = $this->get_config_filename( $network_wide );
 
 		if ( ! file_exists( $config_dir ) ) {
@@ -515,29 +426,29 @@ class Config {
 
 		$config_file_string = '<?php' . PHP_EOL . "defined( 'ABSPATH' ) || exit;" . PHP_EOL . PHP_EOL;
 
-		$config_file_string .= "\$GLOBALS['powered_cache_options'] = " . var_export( $configuration, true ) . ';' . PHP_EOL . PHP_EOL;
+		$config_file_string .= "\$GLOBALS['swiftpress_options'] = " . var_export( $configuration, true ) . ';' . PHP_EOL . PHP_EOL;
 
 		// mobile cache variables
-		$config_file_string .= '$powered_cache_mobile_browsers = ' . var_export( mobile_browsers(), true ) . ';' . PHP_EOL;
-		$config_file_string .= '$powered_cache_mobile_prefixes = ' . var_export( mobile_prefixes(), true ) . ';' . PHP_EOL;
-		$config_file_string .= '$powered_cache_rejected_user_agents = ' . var_export( AdvancedCache::get_rejected_user_agents(), true ) . ';' . PHP_EOL;
-		$config_file_string .= '$powered_cache_rejected_cookies = ' . var_export( AdvancedCache::get_rejected_cookies(), true ) . ';' . PHP_EOL;
-		$config_file_string .= '$powered_cache_rejected_referrers = ' . var_export( AdvancedCache::get_rejected_referrers(), true ) . ';' . PHP_EOL;
-		$config_file_string .= '$powered_cache_vary_cookies = ' . var_export( AdvancedCache::get_vary_cookies(), true ) . ';' . PHP_EOL;
-		$config_file_string .= '$powered_cache_rejected_uri = ' . var_export( AdvancedCache::get_rejected_uri(), true ) . ';' . PHP_EOL;
-		$config_file_string .= '$powered_cache_ignored_query_strings = ' . var_export( AdvancedCache::get_ignored_query_strings(), true ) . ';' . PHP_EOL;
-		$config_file_string .= '$powered_cache_cache_query_strings = ' . var_export( AdvancedCache::get_cache_query_string(), true ) . ';' . PHP_EOL;
+		$config_file_string .= '$swiftpress_mobile_browsers = ' . var_export( mobile_browsers(), true ) . ';' . PHP_EOL;
+		$config_file_string .= '$swiftpress_mobile_prefixes = ' . var_export( mobile_prefixes(), true ) . ';' . PHP_EOL;
+		$config_file_string .= '$swiftpress_rejected_user_agents = ' . var_export( AdvancedCache::get_rejected_user_agents(), true ) . ';' . PHP_EOL;
+		$config_file_string .= '$swiftpress_rejected_cookies = ' . var_export( AdvancedCache::get_rejected_cookies(), true ) . ';' . PHP_EOL;
+		$config_file_string .= '$swiftpress_rejected_referrers = ' . var_export( AdvancedCache::get_rejected_referrers(), true ) . ';' . PHP_EOL;
+		$config_file_string .= '$swiftpress_vary_cookies = ' . var_export( AdvancedCache::get_vary_cookies(), true ) . ';' . PHP_EOL;
+		$config_file_string .= '$swiftpress_rejected_uri = ' . var_export( AdvancedCache::get_rejected_uri(), true ) . ';' . PHP_EOL;
+		$config_file_string .= '$swiftpress_ignored_query_strings = ' . var_export( AdvancedCache::get_ignored_query_strings(), true ) . ';' . PHP_EOL;
+		$config_file_string .= '$swiftpress_cache_query_strings = ' . var_export( AdvancedCache::get_cache_query_string(), true ) . ';' . PHP_EOL;
 
 		if ( permalink_structure_has_trailingslash() ) {
-			$config_file_string .= '$powered_cache_slash_check = true;' . PHP_EOL;
+			$config_file_string .= '$swiftpress_slash_check = true;' . PHP_EOL;
 		} else {
-			$config_file_string .= '$powered_cache_slash_check = false;' . PHP_EOL;
+			$config_file_string .= '$swiftpress_slash_check = false;' . PHP_EOL;
 		}
 
 		/**
 		 * Fires before writing configuration file.
 		 *
-		 * @hook  powered_cache_create_config_file
+		 * @hook  swiftpress_create_config_file
 		 *
 		 * @param {string} $config_file The path of the configuration file.
 		 * @param {string} $config_file_string The contents of the configurations.
@@ -545,7 +456,7 @@ class Config {
 		 *
 		 * @since 2.0
 		 */
-		do_action( 'powered_cache_create_config_file', $config_file, $config_file_string, $network_wide );
+		do_action( 'swiftpress_create_config_file', $config_file, $config_file_string, $network_wide );
 
 		if ( ! file_put_contents( $config_file, $config_file_string ) ) {
 			return false;
@@ -569,10 +480,10 @@ class Config {
 	 * @since 1.1
 	 */
 	public function nginx_rules() {
-		$settings = \PoweredCache\Utils\get_settings();
+		$settings = \SwiftPress\Utils\get_settings();
 
 		$contents  = '';
-		$contents .= '##### POWERED CACHE CONF #####' . PHP_EOL;
+		$contents .= '##### SWIFTPRESS CONF #####' . PHP_EOL;
 		$contents .= 'set $cache_uri $request_uri;' . PHP_EOL;
 		$contents .= 'set $pc_ssl "";' . PHP_EOL;
 		$contents .= 'set $pc_enc "";' . PHP_EOL;
@@ -602,7 +513,7 @@ class Config {
 		/**
 		 * Documented in htaccess config
 		 */
-		if ( apply_filters( 'powered_cache_browser_cache', true ) ) {
+		if ( apply_filters( 'swiftpress_browser_cache', true ) ) {
 			$contents .= 'location ~* .(js|jpg|jpeg|gif|png|css|tgz|gz|rar|bz2|doc|pdf|ppt|tar|wav|bmp|rtf|swf|ico|flv|txt|woff|woff2|svg|webp|avif)$ {' . PHP_EOL;
 			$contents .= '  expires 6M;' . PHP_EOL;
 			$contents .= '}' . PHP_EOL . PHP_EOL;
@@ -610,7 +521,7 @@ class Config {
 
 		// file optimizer rewrite rule
 		if ( $settings['rewrite_file_optimizer'] ) {
-			$file_optimizer_path = \PoweredCache\Optimizer\Helper::get_file_optimizer_relative_path();
+			$file_optimizer_path = \SwiftPress\Optimizer\Helper::get_file_optimizer_relative_path();
 
 			$contents .= 'location /_static/ {' . PHP_EOL;
 			$contents .= '  fastcgi_pass unix:/var/run/fastcgi.sock;' . PHP_EOL;
@@ -671,9 +582,9 @@ class Config {
 		/**
 		 * Documented in htaccess config
 		 */
-		if ( apply_filters( 'powered_cache_mod_rewrite', true ) ) { // rewrite
-			$contents .= '  add_header X-Powered-Cache nginx;' . PHP_EOL;
-			$contents .= '  try_files /wp-content/cache/powered-cache/$http_host/$cache_uri/index${pc_ssl}${pc_ua}.' . $cache_suffix . ' $uri $uri/ /index.php?$args;' . PHP_EOL;
+		if ( apply_filters( 'swiftpress_mod_rewrite', true ) ) { // rewrite
+			$contents .= '  add_header X-SwiftPress-Cache nginx;' . PHP_EOL;
+			$contents .= '  try_files /wp-content/cache/swiftpress/$http_host/$cache_uri/index${pc_ssl}${pc_ua}.' . $cache_suffix . ' $uri $uri/ /index.php?$args;' . PHP_EOL;
 
 		} else {
 			$contents .= '  try_files $uri $uri/ /index.php?$args;' . PHP_EOL;
@@ -703,12 +614,12 @@ class Config {
 
 		if ( 'apache' === $server ) {
 			$rules    = Htaccess::factory()->htaccess_rules();
-			$filename = '.htaccess_powered_cache';
+			$filename = '.htaccess_swiftpress';
 		}
 
 		if ( 'nginx' === $server ) {
 			$rules    = $this->nginx_rules();
-			$filename = 'poweredcache.conf';
+			$filename = 'swiftpress.conf';
 		}
 
 		nocache_headers();
@@ -731,14 +642,6 @@ class Config {
 	 */
 	public function save_configuration( $settings, $network_wide = false ) {
 
-		if ( can_configure_object_cache() ) {
-			if ( ! empty( $settings['dev_mode'] ) ) {
-				$this->setup_object_cache(); // dev mode, no object cache
-			} else {
-				$this->setup_object_cache( $settings['object_cache'] );
-			}
-		}
-
 		$this->setup_page_cache( $settings['enable_page_cache'] );
 		$private_settings = [ 'cloudflare_email', 'cloudflare_api_key', 'cloudflare_api_token', 'cloudflare_zone' ];
 
@@ -753,11 +656,6 @@ class Config {
 	 * Clean-up all the configurations and cache related footprints
 	 */
 	public function clean_up() {
-		$object_cache_dropin = untrailingslashit( WP_CONTENT_DIR ) . '/object-cache.php';
-		if ( file_exists( $object_cache_dropin ) && false !== strpos( file_get_contents( $object_cache_dropin ), 'POWERED_OBJECT_CACHE' ) ) {
-			unlink( $object_cache_dropin );
-		}
-
 		$advanced_cache_dropin = untrailingslashit( WP_CONTENT_DIR ) . '/advanced-cache.php';
 		if ( file_exists( $advanced_cache_dropin ) ) {
 			unlink( $advanced_cache_dropin );
@@ -771,10 +669,10 @@ class Config {
 			remove_dir( get_cache_dir() );
 		}
 
-		$config_dir = WP_CONTENT_DIR . '/pc-config';
+		$config_dir = WP_CONTENT_DIR . '/sp-config';
 
 		if ( is_multisite() ) {
-			$config_file_name = $this->get_config_filename( POWERED_CACHE_IS_NETWORK );
+			$config_file_name = $this->get_config_filename( SWIFTPRESS_IS_NETWORK );
 			$config_file      = trailingslashit( $config_dir ) . $config_file_name;
 			if ( file_exists( $config_file ) ) {
 				unlink( $config_file );
@@ -786,11 +684,11 @@ class Config {
 		/**
 		 * Fires after cleanup all configurations
 		 *
-		 * @hook  powered_cache_after_clean_up
+		 * @hook  swiftpress_after_clean_up
 		 *
 		 * @since 2.0
 		 */
-		do_action( 'powered_cache_after_clean_up' );
+		do_action( 'swiftpress_after_clean_up' );
 
 	}
 

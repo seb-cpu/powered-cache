@@ -1,13 +1,13 @@
-Powered Cache
+SwiftPress
 =============
 
-![Support Level](https://img.shields.io/badge/support-active-green.svg) [![Release Version](https://img.shields.io/wordpress/plugin/v/powered-cache?label=Release%20Version)](https://github.com/poweredcache/powered-cache/releases) ![WordPress tested up to version](https://img.shields.io/wordpress/plugin/tested/powered-cache?label=WordPress) ![Required PHP Version](https://img.shields.io/wordpress/plugin/required-php/powered-cache?label=PHP) [![CI](https://github.com/poweredcache/powered-cache/actions/workflows/ci.yml/badge.svg)](https://github.com/poweredcache/powered-cache/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/poweredcache/powered-cache/branch/master/graph/badge.svg)](https://codecov.io/gh/poweredcache/powered-cache)
+![Support Level](https://img.shields.io/badge/support-active-green.svg) [![Release Version](https://img.shields.io/wordpress/plugin/v/swiftpress?label=Release%20Version)](https://github.com/swiftpress/swiftpress/releases) ![WordPress tested up to version](https://img.shields.io/wordpress/plugin/tested/swiftpress?label=WordPress) ![Required PHP Version](https://img.shields.io/wordpress/plugin/required-php/swiftpress?label=PHP) [![CI](https://github.com/swiftpress/swiftpress/actions/workflows/ci.yml/badge.svg)](https://github.com/swiftpress/swiftpress/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/swiftpress/swiftpress/branch/master/graph/badge.svg)](https://codecov.io/gh/swiftpress/swiftpress)
 
 The most powerful caching and performance suite for WordPress. Easily Improve PageSpeed & Web Vitals Score.
 
-__Plugin Website__: [poweredcache.com](https://poweredcache.com)  
-__Docs__: [docs.poweredcache.com](https://docs.poweredcache.com)    
-__Developer Docs__: [https://poweredcache.github.io/docs/](https://poweredcache.github.io/docs/)
+__Plugin Website__: [swiftpress.com](https://swiftpress.com)  
+__Docs__: [docs.swiftpress.com](https://docs.swiftpress.com)    
+__Developer Docs__: [https://swiftpress.github.io/docs/](https://swiftpress.github.io/docs/)
 
 ### Features
 
@@ -17,9 +17,9 @@ __Developer Docs__: [https://poweredcache.github.io/docs/](https://poweredcache.
 
 - __Object Caching__: Speedup dynamic pageviews. It supports Redis, Memcached, Memcache and APCu.
 
-- __Page Cache Rule Management__: Need advanced caching configurations? Got it covered under advanced options. [Details](https://docs.poweredcache.com/advanced-options/)
+- __Page Cache Rule Management__: Need advanced caching configurations? Got it covered under advanced options. [Details](https://docs.swiftpress.com/advanced-options/)
 
-- __File Optimization__: Easily minify and combine CSS, JS files. Eliminate render-blocking resource problems easily. [And more](https://docs.poweredcache.com/category/file-optimization/)
+- __File Optimization__: Easily minify and combine CSS, JS files. Eliminate render-blocking resource problems easily. [And more](https://docs.swiftpress.com/category/file-optimization/)
 
 - __Database Optimization__: Keep redundant data away from your database.
 
@@ -53,7 +53,7 @@ __Developer Docs__: [https://poweredcache.github.io/docs/](https://poweredcache.
 
 ### Built-in extensions
 
-Built-in extensions (aka add-ons) shipped with Powered Cache to provide more functionality.
+Built-in extensions (aka add-ons) shipped with SwiftPress to provide more functionality.
 
 - __Cloudflare__: Cloudflare compatibility and functionalities ***Free***
 
@@ -61,14 +61,14 @@ Built-in extensions (aka add-ons) shipped with Powered Cache to provide more fun
 
 - __Varnish__: Varnish cache purging ***Premium only***
 
-- __Google Tracking__: Powered Cache will host Google scripts on your server to help satisfy the PageSpeed recommendation. ***Premium only***
+- __Google Tracking__: SwiftPress will host Google scripts on your server to help satisfy the PageSpeed recommendation. ***Premium only***
 
-- __Facebook Tracking__: Powered Cache will host Google scripts on your server to help satisfy the PageSpeed recommendation. ***Premium only***
+- __Facebook Tracking__: SwiftPress will host Google scripts on your server to help satisfy the PageSpeed recommendation. ***Premium only***
 
 
 ### Premium Features
 
-Here is a list of the amazing features included in Powered Cache Premium:
+Here is a list of the amazing features included in SwiftPress Premium:
 
 - __Critical CSS & Load CSS Asynchronously:__ Accelerate your page load times by prioritizing essential styles.
 - __Remove Unused CSS:__ Smartly scans your website to identify and eliminate unused CSS rules, optimizing performance.
@@ -84,21 +84,21 @@ Here is a list of the amazing features included in Powered Cache Premium:
 - __Ad-Free Plugin Interface:__ Enjoy an uncluttered, ad-free plugin admin page.
 
 
-By upgrading to Powered Cache Premium you also get access to one-on-one help from our knowledgeable support team and our extensive documentation site.
+By upgrading to SwiftPress Premium you also get access to one-on-one help from our knowledgeable support team and our extensive documentation site.
 
-**[Learn more about Powered Cache Premium](https://poweredcache.com/)**
+**[Learn more about SwiftPress Premium](https://swiftpress.com/)**
 
 ## Contributing & Bug Report
-Bug reports and pull requests are welcome on [Github](https://github.com/poweredcache/powered-cache). Some of our features are premium only, please consider before sending PR.
+Bug reports and pull requests are welcome on [Github](https://github.com/swiftpress/swiftpress). Some of our features are premium only, please consider before sending PR.
 
 ## Documentation
-__Documentation site__: [https://docs.poweredcache.com/](https://docs.poweredcache.com/)
-__Developer Docs :__ [https://poweredcache.github.io/docs/](https://poweredcache.github.io/docs/)  (***Hook reference***)
+__Documentation site__: [https://docs.swiftpress.com/](https://docs.swiftpress.com/)
+__Developer Docs :__ [https://swiftpress.github.io/docs/](https://swiftpress.github.io/docs/)  (***Hook reference***)
 
 
 ## Setup
-1. Upload the `powered-cache` folder to the `/wp-content/plugins/` directory
-2. Activate the Powered Cache plugin through the 'Plugins' menu in WordPress
+1. Upload the `swiftpress` folder to the `/wp-content/plugins/` directory
+2. Activate the SwiftPress plugin through the 'Plugins' menu in WordPress
 3. That's all.
 
 ## Credits

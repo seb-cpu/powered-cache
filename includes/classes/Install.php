@@ -2,13 +2,13 @@
 /**
  * Installation functionalities
  *
- * @package PoweredCache
+ * @package SwiftPress
  */
 
-namespace PoweredCache;
+namespace SwiftPress;
 
-use const PoweredCache\Constants\DB_VERSION_OPTION_NAME;
-use const PoweredCache\Constants\SETTING_OPTION;
+use const SwiftPress\Constants\SETTING_OPTION;
+use SwiftPress\Async\SitemapPreloader;
 
 /**
  * Class Install
@@ -51,16 +51,16 @@ class Install {
 			return;
 		}
 
-		if ( version_compare( get_option( DB_VERSION_OPTION_NAME ), POWERED_CACHE_DB_VERSION, '<' ) ) {
+		if ( version_compare( get_option( 'swiftpress_db_version' ), SWIFTPRESS_DB_VERSION, '<' ) ) {
 			$this->install();
 			/**
 			 * Fires after plugin update.
 			 *
-			 * @hook  powered_cache_updated
+			 * @hook  swiftpress_updated
 			 *
 			 * @since 2.0
 			 */
-			do_action( 'powered_cache_updated' );
+			do_action( 'swiftpress_updated' );
 		}
 	}
 
@@ -72,7 +72,7 @@ class Install {
 			return;
 		}
 
-		$lock_key = 'powered_cache_installing';
+		$lock_key = 'swiftpress_installing';
 		// Check if we are not already running
 		if ( $this->has_lock( $lock_key ) ) {
 			return;
@@ -81,7 +81,7 @@ class Install {
 		// lets set the transient now.
 		$this->set_lock( $lock_key );
 
-		if ( POWERED_CACHE_IS_NETWORK ) {
+		if ( SWIFTPRESS_IS_NETWORK ) {
 			$this->maybe_upgrade_network_wide();
 		} else {
 			$this->maybe_upgrade();
@@ -94,14 +94,15 @@ class Install {
 	 * Upgrade routine for network wide activation
 	 */
 	public function maybe_upgrade_network_wide() {
-		if ( version_compare( get_site_option( DB_VERSION_OPTION_NAME ), POWERED_CACHE_DB_VERSION, '<' ) ) {
+		if ( version_compare( get_site_option( 'swiftpress_db_version' ), SWIFTPRESS_DB_VERSION, '<' ) ) {
 			$this->upgrade_30( true );
 			$this->upgrade_32( true );
 			$this->upgrade_33( true );
-			$this->upgrade_34( true );
+			$this->upgrade_38( true );
+			$this->protect_cache_dirs();
 
-			\PoweredCache\Utils\log( sprintf( '[Networkwide] Upgrade DB version: %s', POWERED_CACHE_DB_VERSION ) );
-			update_site_option( DB_VERSION_OPTION_NAME, POWERED_CACHE_DB_VERSION );
+			\SwiftPress\Utils\log( sprintf( '[Networkwide] Upgrade DB version: %s', SWIFTPRESS_DB_VERSION ) );
+			update_site_option( 'swiftpress_db_version', SWIFTPRESS_DB_VERSION );
 		}
 	}
 
@@ -109,15 +110,16 @@ class Install {
 	 * Upgrade routine
 	 */
 	public function maybe_upgrade() {
-		if ( version_compare( get_option( DB_VERSION_OPTION_NAME ), POWERED_CACHE_DB_VERSION, '<' ) ) {
-			\PoweredCache\Utils\log( sprintf( 'Upgrade DB version: %s', POWERED_CACHE_DB_VERSION ) );
+		if ( version_compare( get_option( 'swiftpress_db_version' ), SWIFTPRESS_DB_VERSION, '<' ) ) {
+			\SwiftPress\Utils\log( sprintf( 'Upgrade DB version: %s', SWIFTPRESS_DB_VERSION ) );
 			$this->maybe_migrate_from_1x();
 			$this->upgrade_30();
 			$this->upgrade_32();
 			$this->upgrade_33();
-			$this->upgrade_34();
+			$this->upgrade_38();
+			$this->protect_cache_dirs();
 
-			update_option( DB_VERSION_OPTION_NAME, POWERED_CACHE_DB_VERSION );
+			update_option( 'swiftpress_db_version', SWIFTPRESS_DB_VERSION );
 		}
 	}
 
@@ -130,12 +132,12 @@ class Install {
 	 * @since 3.0
 	 */
 	public function upgrade_30( $network_wide = false ) {
-		$current_version = $network_wide ? get_site_option( DB_VERSION_OPTION_NAME ) : get_option( DB_VERSION_OPTION_NAME );
+		$current_version = $network_wide ? get_site_option( 'swiftpress_db_version' ) : get_option( 'swiftpress_db_version' );
 		if ( ! version_compare( $current_version, '3.0', '<' ) ) {
 			return;
 		}
 
-		$settings = \PoweredCache\Utils\get_settings( $network_wide );
+		$settings = \SwiftPress\Utils\get_settings( $network_wide );
 
 		if ( empty( $settings['accepted_query_strings'] ) ) {
 			return;
@@ -151,7 +153,7 @@ class Install {
 		}
 
 		Config::factory()->save_configuration( $settings, $network_wide );
-		\PoweredCache\Utils\log( 'Upgraded to version 3.0' );
+		\SwiftPress\Utils\log( 'Upgraded to version 3.0' );
 	}
 
 	/**
@@ -163,12 +165,12 @@ class Install {
 	 * @since 3.2
 	 */
 	public function upgrade_32( $network_wide = false ) {
-		$current_version = $network_wide ? get_site_option( DB_VERSION_OPTION_NAME ) : get_option( DB_VERSION_OPTION_NAME );
+		$current_version = $network_wide ? get_site_option( 'swiftpress_db_version' ) : get_option( 'swiftpress_db_version' );
 		if ( ! version_compare( $current_version, '3.2', '<' ) ) {
 			return;
 		}
 
-		$settings = \PoweredCache\Utils\get_settings( $network_wide );
+		$settings = \SwiftPress\Utils\get_settings( $network_wide );
 
 		if ( ! empty( $settings['js_execution_method'] ) ) {
 			if ( in_array( $settings['js_execution_method'], [ 'async', 'defer' ], true ) ) {
@@ -191,7 +193,7 @@ class Install {
 		}
 
 		Config::factory()->save_configuration( $settings, $network_wide );
-		\PoweredCache\Utils\log( 'Upgraded to version 3.2' );
+		\SwiftPress\Utils\log( 'Upgraded to version 3.2' );
 	}
 
 	/**
@@ -202,12 +204,12 @@ class Install {
 	 * @return void
 	 */
 	public function upgrade_33( $network_wide = false ) {
-		$current_version = $network_wide ? get_site_option( DB_VERSION_OPTION_NAME ) : get_option( DB_VERSION_OPTION_NAME );
+		$current_version = $network_wide ? get_site_option( 'swiftpress_db_version' ) : get_option( 'swiftpress_db_version' );
 		if ( ! version_compare( $current_version, '3.3', '<' ) ) {
 			return;
 		}
 
-		$settings = \PoweredCache\Utils\get_settings( $network_wide );
+		$settings = \SwiftPress\Utils\get_settings( $network_wide );
 
 		// disable rewrite file optimizer if auto configure htaccess is disabled
 		if ( ! $settings['auto_configure_htaccess'] && $settings['rewrite_file_optimizer'] ) {
@@ -224,48 +226,68 @@ class Install {
 
 		if ( $settings['auto_configure_htaccess'] && $settings['rewrite_file_optimizer'] ) {
 			if ( $network_wide ) {
-				\PoweredCache\Utils\clean_page_cache_dir();
+				\SwiftPress\Utils\clean_page_cache_dir();
 			} else {
-				\PoweredCache\Utils\clean_site_cache_dir();
+				\SwiftPress\Utils\clean_site_cache_dir();
 			}
 		}
 
-		\PoweredCache\Utils\log( 'Upgraded to version 3.3' );
+		\SwiftPress\Utils\log( 'Upgraded to version 3.3' );
 	}
 
+
 	/**
-	 * Upgrade routine for version 3.4
+	 * Upgrade routine for version 3.8 – create preload URLs table
 	 *
 	 * @param bool $network_wide whether plugin activated network-wide or not
-	 * *
+	 *
 	 * @return void
+	 * @since 3.8
 	 */
-	public function upgrade_34( $network_wide = false ) {
-		$current_version = $network_wide ? get_site_option( DB_VERSION_OPTION_NAME ) : get_option( DB_VERSION_OPTION_NAME );
-		if ( ! version_compare( $current_version, '3.4', '<' ) ) {
+	public function upgrade_38( $network_wide = false ) {
+		$current_version = $network_wide ? get_site_option( 'swiftpress_db_version' ) : get_option( 'swiftpress_db_version' );
+		if ( ! version_compare( $current_version, '3.8', '<' ) ) {
 			return;
 		}
 
-		$settings = \PoweredCache\Utils\get_settings( $network_wide );
-
-		$encryption = new Encryption();
-
-		if ( ! empty( $settings['cloudflare_api_key'] ) && false === $encryption->decrypt( $settings['cloudflare_api_key'] ) ) {
-			$settings['cloudflare_api_key'] = $encryption->encrypt( $settings['cloudflare_api_key'] );
-		}
-
-		if ( ! empty( $settings['cloudflare_api_token'] ) && false === $encryption->decrypt( $settings['cloudflare_api_token'] ) ) {
-			$settings['cloudflare_api_token'] = $encryption->encrypt( $settings['cloudflare_api_token'] );
-		}
-
 		if ( $network_wide ) {
-			update_site_option( SETTING_OPTION, $settings );
+			$sites = get_sites( [ 'fields' => 'ids' ] );
+			foreach ( $sites as $site_id ) {
+				switch_to_blog( $site_id );
+				SitemapPreloader::create_table();
+				restore_current_blog();
+			}
 		} else {
-			update_option( SETTING_OPTION, $settings );
+			SitemapPreloader::create_table();
 		}
 
-		Config::factory()->save_configuration( $settings, $network_wide );
-		\PoweredCache\Utils\log( 'Upgraded to version 3.4' );
+		\SwiftPress\Utils\log( 'Upgraded to version 3.8 – preload URLs table created' );
+	}
+
+
+	/**
+	 * Write index.php guard files to cache directories to prevent directory listing.
+	 *
+	 * @since 1.0.0
+	 */
+	private function protect_cache_dirs() {
+		$content = '<?php // Silence is golden.';
+		$dirs    = [
+			WP_CONTENT_DIR . '/cache/swiftpress/',
+			WP_CONTENT_DIR . '/cache/swiftpress/fonts/',
+		];
+
+		foreach ( $dirs as $dir ) {
+			if ( ! wp_mkdir_p( $dir ) ) {
+				continue;
+			}
+
+			$index_file = $dir . 'index.php';
+			if ( ! file_exists( $index_file ) ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+				file_put_contents( $index_file, $content );
+			}
+		}
 	}
 
 	/**
@@ -276,7 +298,7 @@ class Install {
 	 * @return bool
 	 */
 	private function has_lock( $lock_name ) {
-		if ( POWERED_CACHE_IS_NETWORK ) {
+		if ( SWIFTPRESS_IS_NETWORK ) {
 			if ( 'yes' === get_site_transient( $lock_name ) ) {
 				return true;
 			}
@@ -299,7 +321,7 @@ class Install {
 	 * @return bool
 	 */
 	private function set_lock( $lock_name ) {
-		if ( POWERED_CACHE_IS_NETWORK ) {
+		if ( SWIFTPRESS_IS_NETWORK ) {
 			return set_site_transient( $lock_name, 'yes', MINUTE_IN_SECONDS );
 		}
 
@@ -314,7 +336,7 @@ class Install {
 	 * @return bool
 	 */
 	private function remove_lock( $lock_name ) {
-		if ( POWERED_CACHE_IS_NETWORK ) {
+		if ( SWIFTPRESS_IS_NETWORK ) {
 			return delete_site_transient( $lock_name );
 		}
 
@@ -326,16 +348,16 @@ class Install {
 	 * Migrate existing options and extension settings from 1.x
 	 */
 	public function maybe_migrate_from_1x() {
-		if ( POWERED_CACHE_IS_NETWORK ) { // 1x wasn't support network wide activation
+		if ( SWIFTPRESS_IS_NETWORK ) { // 1x wasn't support network wide activation
 			return;
 		}
 
-		$db_version      = get_option( DB_VERSION_OPTION_NAME );
+		$db_version      = get_option( 'swiftpress_db_version' );
 		$old_options     = get_option( SETTING_OPTION );
-		$default_options = \PoweredCache\Utils\get_settings();
+		$default_options = \SwiftPress\Utils\get_settings();
 
 		if ( empty( $db_version ) && ! empty( $old_options ) ) {
-			\PoweredCache\Utils\log( 'Upgrading from version 1.x' );
+			\SwiftPress\Utils\log( 'Upgrading from version 1.x' );
 			$migrated_options = [];
 
 			// migrate the settings with same key
@@ -370,16 +392,7 @@ class Install {
 				$migrated_options['cloudflare_zone']    = $extension_settings['cloudflare']['zone'];
 			}
 
-			$migrated_options['enable_lazy_load'] = in_array( 'lazy-load', $active_extensions, true );
-
-			if ( ! empty( $extension_settings['lazyload'] ) ) {
-				$migrated_options['lazy_load_post_content']   = $extension_settings['lazyload']['post_content'];
-				$migrated_options['lazy_load_images']         = $extension_settings['lazyload']['image'];
-				$migrated_options['lazy_load_iframes']        = $extension_settings['lazyload']['iframe'];
-				$migrated_options['lazy_load_widgets']        = $extension_settings['lazyload']['widget_text'];
-				$migrated_options['lazy_load_post_thumbnail'] = $extension_settings['lazyload']['post_thumbnail'];
-				$migrated_options['lazy_load_avatars']        = $extension_settings['lazyload']['avatar'];
-			}
+			// Lazy load migration removed (feature deleted in Phase 2)
 
 			$migrated_options['enable_cache_preload'] = in_array( 'preload', $active_extensions, true );
 
@@ -410,12 +423,12 @@ class Install {
 			update_option( SETTING_OPTION, $migrated_options );
 			Config::factory()->save_configuration( $migrated_options ); // make it current
 
-			\PoweredCache\Utils\log( 'Upgraded from version 1.x' );
+			\SwiftPress\Utils\log( 'Upgraded from version 1.x' );
 
 			// remove old crons
-			wp_clear_scheduled_hook( 'powered_cache_preload_hook' );
-			wp_clear_scheduled_hook( 'powered_cache_preload_child_process' );
-			wp_clear_scheduled_hook( 'powered_cache_purge_cache' );
+			wp_clear_scheduled_hook( 'swiftpress_preload_hook' );
+			wp_clear_scheduled_hook( 'swiftpress_preload_child_process' );
+			wp_clear_scheduled_hook( 'swiftpress_purge_cache' );
 		}
 	}
 

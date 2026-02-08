@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PoweredCache\Dependencies\voku\helper;
+namespace SwiftPress\Dependencies\voku\helper;
 
 final class HtmlDomHelper
 {
@@ -22,8 +22,8 @@ final class HtmlDomHelper
             return $html;
         }
 
-        $dom = \PoweredCache\Dependencies\voku\helper\HtmlDomParser::str_get_html($html);
-        $domNew = \PoweredCache\Dependencies\voku\helper\HtmlDomParser::str_get_html('<textarea ' . $optionStr . '></textarea>');
+        $dom = \SwiftPress\Dependencies\voku\helper\HtmlDomParser::str_get_html($html);
+        $domNew = \SwiftPress\Dependencies\voku\helper\HtmlDomParser::str_get_html('<textarea ' . $optionStr . '></textarea>');
 
         $domElement = $dom->findOneOrFalse($htmlCssSelector);
         if ($domElement === false) {

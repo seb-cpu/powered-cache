@@ -8,7 +8,7 @@
  * @author Matthias Mullie <minify@mullie.eu>
  */
 
-namespace PoweredCache\Dependencies\MatthiasMullie\Minify;
+namespace SwiftPress\Dependencies\MatthiasMullie\Minify;
 
 /**
  * Base Exception Class.

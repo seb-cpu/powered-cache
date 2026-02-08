@@ -2,10 +2,10 @@
 /**
  * Heartbeat Extension
  *
- * @package PoweredCache\Extensions
+ * @package SwiftPress\Extensions
  */
 
-namespace PoweredCache\Extensions\Heartbeat;
+namespace SwiftPress\Extensions\Heartbeat;
 
 /**
  * Class Heartbeat
@@ -59,7 +59,7 @@ class Heartbeat {
 			return;
 		}
 
-		$this->settings = \PoweredCache\Utils\get_settings();
+		$this->settings = \SwiftPress\Utils\get_settings();
 		$this->set_location();
 
 		add_action( 'wp_enqueue_scripts', [ $this, 'maybe_stop_heartbeat' ] );

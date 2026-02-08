@@ -3,10 +3,10 @@
  * JS Optimizer
  * Credits: https://github.com/Automattic/nginx-http-concat/blob/master/jsconcat.php
  *
- * @package PoweredCache\Optimizer
+ * @package SwiftPress\Optimizer
  */
 
-namespace PoweredCache\Optimizer;
+namespace SwiftPress\Optimizer;
 
 use \WP_Scripts as WP_Scripts;
 
@@ -88,7 +88,7 @@ class JS extends WP_Scripts {
 		$abspath     = wp_normalize_path( ABSPATH );
 		$handles     = false === $handles ? $this->queue : (array) $handles;
 		$javascripts = array();
-		$siteurl     = apply_filters( 'powered_cache_fo_site_url', $this->base_url );
+		$siteurl     = apply_filters( 'swiftpress_fo_site_url', $this->base_url );
 
 		$this->all_deps( $handles );
 		$level = 0;
@@ -160,7 +160,7 @@ class JS extends WP_Scripts {
 			/**
 			 * Allow plugins to disable concatenation of certain scripts.
 			 *
-			 * @hook   powered_cache_fo_js_do_concat
+			 * @hook   swiftpress_fo_js_do_concat
 			 *
 			 * @param  {boolean} $do_concat Contact status.
 			 * @param  {string} $handle Handle of script.
@@ -168,7 +168,7 @@ class JS extends WP_Scripts {
 			 * @return {boolean} New value.
 			 * @since  2.0
 			 */
-			$do_concat = apply_filters( 'powered_cache_fo_js_do_concat', $do_concat, $handle );
+			$do_concat = apply_filters( 'swiftpress_fo_js_do_concat', $do_concat, $handle );
 
 			if ( true === $do_concat ) {
 				if ( ! isset( $javascripts[ $level ] ) ) {
@@ -233,14 +233,14 @@ class JS extends WP_Scripts {
 					/**
 					 * Filters combined script loader tags.
 					 *
-					 * @hook   powered_cache_fo_script_loader_tag
+					 * @hook   swiftpress_fo_script_loader_tag
 					 *
 					 * @param  {string} $js_tag JS tag.
 					 *
 					 * @return {string} New value.
 					 * @since  2.0
 					 */
-					echo apply_filters( 'powered_cache_fo_script_loader_tag', "<script type='text/javascript' src='$href'></script>", $href ); // phpcs:ignore
+					echo apply_filters( 'swiftpress_fo_script_loader_tag', "<script type='text/javascript' src='$href'></script>", $href ); // phpcs:ignore
 					echo PHP_EOL;
 				}
 				if ( isset( $js_array['extras']['after'] ) ) {
@@ -254,13 +254,13 @@ class JS extends WP_Scripts {
 		/**
 		 * Fires after combine JS
 		 *
-		 * @hook  powered_cache_fo_js_concat_did_items
+		 * @hook  swiftpress_fo_js_concat_did_items
 		 *
 		 * @param {array} $javascripts JS resources.
 		 *
 		 * @since 2.0
 		 */
-		do_action( 'powered_cache_fo_js_concat_did_items', $javascripts );
+		do_action( 'swiftpress_fo_js_concat_did_items', $javascripts );
 
 		return $this->done;
 	}

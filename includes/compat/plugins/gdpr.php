@@ -2,22 +2,22 @@
 /**
  * Compat with GDPR Plugin
  *
- * @package PoweredCache\Compat
+ * @package SwiftPress\Compat
  * @link    https://wordpress.org/plugins/gdpr/
  */
 
-namespace PoweredCache\Compat\GDPR;
+namespace SwiftPress\Compat\GDPR;
 
-use PoweredCache\Config;
-use function PoweredCache\Utils\clean_site_cache_dir;
+use SwiftPress\Config;
+use function SwiftPress\Utils\clean_site_cache_dir;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
 if ( class_exists( '\GDPR' ) ) {
-	add_filter( 'powered_cache_mod_rewrite', '__return_false', 23 );
-	add_filter( 'powered_cache_vary_cookies', __NAMESPACE__ . '\\add_vary_cookie' );
+	add_filter( 'swiftpress_mod_rewrite', '__return_false', 23 );
+	add_filter( 'swiftpress_vary_cookies', __NAMESPACE__ . '\\add_vary_cookie' );
 }
 
 
@@ -44,10 +44,10 @@ function add_vary_cookie( $cookies ) {
  * @since 2.0
  */
 function activate() {
-	add_filter( 'powered_cache_mod_rewrite', '__return_false' );
-	add_filter( 'powered_cache_vary_cookies', __NAMESPACE__ . '\\add_vary_cookie' );
-	$settings = \PoweredCache\Utils\get_settings();
-	Config::factory()->save_configuration( $settings, POWERED_CACHE_IS_NETWORK );
+	add_filter( 'swiftpress_mod_rewrite', '__return_false' );
+	add_filter( 'swiftpress_vary_cookies', __NAMESPACE__ . '\\add_vary_cookie' );
+	$settings = \SwiftPress\Utils\get_settings();
+	Config::factory()->save_configuration( $settings, SWIFTPRESS_IS_NETWORK );
 	clean_site_cache_dir();
 }
 
@@ -57,10 +57,10 @@ function activate() {
  * @since 2.0
  */
 function deactivate() {
-	remove_filter( 'powered_cache_mod_rewrite', '__return_false', 23 );
-	remove_filter( 'powered_cache_vary_cookies', __NAMESPACE__ . '\\add_vary_cookie' );
-	$settings = \PoweredCache\Utils\get_settings();
-	Config::factory()->save_configuration( $settings, POWERED_CACHE_IS_NETWORK );
+	remove_filter( 'swiftpress_mod_rewrite', '__return_false', 23 );
+	remove_filter( 'swiftpress_vary_cookies', __NAMESPACE__ . '\\add_vary_cookie' );
+	$settings = \SwiftPress\Utils\get_settings();
+	Config::factory()->save_configuration( $settings, SWIFTPRESS_IS_NETWORK );
 	clean_site_cache_dir();
 }
 

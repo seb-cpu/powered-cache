@@ -10,12 +10,12 @@
  * @license MIT License
  */
 
-namespace PoweredCache\Dependencies\MatthiasMullie\Minify;
+namespace SwiftPress\Dependencies\MatthiasMullie\Minify;
 
-use PoweredCache\Dependencies\MatthiasMullie\Minify\Exceptions\FileImportException;
-use PoweredCache\Dependencies\MatthiasMullie\Minify\Exceptions\PatternMatchException;
-use PoweredCache\Dependencies\MatthiasMullie\PathConverter\Converter;
-use PoweredCache\Dependencies\MatthiasMullie\PathConverter\ConverterInterface;
+use SwiftPress\Dependencies\MatthiasMullie\Minify\Exceptions\FileImportException;
+use SwiftPress\Dependencies\MatthiasMullie\Minify\Exceptions\PatternMatchException;
+use SwiftPress\Dependencies\MatthiasMullie\PathConverter\Converter;
+use SwiftPress\Dependencies\MatthiasMullie\PathConverter\ConverterInterface;
 
 /**
  * CSS minifier.

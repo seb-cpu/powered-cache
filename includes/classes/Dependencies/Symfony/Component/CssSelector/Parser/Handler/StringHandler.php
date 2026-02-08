@@ -9,15 +9,15 @@
  * file that was distributed with this source code.
  */
 
-namespace PoweredCache\Dependencies\Symfony\Component\CssSelector\Parser\Handler;
+namespace SwiftPress\Dependencies\Symfony\Component\CssSelector\Parser\Handler;
 
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Exception\InternalErrorException;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Exception\SyntaxErrorException;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Parser\Reader;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Parser\Token;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Parser\Tokenizer\TokenizerEscaping;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Parser\Tokenizer\TokenizerPatterns;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Parser\TokenStream;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Exception\InternalErrorException;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Exception\SyntaxErrorException;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Parser\Reader;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Parser\Token;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Parser\Tokenizer\TokenizerEscaping;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Parser\Tokenizer\TokenizerPatterns;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Parser\TokenStream;
 
 /**
  * CSS selector comment handler.

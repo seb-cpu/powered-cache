@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PoweredCache\Dependencies\voku\helper;
+namespace SwiftPress\Dependencies\voku\helper;
 
 /**
  * @property-read string $outerText
@@ -36,14 +36,14 @@ class HtmlDomParser extends AbstractDomParser
     /**
      * @var callable|null
      *
-     * @phpstan-var null|callable(string $cssSelectorString, string $xPathString, \DOMXPath, \PoweredCache\Dependencies\voku\helper\HtmlDomParser): string
+     * @phpstan-var null|callable(string $cssSelectorString, string $xPathString, \DOMXPath, \SwiftPress\Dependencies\voku\helper\HtmlDomParser): string
      */
     private $callbackXPathBeforeQuery;
 
     /**
      * @var callable|null
      *
-     * @phpstan-var null|callable(string $htmlString, \PoweredCache\Dependencies\voku\helper\HtmlDomParser): string
+     * @phpstan-var null|callable(string $htmlString, \SwiftPress\Dependencies\voku\helper\HtmlDomParser): string
      */
     private $callbackBeforeCreateDom;
 
@@ -897,8 +897,8 @@ class HtmlDomParser extends AbstractDomParser
         }
 
         try {
-            if (\class_exists('\PoweredCache\Dependencies\voku\helper\UTF8')) {
-                $html = \PoweredCache\Dependencies\voku\helper\UTF8::file_get_contents($filePath);
+            if (\class_exists('\SwiftPress\Dependencies\voku\helper\UTF8')) {
+                $html = \SwiftPress\Dependencies\voku\helper\UTF8::file_get_contents($filePath);
             } else {
                 $html = \file_get_contents($filePath);
             }
@@ -1201,7 +1201,7 @@ class HtmlDomParser extends AbstractDomParser
     /**
      * @param callable $callbackXPathBeforeQuery
      *
-     * @phpstan-param callable(string $cssSelectorString, string $xPathString,\DOMXPath,\PoweredCache\Dependencies\voku\helper\HtmlDomParser): string $callbackXPathBeforeQuery
+     * @phpstan-param callable(string $cssSelectorString, string $xPathString,\DOMXPath,\SwiftPress\Dependencies\voku\helper\HtmlDomParser): string $callbackXPathBeforeQuery
      *
      * @return $this
      */
@@ -1215,7 +1215,7 @@ class HtmlDomParser extends AbstractDomParser
     /**
      * @param callable $callbackBeforeCreateDom
      *
-     * @phpstan-param callable(string $htmlString, \PoweredCache\Dependencies\voku\helper\HtmlDomParser): string $callbackBeforeCreateDom
+     * @phpstan-param callable(string $htmlString, \SwiftPress\Dependencies\voku\helper\HtmlDomParser): string $callbackBeforeCreateDom
      *
      * @return $this
      */

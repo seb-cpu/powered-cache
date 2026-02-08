@@ -1,6 +1,6 @@
 <?php
 
-namespace PoweredCache\Dependencies\MatthiasMullie\PathConverter;
+namespace SwiftPress\Dependencies\MatthiasMullie\PathConverter;
 
 /**
  * Convert paths relative from 1 file to another.

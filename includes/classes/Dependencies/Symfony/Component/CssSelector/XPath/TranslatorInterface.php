@@ -9,9 +9,9 @@
  * file that was distributed with this source code.
  */
 
-namespace PoweredCache\Dependencies\Symfony\Component\CssSelector\XPath;
+namespace SwiftPress\Dependencies\Symfony\Component\CssSelector\XPath;
 
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Node\SelectorNode;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Node\SelectorNode;
 
 /**
  * XPath expression translator interface.

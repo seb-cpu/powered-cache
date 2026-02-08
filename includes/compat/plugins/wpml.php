@@ -2,15 +2,15 @@
 /**
  * Compat with WPML
  *
- * @package PoweredCache\Compat
+ * @package SwiftPress\Compat
  * @link    https://wpml.org/
  */
 
-namespace PoweredCache\Compat\WPML;
+namespace SwiftPress\Compat\WPML;
 
-use PoweredCache\Async\CachePurger;
-use function PoweredCache\Utils\get_page_cache_dir;
-use function PoweredCache\Utils\remove_dir;
+use SwiftPress\Async\CachePurger;
+use function SwiftPress\Utils\get_page_cache_dir;
+use function SwiftPress\Utils\remove_dir;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
@@ -18,10 +18,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 if ( class_exists( '\SitePress' ) ) {
 
-	add_action( 'powered_cache_create_config_file', __NAMESPACE__ . '\\generate_configuration_for_domains', 10, 3 );
+	add_action( 'swiftpress_create_config_file', __NAMESPACE__ . '\\generate_configuration_for_domains', 10, 3 );
 	add_action( 'admin_bar_menu', __NAMESPACE__ . '\\admin_bar_purge_cache_menu' );
 	add_action( 'admin_bar_menu', __NAMESPACE__ . '\\admin_bar_preload_cache_menu' );
-	add_action( 'admin_post_powered_cache_purge_page_cache_for_lang', __NAMESPACE__ . '\\purge_page_cache' );
+	add_action( 'admin_post_swiftpress_purge_page_cache_for_lang', __NAMESPACE__ . '\\purge_page_cache' );
 	add_filter( 'populate_preload_queue_urls', __NAMESPACE__ . '\\add_language_urls_to_queue' );
 
 	/**
@@ -29,7 +29,7 @@ if ( class_exists( '\SitePress' ) ) {
 	 *
 	 * @param string $config_file        Configuration path
 	 * @param string $config_file_string Configuration content
-	 * @param bool   $network_wide       whether powered cache activated network wide or not
+	 * @param bool   $network_wide       whether swiftpress activated network wide or not
 	 *
 	 * @since 2.2.2
 	 */
@@ -49,7 +49,7 @@ if ( class_exists( '\SitePress' ) ) {
 		}
 
 		$domains    = (array) $sitepress->get_setting( 'language_domains' );
-		$config_dir = WP_CONTENT_DIR . '/pc-config/';
+		$config_dir = WP_CONTENT_DIR . '/sp-config/';
 
 		foreach ( $domains as $lang_code => $domain ) {
 			$config_name = 'config-' . $domain . '.php';
@@ -104,7 +104,7 @@ if ( class_exists( '\SitePress' ) ) {
 						'parent' => 'advanced-cache-purge',
 						'id'     => 'purge-all-' . $lang['code'],
 						'title'  => $flag_url . '&nbsp;' . $lang['display_name'],
-						'href'   => wp_nonce_url( admin_url( 'admin-post.php?action=powered_cache_purge_page_cache_for_lang&lang_code=' . $lang['code'] ), 'powered_cache_purge_page_cache_for_lang' ),
+						'href'   => wp_nonce_url( admin_url( 'admin-post.php?action=swiftpress_purge_page_cache_for_lang&lang_code=' . $lang['code'] ), 'swiftpress_purge_page_cache_for_lang' ),
 					]
 				);
 
@@ -115,8 +115,8 @@ if ( class_exists( '\SitePress' ) ) {
 					[
 						'parent' => 'advanced-cache-purge',
 						'id'     => 'purge-all',
-						'title'  => '<img class="ab-icon" src="' . ICL_PLUGIN_URL . '/res/img/icon16.png"> &nbsp;' . esc_html__( 'All languages', 'powered-cache' ),
-						'href'   => wp_nonce_url( admin_url( 'admin-post.php?action=powered_cache_purge_page_cache' ), 'powered_cache_purge_page_cache' ),
+						'title'  => '<img class="ab-icon" src="' . ICL_PLUGIN_URL . '/res/img/icon16.png"> &nbsp;' . esc_html__( 'All languages', 'swiftpress' ),
+						'href'   => wp_nonce_url( admin_url( 'admin-post.php?action=swiftpress_purge_page_cache' ), 'swiftpress_purge_page_cache' ),
 					]
 				);
 			}
@@ -133,7 +133,7 @@ if ( class_exists( '\SitePress' ) ) {
 	function admin_bar_preload_cache_menu( $wp_admin_bar ) {
 		global $sitepress;
 
-		if ( POWERED_CACHE_IS_NETWORK && ! current_user_can( 'manage_network' ) ) {
+		if ( SWIFTPRESS_IS_NETWORK && ! current_user_can( 'manage_network' ) ) {
 			return;
 		}
 
@@ -162,7 +162,7 @@ if ( class_exists( '\SitePress' ) ) {
 					'parent' => 'preload-cache',
 					'id'     => 'preload-cache-' . $lang['code'],
 					'title'  => $flag_url . '&nbsp;' . $lang['display_name'],
-					'href'   => wp_nonce_url( admin_url( 'admin-post.php?action=powered_cache_preload_cache&lang_code=' . $lang['code'] ), 'powered_cache_preload_cache' ),
+					'href'   => wp_nonce_url( admin_url( 'admin-post.php?action=swiftpress_preload_cache&lang_code=' . $lang['code'] ), 'swiftpress_preload_cache' ),
 				]
 			);
 		}
@@ -172,8 +172,8 @@ if ( class_exists( '\SitePress' ) ) {
 				[
 					'parent' => 'preload-cache',
 					'id'     => 'preload-all-languages',
-					'title'  => '<img class="ab-icon" src="' . ICL_PLUGIN_URL . '/res/img/icon16.png"> &nbsp;' . esc_html__( 'All languages', 'powered-cache' ),
-					'href'   => wp_nonce_url( admin_url( 'admin-post.php?action=powered_cache_preload_cache&lang_code=all' ), 'powered_cache_preload_cache' ),
+					'title'  => '<img class="ab-icon" src="' . ICL_PLUGIN_URL . '/res/img/icon16.png"> &nbsp;' . esc_html__( 'All languages', 'swiftpress' ),
+					'href'   => wp_nonce_url( admin_url( 'admin-post.php?action=swiftpress_preload_cache&lang_code=all' ), 'swiftpress_preload_cache' ),
 				]
 			);
 		}
@@ -186,14 +186,14 @@ if ( class_exists( '\SitePress' ) ) {
 	 * @since 2.4
 	 */
 	function purge_page_cache() {
-		if ( ! wp_verify_nonce( $_GET['_wpnonce'], 'powered_cache_purge_page_cache_for_lang' ) ) { // phpcs:ignore
+		if ( ! wp_verify_nonce( $_GET['_wpnonce'], 'swiftpress_purge_page_cache_for_lang' ) ) { // phpcs:ignore
 			wp_nonce_ays( '' );
 		}
 
 		if ( current_user_can( 'manage_options' ) ) {
 			$lang = isset( $_GET['lang_code'] ) && 'all' !== $_GET['lang_code'] ? sanitize_key( $_GET['lang_code'] ) : '';
 
-			$settings     = \PoweredCache\Utils\get_settings();
+			$settings     = \SwiftPress\Utils\get_settings();
 			$cache_purger = CachePurger::factory();
 
 			if ( $settings['async_cache_cleaning'] ) {
@@ -211,14 +211,14 @@ if ( class_exists( '\SitePress' ) ) {
 			$lang_name    = $GLOBALS['sitepress']->get_display_language_name( $lang );
 			$redirect_url = add_query_arg(
 				[
-					'pc_action' => 'flush_lang_cache',
+					'sp_action' => 'flush_lang_cache',
 					'language'  => rawurlencode( $lang_name ),
 				],
 				wp_get_referer()
 			);
 
 		} else {
-			$redirect_url = add_query_arg( 'pc_action', 'flush_page_cache_err_permission', wp_get_referer() );
+			$redirect_url = add_query_arg( 'sp_action', 'flush_page_cache_err_permission', wp_get_referer() );
 		}
 
 		wp_safe_redirect( esc_url_raw( $redirect_url ) );

@@ -10,7 +10,7 @@
  * @license MIT License
  */
 
-namespace PoweredCache\Dependencies\MatthiasMullie\Minify\Exceptions;
+namespace SwiftPress\Dependencies\MatthiasMullie\Minify\Exceptions;
 
 /**
  * Pattern Match Exception Class.

@@ -2,16 +2,16 @@
 /**
  * Cron based functionalities
  *
- * @package PoweredCache
+ * @package SwiftPress
  */
 
-namespace PoweredCache;
+namespace SwiftPress;
 
-use const PoweredCache\Constants\PURGE_CACHE_CRON_NAME;
-use const PoweredCache\Constants\PURGE_FO_CRON_NAME;
-use function PoweredCache\Utils\get_expired_files;
-use function PoweredCache\Utils\is_dir_empty;
-use function PoweredCache\Utils\site_cache_dir;
+use const SwiftPress\Constants\PURGE_CACHE_CRON_NAME;
+use const SwiftPress\Constants\PURGE_FO_CRON_NAME;
+use function SwiftPress\Utils\get_expired_files;
+use function SwiftPress\Utils\is_dir_empty;
+use function SwiftPress\Utils\site_cache_dir;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -51,23 +51,23 @@ class Cron {
 	 * @since  1.0
 	 */
 	public function cron_schedules( $schedules ) {
-		$settings = \PoweredCache\Utils\get_settings();
+		$settings = \SwiftPress\Utils\get_settings();
 
 		$interval = $settings['cache_timeout'] * 60; // in seconds
 
-		$schedules['powered_cache'] = [
+		$schedules['swiftpress'] = [
 			/**
 			 * Filters page cache purge interval
 			 *
-			 * @hook   powered_cache_cache_purge_interval
+			 * @hook   swiftpress_cache_purge_interval
 			 *
 			 * @param  {int} TTL in seconds.
 			 *
 			 * @return {int} New value.
 			 * @since  2.0
 			 */
-			'interval' => apply_filters( 'powered_cache_cache_purge_interval', $interval ),
-			'display'  => esc_html__( 'Powered Cache Purge Interval', 'powered-cache' ),
+			'interval' => apply_filters( 'swiftpress_cache_purge_interval', $interval ),
+			'display'  => esc_html__( 'SwiftPress Purge Interval', 'swiftpress' ),
 		];
 
 		return $schedules;
@@ -92,7 +92,7 @@ class Cron {
 	 * @since 1.0
 	 */
 	public function schedule_page_cache_events() {
-		$settings = \PoweredCache\Utils\get_settings();
+		$settings = \SwiftPress\Utils\get_settings();
 
 		$timestamp = wp_next_scheduled( PURGE_CACHE_CRON_NAME );
 
@@ -112,10 +112,10 @@ class Cron {
 
 		if ( ! $timestamp ) {
 			/**
-			 * Only use `powered_cache` interval when TTL under the an hour
+			 * Only use `swiftpress` interval when TTL under the an hour
 			 */
 			if ( intval( $settings['cache_timeout'] ) < 60 ) {
-				return wp_schedule_event( time(), 'powered_cache', PURGE_CACHE_CRON_NAME );
+				return wp_schedule_event( time(), 'swiftpress', PURGE_CACHE_CRON_NAME );
 			}
 
 			return wp_schedule_event( time(), 'hourly', PURGE_CACHE_CRON_NAME );
@@ -132,7 +132,7 @@ class Cron {
 	public function schedule_fo_cache_events() {
 		$timestamp = wp_next_scheduled( PURGE_FO_CRON_NAME );
 
-		if ( ! file_exists( POWERED_CACHE_FO_CACHE_DIR ) || is_dir_empty( POWERED_CACHE_FO_CACHE_DIR ) ) {
+		if ( ! file_exists( SWIFTPRESS_FO_CACHE_DIR ) || is_dir_empty( SWIFTPRESS_FO_CACHE_DIR ) ) {
 			return;
 		}
 
@@ -147,7 +147,7 @@ class Cron {
 	 * @since 1.0
 	 */
 	public function purge_expired_page_cache() {
-		$settings = \PoweredCache\Utils\get_settings();
+		$settings = \SwiftPress\Utils\get_settings();
 
 		// Do nothing, caching is turned off
 		if ( true !== $settings['enable_page_cache'] ) {
@@ -159,7 +159,7 @@ class Cron {
 		$expired_files = get_expired_files( site_cache_dir(), $lifespan );
 
 		foreach ( $expired_files as $file_path ) {
-			\PoweredCache\Utils\log( sprintf( 'Cleanup via cron: %s', $file_path ) );
+			\SwiftPress\Utils\log( sprintf( 'Cleanup via cron: %s', $file_path ) );
 			@unlink( $file_path );  // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 		}
 
@@ -177,7 +177,7 @@ class Cron {
 		 * @since 2.0 added $expired_files $arg
 		 * @since 1.0
 		 */
-		do_action( 'powered_cache_expired_files_deleted', $expired_files );
+		do_action( 'swiftpress_expired_files_deleted', $expired_files );
 	}
 
 	/**
@@ -187,17 +187,17 @@ class Cron {
 		/**
 		 * Filters default TTL for minified assets.
 		 *
-		 * @hook   powered_cache_fo_cache_ttl
+		 * @hook   swiftpress_fo_cache_ttl
 		 *
 		 * @param  {int} TTL in seconds.
 		 *
 		 * @return {int} New value.
 		 * @since  2.0
 		 */
-		$lifespan      = apply_filters( 'powered_cache_fo_cache_ttl', 60 * 60 ); // in seconds
-		$expired_files = get_expired_files( POWERED_CACHE_FO_CACHE_DIR, $lifespan );
+		$lifespan      = apply_filters( 'swiftpress_fo_cache_ttl', 60 * 60 ); // in seconds
+		$expired_files = get_expired_files( SWIFTPRESS_FO_CACHE_DIR, $lifespan );
 		foreach ( $expired_files as $file_path ) {
-			\PoweredCache\Utils\log( sprintf( 'Cleanup via cron: %s', $file_path ) );
+			\SwiftPress\Utils\log( sprintf( 'Cleanup via cron: %s', $file_path ) );
 			@unlink( $file_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 		}
 	}

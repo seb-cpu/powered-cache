@@ -9,9 +9,9 @@
  * file that was distributed with this source code.
  */
 
-namespace PoweredCache\Dependencies\Symfony\Component\CssSelector\Exception;
+namespace SwiftPress\Dependencies\Symfony\Component\CssSelector\Exception;
 
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Parser\Token;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Parser\Token;
 
 /**
  * ParseException is thrown when a CSS selector syntax is not valid.

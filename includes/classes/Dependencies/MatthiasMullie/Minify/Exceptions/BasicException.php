@@ -10,9 +10,9 @@
  * @license MIT License
  */
 
-namespace PoweredCache\Dependencies\MatthiasMullie\Minify\Exceptions;
+namespace SwiftPress\Dependencies\MatthiasMullie\Minify\Exceptions;
 
-use PoweredCache\Dependencies\MatthiasMullie\Minify\Exception;
+use SwiftPress\Dependencies\MatthiasMullie\Minify\Exception;
 
 /**
  * Basic Exception Class.

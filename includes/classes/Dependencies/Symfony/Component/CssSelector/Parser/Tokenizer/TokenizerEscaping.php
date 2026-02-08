@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace PoweredCache\Dependencies\Symfony\Component\CssSelector\Parser\Tokenizer;
+namespace SwiftPress\Dependencies\Symfony\Component\CssSelector\Parser\Tokenizer;
 
 /**
  * CSS selector tokenizer escaping applier.

@@ -2,13 +2,13 @@
 /**
  * Compat with ACF
  *
- * @package PoweredCache\Compat
+ * @package SwiftPress\Compat
  * @link    https://wordpress.org/plugins/advanced-custom-fields
  */
 
-namespace PoweredCache\Compat\AdvancedCustomFields;
+namespace SwiftPress\Compat\AdvancedCustomFields;
 
-use function PoweredCache\Utils\clean_site_cache_dir;
+use function SwiftPress\Utils\clean_site_cache_dir;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.

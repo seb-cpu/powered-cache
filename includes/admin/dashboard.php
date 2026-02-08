@@ -2,39 +2,30 @@
 /**
  * Dashboard Page
  *
- * @package PoweredCache
+ * @package SwiftPress
  */
 
-namespace PoweredCache\Admin\Dashboard;
+namespace SwiftPress\Admin\Dashboard;
 
-use PoweredCache\Async\CachePreloader;
-use PoweredCache\Async\CachePurger;
-use PoweredCache\Async\DatabaseOptimizer;
-use PoweredCache\Config;
-use PoweredCache\Encryption;
-use PoweredCache\Preloader;
-use function PoweredCache\Utils\is_dev_mode_active;
-use function PoweredCache\Utils\mask_string;
-use const PoweredCache\Constants\ALLOPTIONS_CRITICAL_THRESHOLD;
-use const PoweredCache\Constants\ALLOPTIONS_WARNING_THRESHOLD;
-use const PoweredCache\Constants\ICON_BASE64;
-use const PoweredCache\Constants\MENU_SLUG;
-use const PoweredCache\Constants\PURGE_CACHE_CRON_NAME;
-use const PoweredCache\Constants\PURGE_CACHE_PLUGIN_NOTICE_TRANSIENT;
-use const PoweredCache\Constants\SETTING_OPTION;
-use function PoweredCache\Utils\can_configure_htaccess;
-use function PoweredCache\Utils\can_configure_object_cache;
-use function PoweredCache\Utils\can_control_all_settings;
-use function PoweredCache\Utils\cdn_zones;
-use function PoweredCache\Utils\clean_site_cache_dir;
-use function PoweredCache\Utils\get_available_object_caches;
-use function PoweredCache\Utils\get_cache_dir;
-use function PoweredCache\Utils\get_timeout_with_interval;
-use function PoweredCache\Utils\is_premium;
-use function PoweredCache\Utils\powered_cache_flush;
-use function PoweredCache\Utils\remove_dir;
-use function PoweredCache\Utils\sanitize_css;
-use const PoweredCache\Constants\UNMASK_CHARACTER_LENGTH;
+use SwiftPress\Async\CachePreloader;
+use SwiftPress\Async\CachePurger;
+use SwiftPress\Async\SitemapPreloader;
+use SwiftPress\Config;
+use SwiftPress\Preloader;
+use function SwiftPress\Utils\is_dev_mode_active;
+use const SwiftPress\Constants\ICON_BASE64;
+use const SwiftPress\Constants\MENU_SLUG;
+use const SwiftPress\Constants\PURGE_CACHE_CRON_NAME;
+use const SwiftPress\Constants\PURGE_CACHE_PLUGIN_NOTICE_TRANSIENT;
+use const SwiftPress\Constants\SETTING_OPTION;
+use function SwiftPress\Utils\can_configure_htaccess;
+use function SwiftPress\Utils\can_control_all_settings;
+use function SwiftPress\Utils\clean_site_cache_dir;
+use function SwiftPress\Utils\get_cache_dir;
+use function SwiftPress\Utils\get_timeout_with_interval;
+use function SwiftPress\Utils\swiftpress_flush;
+use function SwiftPress\Utils\remove_dir;
+use function SwiftPress\Utils\sanitize_css;
 
 // phpcs:disable WordPress.WhiteSpace.PrecisionAlignment.Found
 // phpcs:disable Generic.WhiteSpace.DisallowSpaceIndent.SpacesUsed
@@ -46,7 +37,7 @@ use const PoweredCache\Constants\UNMASK_CHARACTER_LENGTH;
  * @return void
  */
 function setup() {
-	if ( POWERED_CACHE_IS_NETWORK ) {
+	if ( SWIFTPRESS_IS_NETWORK ) {
 		add_action( 'network_admin_menu', __NAMESPACE__ . '\\admin_menu' );
 		add_action( 'network_admin_notices', __NAMESPACE__ . '\\maybe_display_message' );
 	} else {
@@ -59,26 +50,26 @@ function setup() {
 	add_filter( 'admin_body_class', __NAMESPACE__ . '\\add_sui_admin_body_class' );
 	add_action( 'admin_bar_menu', __NAMESPACE__ . '\\admin_bar_menu', 999 );
 	add_action( 'admin_bar_menu', __NAMESPACE__ . '\\purge_all_admin_bar_menu' );
-	add_action( 'admin_post_powered_cache_purge_all_cache', __NAMESPACE__ . '\\purge_all_cache_action' );
-	add_action( 'admin_post_powered_cache_download_rewrite_settings', __NAMESPACE__ . '\\download_rewrite_config' );
-	add_action( 'wp_ajax_powered_cache_run_diagnostic', __NAMESPACE__ . '\\run_diagnostic' );
-	add_action( 'wp_ajax_powered_cache_check_alloptions', __NAMESPACE__ . '\\check_alloptions' );
+	add_action( 'admin_post_swiftpress_purge_all_cache', __NAMESPACE__ . '\\purge_all_cache_action' );
+	add_action( 'admin_post_swiftpress_download_rewrite_settings', __NAMESPACE__ . '\\download_rewrite_config' );
+	add_action( 'wp_ajax_swiftpress_run_diagnostic', __NAMESPACE__ . '\\run_diagnostic' );
+	add_action( 'wp_ajax_swiftpress_clear_cache', __NAMESPACE__ . '\\ajax_clear_cache' );
+	add_action( 'wp_ajax_swiftpress_clear_font_cache', __NAMESPACE__ . '\\ajax_clear_font_cache' );
+	add_action( 'wp_ajax_swiftpress_refresh_sitemap', __NAMESPACE__ . '\\ajax_refresh_sitemap' );
+	add_action( 'wp_ajax_swiftpress_preload_status', __NAMESPACE__ . '\\ajax_preload_status' );
 	add_action( 'admin_post_deactivate_plugin', __NAMESPACE__ . '\\deactivate_plugin' );
-	add_filter( 'plugin_action_links_' . plugin_basename( POWERED_CACHE_PLUGIN_FILE ), __NAMESPACE__ . '\\action_links' );
-	add_filter( 'network_admin_plugin_action_links_' . plugin_basename( POWERED_CACHE_PLUGIN_FILE ), __NAMESPACE__ . '\\action_links' );
+	add_filter( 'plugin_action_links_' . plugin_basename( SWIFTPRESS_PLUGIN_FILE ), __NAMESPACE__ . '\\action_links' );
+	add_filter( 'network_admin_plugin_action_links_' . plugin_basename( SWIFTPRESS_PLUGIN_FILE ), __NAMESPACE__ . '\\action_links' );
 }
 
 /**
- * Add required class for shared UI
+ * Add admin body class for SwiftPress settings page
  *
  * @param string $classes css classes for admin area
  *
  * @return string
- * @see https://wpmudev.github.io/shared-ui/installation/
  */
 function add_sui_admin_body_class( $classes ) {
-	$classes .= ' sui-2-12-24 ';
-
 	return $classes;
 }
 
@@ -88,17 +79,17 @@ function add_sui_admin_body_class( $classes ) {
  * @since 1.0
  */
 function admin_menu() {
-	global $powered_cache_settings_page;
+	global $swiftpress_settings_page;
 
 	$capability = 'manage_options';
 
-	if ( POWERED_CACHE_IS_NETWORK ) {
+	if ( SWIFTPRESS_IS_NETWORK ) {
 		$capability = 'manage_network';
 	}
 
-	$powered_cache_settings_page = add_menu_page(
-		esc_html__( 'Powered Cache Settings', 'powered-cache' ),
-		esc_html__( 'Powered Cache', 'powered-cache' ),
+	$swiftpress_settings_page = add_menu_page(
+		esc_html__( 'SwiftPress Settings', 'swiftpress' ),
+		esc_html__( 'SwiftPress', 'swiftpress' ),
 		$capability,
 		MENU_SLUG,
 		__NAMESPACE__ . '\settings_page',
@@ -110,8 +101,8 @@ function admin_menu() {
 	 */
 	add_submenu_page(
 		MENU_SLUG,
-		esc_html__( 'Powered Cache Settings', 'powered-cache' ),
-		esc_html__( 'Settings', 'powered-cache' ),
+		esc_html__( 'SwiftPress Settings', 'swiftpress' ),
+		esc_html__( 'Settings', 'swiftpress' ),
 		$capability,
 		MENU_SLUG
 	);
@@ -131,7 +122,7 @@ function settings_page() {
  */
 function process_form_submit() {
 
-	if ( POWERED_CACHE_IS_NETWORK && ! current_user_can( 'manage_network' ) ) {
+	if ( SWIFTPRESS_IS_NETWORK && ! current_user_can( 'manage_network' ) ) {
 		return;
 	}
 
@@ -139,31 +130,26 @@ function process_form_submit() {
 		return;
 	}
 
-	$nonce = filter_input( INPUT_POST, 'powered_cache_settings_nonce', FILTER_SANITIZE_SPECIAL_CHARS );
-	if ( wp_verify_nonce( $nonce, 'powered_cache_update_settings' ) ) {
-		$action      = isset( $_POST['powered_cache_form_action'] ) ? sanitize_text_field( wp_unslash( $_POST['powered_cache_form_action'] ) ) : 'save_settings';
-		$old_options = \PoweredCache\Utils\get_settings();
+	$nonce = filter_input( INPUT_POST, 'swiftpress_settings_nonce', FILTER_SANITIZE_SPECIAL_CHARS );
+	if ( wp_verify_nonce( $nonce, 'swiftpress_update_settings' ) ) {
+		$action      = isset( $_POST['swiftpress_form_action'] ) ? sanitize_text_field( wp_unslash( $_POST['swiftpress_form_action'] ) ) : 'save_settings';
+		$old_options = \SwiftPress\Utils\get_settings();
 		$options     = sanitize_options( $_POST );
-		$options     = maybe_process_cloudflare_settings( $options );
 
 		switch ( $action ) {
 			case 'reset_settings':
-				if ( POWERED_CACHE_IS_NETWORK ) {
+				if ( SWIFTPRESS_IS_NETWORK ) {
 					delete_site_option( SETTING_OPTION );
 				} else {
 					delete_option( SETTING_OPTION );
 				}
 
-				if ( 'off' !== $old_options['object_cache'] ) {
-					wp_cache_flush();
-				}
-
-				$options = \PoweredCache\Utils\get_settings();
+				$options = \SwiftPress\Utils\get_settings();
 
 				break;
 			case 'export_settings':
-				$filename = sprintf( 'powered-cache-settings-%s-%s.json', gmdate( 'Y-m-d' ), uniqid() );
-				if ( POWERED_CACHE_IS_NETWORK ) {
+				$filename = sprintf( 'swiftpress-settings-%s-%s.json', gmdate( 'Y-m-d' ), uniqid() );
+				if ( SWIFTPRESS_IS_NETWORK ) {
 					$options = get_site_option( SETTING_OPTION );
 				} else {
 					$options = get_option( SETTING_OPTION );
@@ -206,9 +192,6 @@ function process_form_submit() {
 			case 'disable_dev_mode':
 				$options['dev_mode'] = false;
 				break;
-			case 'save_settings_and_optimize':
-				db_optimize( $options );
-				break;
 			case 'save_settings_and_clear_cache':
 				purge_all_cache( $options );
 				break;
@@ -217,18 +200,13 @@ function process_form_submit() {
 				break;
 		}
 
-		if ( POWERED_CACHE_IS_NETWORK ) {
+		if ( SWIFTPRESS_IS_NETWORK ) {
 			update_site_option( SETTING_OPTION, $options );
 		} else {
 			update_option( SETTING_OPTION, $options );
 		}
 
-		Config::factory()->save_configuration( $options, POWERED_CACHE_IS_NETWORK );
-
-		// drop object cache on backend changes
-		if ( isset( $options['object_cache'] ) && $old_options['object_cache'] !== $options['object_cache'] ) {
-			wp_cache_flush();
-		}
+		Config::factory()->save_configuration( $options, SWIFTPRESS_IS_NETWORK );
 
 		// Flush cache when Dev Mode is turned OFF
 		if ( ! empty( $old_options['dev_mode'] ) && empty( $options['dev_mode'] ) ) {
@@ -268,14 +246,14 @@ function process_form_submit() {
 		/**
 		 * Fires after saving configurations.
 		 *
-		 * @hook  powered_cache_settings_saved
+		 * @hook  swiftpress_settings_saved
 		 *
 		 * @param {array} $old_options Old settings.
 		 * @param {array} $options New settings.
 		 *
 		 * @since 1.0
 		 */
-		do_action( 'powered_cache_settings_saved', $old_options, $options );
+		do_action( 'swiftpress_settings_saved', $old_options, $options );
 
 		$redirect_url = wp_get_referer();
 
@@ -285,7 +263,7 @@ function process_form_submit() {
 
 		$redirect_url = add_query_arg(
 			[
-				'pc_action' => $action,
+				'sp_action' => $action,
 			],
 			$redirect_url
 		);
@@ -304,12 +282,6 @@ function process_form_submit() {
  */
 function sanitize_options( $options ) {
 	$sanitized_options = [];
-
-	if ( isset( $options['object_cache'] ) && in_array( $options['object_cache'], get_available_object_caches(), true ) ) {
-		$sanitized_options['object_cache'] = sanitize_text_field( $options['object_cache'] );
-	} else {
-		$sanitized_options['object_cache'] = 'off';
-	}
 
 	$sanitized_options['enable_page_cache']                = ! empty( $options['enable_page_cache'] );
 	$sanitized_options['cache_mobile']                     = ! empty( $options['cache_mobile'] );
@@ -351,21 +323,9 @@ function sanitize_options( $options ) {
 	$sanitized_options['js_delay_timeout']                 = absint( $options['js_delay_timeout'] );
 	$sanitized_options['enable_image_optimization']        = ! empty( $options['enable_image_optimization'] );
 	$sanitized_options['image_optimizer_preferred_format'] = isset( $options['image_optimizer_preferred_format'] ) ? sanitize_text_field( wp_unslash( $options['image_optimizer_preferred_format'] ) ) : '';
-	$sanitized_options['enable_lazy_load']                 = ! empty( $options['enable_lazy_load'] );
-	$sanitized_options['lazy_load_post_content']           = ! empty( $options['lazy_load_post_content'] );
-	$sanitized_options['lazy_load_images']                 = ! empty( $options['lazy_load_images'] );
-	$sanitized_options['lazy_load_iframes']                = ! empty( $options['lazy_load_iframes'] );
-	$sanitized_options['lazy_load_widgets']                = ! empty( $options['lazy_load_widgets'] );
-	$sanitized_options['lazy_load_post_thumbnail']         = ! empty( $options['lazy_load_post_thumbnail'] );
-	$sanitized_options['lazy_load_avatars']                = ! empty( $options['lazy_load_avatars'] );
-	$sanitized_options['lazy_load_youtube']                = ! empty( $options['lazy_load_youtube'] );
-	$sanitized_options['lazy_load_exclusions']             = sanitize_textarea_field( $options['lazy_load_exclusions'] );
-	$sanitized_options['lazy_load_skip_first_nth_img']     = absint( $options['lazy_load_skip_first_nth_img'] );
-	$sanitized_options['disable_wp_lazy_load']             = ! empty( $options['disable_wp_lazy_load'] );
 	$sanitized_options['add_missing_image_dimensions']     = ! empty( $options['add_missing_image_dimensions'] );
 	$sanitized_options['disable_wp_embeds']                = ! empty( $options['disable_wp_embeds'] );
 	$sanitized_options['disable_emoji_scripts']            = ! empty( $options['disable_emoji_scripts'] );
-	$sanitized_options['enable_cdn']                       = ! empty( $options['enable_cdn'] );
 
 	// convert TTL in minute
 	if ( $options['cache_timeout'] > 0 && isset( $options['cache_timeout_interval'] ) ) {
@@ -382,58 +342,18 @@ function sanitize_options( $options ) {
 		}
 	}
 
-	$cdn_hostname = [];
-	if ( isset( $options['cdn_hostname'] ) ) {
-		foreach ( (array) $options['cdn_hostname'] as $hostname ) {
-			$hostname = trim( $hostname );
-			if ( filter_var( $hostname, FILTER_VALIDATE_URL ) ) {
-				$cdn_hostname[] = wp_parse_url( $hostname, PHP_URL_HOST );
-			} else {
-				$cdn_hostname[] = $hostname;
-			}
-		}
-	}
-
-	$cdn_zone = [];
-
-	if ( isset( $options['cdn_zone'] ) ) {
-		foreach ( (array) $options['cdn_zone'] as $zone ) {
-			$cdn_zone[] = sanitize_text_field( $zone );
-		}
-	}
-
-	if ( empty( $cdn_hostname ) ) {
-		$cdn_hostname = [ '' ];
-	}
-
-	if ( empty( $cdn_zone ) ) {
-		$cdn_zone = [ '' ];
-	}
-
-	$sanitized_options['cdn_hostname']                   = $cdn_hostname;
-	$sanitized_options['cdn_zone']                       = $cdn_zone;
-	$sanitized_options['cdn_rejected_files']             = sanitize_textarea_field( $options['cdn_rejected_files'] );
 	$sanitized_options['enable_cache_preload']           = ! empty( $options['enable_cache_preload'] );
 	$sanitized_options['preload_homepage']               = ! empty( $options['preload_homepage'] );
 	$sanitized_options['preload_public_posts']           = ! empty( $options['preload_public_posts'] );
 	$sanitized_options['preload_public_tax']             = ! empty( $options['preload_public_tax'] );
 	$sanitized_options['enable_sitemap_preload']         = ! empty( $options['enable_sitemap_preload'] );
 	$sanitized_options['preload_request_interval']       = absint( $options['preload_request_interval'] );
-	$sanitized_options['preload_sitemap']                = sanitize_textarea_field( $options['preload_sitemap'] );
+	$sanitized_options['preload_crawl_interval']         = max( 10, absint( isset( $options['preload_crawl_interval'] ) ? $options['preload_crawl_interval'] : 60 ) );
+	$sanitized_options['preload_sitemap']                = isset( $options['preload_sitemap'] ) ? esc_url_raw( trim( $options['preload_sitemap'] ) ) : '';
 	$sanitized_options['prefetch_dns']                   = sanitize_textarea_field( $options['prefetch_dns'] );
 	$sanitized_options['preconnect_resource']            = sanitize_textarea_field( $options['preconnect_resource'] );
 	$sanitized_options['enable_lcp_optimization']        = ! empty( $options['enable_lcp_optimization'] );
 	$sanitized_options['prefetch_links']                 = ! empty( $options['prefetch_links'] );
-	$sanitized_options['db_cleanup_post_revisions']      = ! empty( $options['db_cleanup_post_revisions'] );
-	$sanitized_options['db_cleanup_auto_drafts']         = ! empty( $options['db_cleanup_auto_drafts'] );
-	$sanitized_options['db_cleanup_trashed_posts']       = ! empty( $options['db_cleanup_trashed_posts'] );
-	$sanitized_options['db_cleanup_spam_comments']       = ! empty( $options['db_cleanup_spam_comments'] );
-	$sanitized_options['db_cleanup_trashed_comments']    = ! empty( $options['db_cleanup_trashed_comments'] );
-	$sanitized_options['db_cleanup_expired_transients']  = ! empty( $options['db_cleanup_expired_transients'] );
-	$sanitized_options['db_cleanup_all_transients']      = ! empty( $options['db_cleanup_all_transients'] );
-	$sanitized_options['db_cleanup_optimize_tables']     = ! empty( $options['db_cleanup_optimize_tables'] );
-	$sanitized_options['enable_scheduled_db_cleanup']    = ! empty( $options['enable_scheduled_db_cleanup'] );
-	$sanitized_options['scheduled_db_cleanup_frequency'] = sanitize_text_field( $options['scheduled_db_cleanup_frequency'] );
 	$sanitized_options['enable_cloudflare']              = ! empty( $options['enable_cloudflare'] );
 	$sanitized_options['cloudflare_email']               = sanitize_email( $options['cloudflare_email'] );
 	$sanitized_options['cloudflare_api_key']             = sanitize_text_field( $options['cloudflare_api_key'] );
@@ -465,7 +385,7 @@ function sanitize_options( $options ) {
 	/**
 	 * Filters sanitized options.
 	 *
-	 * @hook   powered_cache_sanitized_options
+	 * @hook   swiftpress_sanitized_options
 	 *
 	 * @param  {array} $sanitized_options Sanitized options.
 	 * @param  {array} $options raw input.
@@ -474,7 +394,7 @@ function sanitize_options( $options ) {
 	 *
 	 * @since  2.0
 	 */
-	return apply_filters( 'powered_cache_sanitized_options', $sanitized_options, $options );
+	return apply_filters( 'swiftpress_sanitized_options', $sanitized_options, $options );
 }
 
 /**
@@ -485,13 +405,13 @@ function sanitize_options( $options ) {
  * @since 2.0
  */
 function admin_bar_menu( $wp_admin_bar ) {
-	$href = admin_url( 'admin.php?page=powered-cache' );
+	$href = admin_url( 'admin.php?page=swiftpress' );
 
-	if ( POWERED_CACHE_IS_NETWORK && current_user_can( 'manage_network' ) ) {
-		$href = network_admin_url( 'admin.php?page=powered-cache' );
+	if ( SWIFTPRESS_IS_NETWORK && current_user_can( 'manage_network' ) ) {
+		$href = network_admin_url( 'admin.php?page=swiftpress' );
 	}
 
-	if ( POWERED_CACHE_IS_NETWORK && ! current_user_can( 'manage_network' ) ) {
+	if ( SWIFTPRESS_IS_NETWORK && ! current_user_can( 'manage_network' ) ) {
 		$href = '#';
 	}
 
@@ -499,7 +419,7 @@ function admin_bar_menu( $wp_admin_bar ) {
 		$wp_admin_bar->add_menu(
 			array(
 				'id'    => MENU_SLUG,
-				'title' => __( 'Powered Cache', 'powered-cache' ),
+				'title' => __( 'SwiftPress', 'swiftpress' ),
 				'href'  => $href,
 			)
 		);
@@ -513,7 +433,7 @@ function admin_bar_menu( $wp_admin_bar ) {
  */
 function maybe_display_message() {
 	// phpcs:disable WordPress.Security.NonceVerification.Recommended
-	if ( ! isset( $_GET['pc_action'] ) ) {
+	if ( ! isset( $_GET['sp_action'] ) ) {
 		return;
 	}
 
@@ -527,61 +447,58 @@ function maybe_display_message() {
 	$screen = get_current_screen();
 
 	$success_messages = [
-		'purge_image_optimizer_cache'   => esc_html__( 'Image optimizer cache purged successfully!', 'powered-cache' ),
-		'flush_page_cache_network'      => esc_html__( 'Page cache deleted for all websites!', 'powered-cache' ),
-		'flush_page_cache'              => esc_html__( 'Page cache deleted successfully!', 'powered-cache' ),
-		'flush_object_cache'            => esc_html__( 'Object cache deleted successfully!', 'powered-cache' ),
-		'flush_all_cache'               => esc_html__( 'All cached items flushed successfully!', 'powered-cache' ),
-		'start_preload'                 => esc_html__( 'The cache preloading has been initialized!', 'powered-cache' ),
-		'generate_critical'             => esc_html__( 'The Critical CSS generation process has been initialized!', 'powered-cache' ),
-		'generate_critical_network'     => esc_html__( 'The Critical CSS generation process has been initialized for all sites! This might take a while, depending on the network size.', 'powered-cache' ),
-		'generate_ucss'                 => esc_html__( 'The UCSS generation process has been initialized!', 'powered-cache' ),
-		'generate_ucss_network'         => esc_html__( 'The UCSS generation process has been initialized for all sites! This might take a while, depending on the network size.', 'powered-cache' ),
-		'flush_cf_cache'                => esc_html__( 'Cloudflare cache flushed, it can take up to 30 seconds to delete all cache from Cloudflare!', 'powered-cache' ),
-		'reset_settings'                => esc_html__( 'Settings have been reset!', 'powered-cache' ),
-		'import_settings'               => esc_html__( 'Settings have been imported!', 'powered-cache' ),
-		'save_settings_and_optimize'    => esc_html__( 'Settings saved and database being optimized...', 'powered-cache' ),
-		'save_settings_and_clear_cache' => esc_html__( 'Settings have been successfully saved, and all cache has been cleared.', 'powered-cache' ),
-		'save_settings'                 => esc_html__( 'Settings saved.', 'powered-cache' ),
+		'purge_image_optimizer_cache'   => esc_html__( 'Image optimizer cache purged successfully!', 'swiftpress' ),
+		'flush_page_cache_network'      => esc_html__( 'Page cache deleted for all websites!', 'swiftpress' ),
+		'flush_page_cache'              => esc_html__( 'Page cache deleted successfully!', 'swiftpress' ),
+		'flush_all_cache'               => esc_html__( 'All cached items flushed successfully!', 'swiftpress' ),
+		'start_preload'                 => esc_html__( 'The cache preloading has been initialized!', 'swiftpress' ),
+		'generate_critical'             => esc_html__( 'The Critical CSS generation process has been initialized!', 'swiftpress' ),
+		'generate_critical_network'     => esc_html__( 'The Critical CSS generation process has been initialized for all sites! This might take a while, depending on the network size.', 'swiftpress' ),
+		'generate_ucss'                 => esc_html__( 'The UCSS generation process has been initialized!', 'swiftpress' ),
+		'generate_ucss_network'         => esc_html__( 'The UCSS generation process has been initialized for all sites! This might take a while, depending on the network size.', 'swiftpress' ),
+		'flush_cf_cache'                => esc_html__( 'Cloudflare cache flushed, it can take up to 30 seconds to delete all cache from Cloudflare!', 'swiftpress' ),
+		'reset_settings'                => esc_html__( 'Settings have been reset!', 'swiftpress' ),
+		'import_settings'               => esc_html__( 'Settings have been imported!', 'swiftpress' ),
+		'save_settings_and_clear_cache' => esc_html__( 'Settings have been successfully saved, and all cache has been cleared.', 'swiftpress' ),
+		'save_settings'                 => esc_html__( 'Settings saved.', 'swiftpress' ),
 	];
 
 	if ( isset( $_GET['language'] ) ) {
-		$success_messages['flush_lang_cache'] = sprintf( esc_html__( 'Page cache for %s language has been deleted!', 'powered-cache' ), esc_attr( urldecode_deep( $_GET['language'] ) ) ); // phpcs:ignore
+		$success_messages['flush_lang_cache'] = sprintf( esc_html__( 'Page cache for %s language has been deleted!', 'swiftpress' ), esc_attr( urldecode_deep( $_GET['language'] ) ) ); // phpcs:ignore
 	}
 
 	$err_messages = [
-		'purge_image_optimizer_cache_failed'      => esc_html__( 'Could not purge image optimizer cache. Please try again later and ensure your license key is activated!', 'powered-cache' ),
-		'generic_permission_err'                  => esc_html__( 'You don\'t have permission to perform this action!', 'powered-cache' ),
-		'flush_page_cache_network_err_permission' => esc_html__( 'You don\'t have permission to perform this action!', 'powered-cache' ),
-		'flush_page_cache_err_permission'         => esc_html__( 'You don\'t have permission to perform this action!', 'powered-cache' ),
-		'flush_object_cache_err_permission'       => esc_html__( 'You don\'t have permission to perform this action!', 'powered-cache' ),
-		'flush_all_cache_err_permission'          => esc_html__( 'You don\'t have permission to perform this action!', 'powered-cache' ),
-		'start_preload_err_permission'            => esc_html__( 'You don\'t have permission to perform this action!', 'powered-cache' ),
-		'start_critical_err_permission'           => esc_html__( 'You don\'t have permission to perform this action!', 'powered-cache' ),
-		'start_ucss_err_permission'               => esc_html__( 'You don\'t have permission to perform this action!', 'powered-cache' ),
-		'start_critical_err_license'              => esc_html__( 'Your license key does not seem valid. A valid license is required for the Critical CSS!', 'powered-cache' ),
-		'start_ucss_err_license'                  => esc_html__( 'Your license key does not seem valid. A valid license is required for removing unused CSS!', 'powered-cache' ),
-		'flush_cf_cache_failed'                   => esc_html__( 'Could not flush Cloudflare cache. Please make sure you entered the correct credentials and zone id!', 'powered-cache' ),
+		'purge_image_optimizer_cache_failed'      => esc_html__( 'Could not purge image optimizer cache. Please try again later and ensure your license key is activated!', 'swiftpress' ),
+		'generic_permission_err'                  => esc_html__( 'You don\'t have permission to perform this action!', 'swiftpress' ),
+		'flush_page_cache_network_err_permission' => esc_html__( 'You don\'t have permission to perform this action!', 'swiftpress' ),
+		'flush_page_cache_err_permission'         => esc_html__( 'You don\'t have permission to perform this action!', 'swiftpress' ),
+		'flush_all_cache_err_permission'          => esc_html__( 'You don\'t have permission to perform this action!', 'swiftpress' ),
+		'start_preload_err_permission'            => esc_html__( 'You don\'t have permission to perform this action!', 'swiftpress' ),
+		'start_critical_err_permission'           => esc_html__( 'You don\'t have permission to perform this action!', 'swiftpress' ),
+		'start_ucss_err_permission'               => esc_html__( 'You don\'t have permission to perform this action!', 'swiftpress' ),
+		'start_critical_err_license'              => esc_html__( 'Your license key does not seem valid. A valid license is required for the Critical CSS!', 'swiftpress' ),
+		'start_ucss_err_license'                  => esc_html__( 'Your license key does not seem valid. A valid license is required for removing unused CSS!', 'swiftpress' ),
+		'flush_cf_cache_failed'                   => esc_html__( 'Could not flush Cloudflare cache. Please make sure you entered the correct credentials and zone id!', 'swiftpress' ),
 	];
 
-	if ( isset( $success_messages[ $_GET['pc_action'] ] ) ) {
+	if ( isset( $success_messages[ $_GET['sp_action'] ] ) ) {
 		if ( MENU_SLUG === $screen->parent_base ) { // display with shared-ui on plugin page
-			add_settings_error( $screen->parent_file, MENU_SLUG, $success_messages[ $_GET['pc_action'] ], 'success' ); // phpcs:ignore
+			add_settings_error( $screen->parent_file, MENU_SLUG, $success_messages[ $_GET['sp_action'] ], 'success' ); // phpcs:ignore
 
 			return;
 		}
 
-		printf( '<div class="notice notice-success is-dismissible"><p>%s</p></div>', $success_messages[ $_GET['pc_action'] ] ); // phpcs:ignore
+		printf( '<div class="notice notice-success is-dismissible"><p>%s</p></div>', $success_messages[ $_GET['sp_action'] ] ); // phpcs:ignore
 	}
 
-	if ( isset( $err_messages[ $_GET['pc_action'] ] ) ) {
+	if ( isset( $err_messages[ $_GET['sp_action'] ] ) ) {
 		if ( MENU_SLUG === $screen->parent_base ) { // display with shared-ui on plugin page
-			add_settings_error( $screen->parent_file, MENU_SLUG, $err_messages[ $_GET['pc_action'] ], 'error' ); // phpcs:ignore
+			add_settings_error( $screen->parent_file, MENU_SLUG, $err_messages[ $_GET['sp_action'] ], 'error' ); // phpcs:ignore
 
 			return;
 		}
 
-		printf( '<div class="notice notice-error is-dismissible"><p>%s</p></div>', $err_messages[ $_GET['pc_action'] ] ); // phpcs:ignore
+		printf( '<div class="notice notice-error is-dismissible"><p>%s</p></div>', $err_messages[ $_GET['sp_action'] ] ); // phpcs:ignore
 	}
 	// phpcs:enable WordPress.Security.NonceVerification.Recommended
 }
@@ -603,9 +520,9 @@ function purge_all_admin_bar_menu( $wp_admin_bar ) {
 	$wp_admin_bar->add_menu(
 		array(
 			'id'     => 'all-cache-purge',
-			'title'  => __( 'Purge All Cache', 'powered-cache' ),
-			'href'   => wp_nonce_url( admin_url( 'admin-post.php?action=powered_cache_purge_all_cache' ), 'powered_cache_purge_all_cache' ),
-			'parent' => 'powered-cache',
+			'title'  => __( 'Purge All Cache', 'swiftpress' ),
+			'href'   => wp_nonce_url( admin_url( 'admin-post.php?action=swiftpress_purge_all_cache' ), 'swiftpress_purge_all_cache' ),
+			'parent' => 'swiftpress',
 		)
 	);
 }
@@ -617,25 +534,25 @@ function purge_all_admin_bar_menu( $wp_admin_bar ) {
  */
 function purge_all_cache_action() {
 
-	if ( ! wp_verify_nonce( $_GET['_wpnonce'], 'powered_cache_purge_all_cache' ) ) { // phpcs:ignore
+	if ( ! wp_verify_nonce( $_GET['_wpnonce'], 'swiftpress_purge_all_cache' ) ) { // phpcs:ignore
 		wp_nonce_ays( '' );
 	}
 
 	if ( is_multisite() && ! current_user_can( 'manage_network' ) ) {
-		$redirect_url = add_query_arg( 'pc_action', 'flush_all_cache_err_permission', wp_get_referer() );
+		$redirect_url = add_query_arg( 'sp_action', 'flush_all_cache_err_permission', wp_get_referer() );
 		wp_safe_redirect( esc_url_raw( $redirect_url ) );
 		exit;
 	}
 
 	if ( ! current_user_can( 'manage_options' ) ) {
-		$redirect_url = add_query_arg( 'pc_action', 'flush_all_cache_err_permission', wp_get_referer() );
+		$redirect_url = add_query_arg( 'sp_action', 'flush_all_cache_err_permission', wp_get_referer() );
 		wp_safe_redirect( esc_url_raw( $redirect_url ) );
 		exit;
 	}
 
 	purge_all_cache();
 
-	$redirect_url = add_query_arg( 'pc_action', 'flush_all_cache', wp_get_referer() );
+	$redirect_url = add_query_arg( 'sp_action', 'flush_all_cache', wp_get_referer() );
 
 	wp_safe_redirect( esc_url_raw( $redirect_url ) );
 	exit;
@@ -652,28 +569,28 @@ function purge_all_cache_action() {
 function purge_all_cache( $settings = array() ) {
 	$cache_purger = CachePurger::factory();
 	if ( empty( $settings ) ) {
-		$settings = \PoweredCache\Utils\get_settings();
+		$settings = \SwiftPress\Utils\get_settings();
 	}
 
 	if ( $settings['async_cache_cleaning'] ) {
 		if ( function_exists( 'wp_cache_flush' ) ) {
 			wp_cache_flush();
 		}
-		$cache_purger->push_to_queue( [ 'call' => 'powered_cache_flush' ] );
+		$cache_purger->push_to_queue( [ 'call' => 'swiftpress_flush' ] );
 		$cache_purger->save()->dispatch();
 	} else {
-		powered_cache_flush();// cleans object cache + page cache dir
+		swiftpress_flush();// cleans object cache + page cache dir
 	}
 
 	/**
 	 * Fires after purging all cache
 	 *
-	 * @hook  powered_cache_purge_all_cache
+	 * @hook  swiftpress_purge_all_cache
 	 * @since 1.1
 	 */
-	do_action( 'powered_cache_purge_all_cache' );
+	do_action( 'swiftpress_purge_all_cache' );
 
-	if ( POWERED_CACHE_IS_NETWORK ) {
+	if ( SWIFTPRESS_IS_NETWORK ) {
 		delete_site_transient( PURGE_CACHE_PLUGIN_NOTICE_TRANSIENT );
 	} else {
 		delete_transient( PURGE_CACHE_PLUGIN_NOTICE_TRANSIENT );
@@ -687,12 +604,12 @@ function purge_all_cache( $settings = array() ) {
  * @since 1.1
  */
 function download_rewrite_config() {
-	if ( ! wp_verify_nonce( $_GET['_wpnonce'], 'powered_cache_download_rewrite' ) ) { // phpcs:ignore
+	if ( ! wp_verify_nonce( $_GET['_wpnonce'], 'swiftpress_download_rewrite' ) ) { // phpcs:ignore
 		wp_nonce_ays( '' );
 	}
 
 	if ( ! can_control_all_settings() ) {
-		$redirect_url = add_query_arg( 'pc_action', 'generic_permission_err', wp_get_referer() );
+		$redirect_url = add_query_arg( 'sp_action', 'generic_permission_err', wp_get_referer() );
 		wp_safe_redirect( esc_url_raw( $redirect_url ) );
 		exit;
 	}
@@ -707,45 +624,10 @@ function download_rewrite_config() {
 }
 
 /**
- * Run DB optimization
- *
- * @param array $options plugin settings
- */
-function db_optimize( $options ) {
-	$powered_cache_db_optimizer = DatabaseOptimizer::factory();
-
-	$supported_options = $powered_cache_db_optimizer->get_supported_options();
-
-	if ( POWERED_CACHE_IS_NETWORK ) {
-		$sites = get_sites();
-		foreach ( $sites as $site ) {
-			switch_to_blog( $site->blog_id );
-			foreach ( $supported_options as $optimization_item ) {
-				if ( $options[ $optimization_item ] ) {
-					$powered_cache_db_optimizer->push_to_queue( $optimization_item );
-				}
-			}
-
-			$powered_cache_db_optimizer->save()->dispatch();
-			restore_current_blog();
-		}
-	} else {
-		foreach ( $supported_options as $optimization_item ) {
-			if ( $options[ $optimization_item ] ) {
-				$powered_cache_db_optimizer->push_to_queue( $optimization_item );
-			}
-		}
-
-		$powered_cache_db_optimizer->save()->dispatch();
-	}
-
-}
-
-/**
  * Cancel preloading process on toggling preload option
  */
 function cancel_preloading() {
-	\PoweredCache\Utils\log( 'Cancel preload process - Settings toggle' );
+	\SwiftPress\Utils\log( 'Cancel preload process - Settings toggle' );
 	$cache_preloader = CachePreloader::factory();
 	$cache_preloader->cancel_process();
 	$cache_preloader->delete_all();
@@ -757,7 +639,7 @@ function cancel_preloading() {
  * @return void
  */
 function start_preloading() {
-	\PoweredCache\Utils\log( 'Enable Preloader - Settings toggle' );
+	\SwiftPress\Utils\log( 'Enable Preloader - Settings toggle' );
 	Preloader::factory()->setup_preload_queue();
 	// kickstart the preloading process
 	Preloader::factory()->dispatch_preload_queue();
@@ -769,9 +651,87 @@ function start_preloading() {
  * @since 2.3
  */
 function cancel_async_cache_cleaning() {
-	\PoweredCache\Utils\log( 'Cancel CachePurger process' );
+	\SwiftPress\Utils\log( 'Cancel CachePurger process' );
 	$cache_preloader = CachePurger::factory();
 	$cache_preloader->cancel_process();
+}
+
+
+// ──────────────────────────────────────────────────────────────
+//  Phase 6 – AJAX Endpoints for Settings Page
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * AJAX: Clear all cache
+ *
+ * @since 3.8
+ */
+function ajax_clear_cache() {
+	check_ajax_referer( 'swiftpress_settings_ajax', 'nonce' );
+
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_send_json_error( [ 'message' => esc_html__( 'Permission denied.', 'swiftpress' ) ] );
+	}
+
+	purge_all_cache();
+
+	wp_send_json_success( [ 'message' => esc_html__( 'All cache cleared successfully.', 'swiftpress' ) ] );
+}
+
+/**
+ * AJAX: Clear font cache
+ *
+ * @since 3.8
+ */
+function ajax_clear_font_cache() {
+	check_ajax_referer( 'swiftpress_settings_ajax', 'nonce' );
+
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_send_json_error( [ 'message' => esc_html__( 'Permission denied.', 'swiftpress' ) ] );
+	}
+
+	$font_cache_dir = WP_CONTENT_DIR . '/cache/fonts/';
+
+	if ( is_dir( $font_cache_dir ) ) {
+		remove_dir( $font_cache_dir );
+		\SwiftPress\Utils\log( 'Font cache directory cleared via AJAX.' );
+	}
+
+	wp_send_json_success( [ 'message' => esc_html__( 'Font cache cleared successfully.', 'swiftpress' ) ] );
+}
+
+/**
+ * AJAX: Refresh sitemap (re-detect + re-parse)
+ *
+ * @since 3.8
+ */
+function ajax_refresh_sitemap() {
+	check_ajax_referer( 'swiftpress_settings_ajax', 'nonce' );
+
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_send_json_error( [ 'message' => esc_html__( 'Permission denied.', 'swiftpress' ) ] );
+	}
+
+	$stats = SitemapPreloader::factory()->manual_refresh();
+
+	wp_send_json_success( $stats );
+}
+
+/**
+ * AJAX: Get preload status (for progress bar auto-refresh)
+ *
+ * @since 3.8
+ */
+function ajax_preload_status() {
+	check_ajax_referer( 'swiftpress_settings_ajax', 'nonce' );
+
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_send_json_error( [ 'message' => esc_html__( 'Permission denied.', 'swiftpress' ) ] );
+	}
+
+	$stats = SitemapPreloader::factory()->get_preload_stats();
+
+	wp_send_json_success( $stats );
 }
 
 
@@ -783,8 +743,8 @@ function run_diagnostic() {
 
 	$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
 
-	if ( wp_verify_nonce( $nonce, 'powered_cache_run_diagnostic' ) ) {
-		$settings = \PoweredCache\Utils\get_settings();
+	if ( wp_verify_nonce( $nonce, 'swiftpress_run_diagnostic' ) ) {
+		$settings = \SwiftPress\Utils\get_settings();
 		$checks   = array();
 
 		// check config file
@@ -792,9 +752,9 @@ function run_diagnostic() {
 		$config_file_status = is_writeable( $config_file );
 
 		if ( $config_file_status ) {
-			$config_file_desc = esc_html__( 'wp-config.php is writable.', 'powered-cache' );
+			$config_file_desc = esc_html__( 'wp-config.php is writable.', 'swiftpress' );
 		} else {
-			$config_file_desc = sprintf( __( 'wp-config.php is not writable. Please make sure the file writable or you can manually define %s constant.', 'powered-cache' ), '<code>WP_CACHE</code>' );
+			$config_file_desc = sprintf( __( 'wp-config.php is not writable. Please make sure the file writable or you can manually define %s constant.', 'swiftpress' ), '<code>WP_CACHE</code>' );
 		}
 
 		$checks[] = array(
@@ -807,12 +767,12 @@ function run_diagnostic() {
 		$cache_dir        = get_cache_dir();
 		$cache_dir_status = false;
 		if ( ! file_exists( $cache_dir ) ) {
-			$cache_dir_desc = sprintf( __( 'Cache directory %s is not exist!', 'powered-cache' ), '<code>' . $cache_dir . '</code>' );
+			$cache_dir_desc = sprintf( __( 'Cache directory %s is not exist!', 'swiftpress' ), '<code>' . $cache_dir . '</code>' );
 		} elseif ( ! is_writeable( $cache_dir ) ) {
-			$cache_dir_desc = sprintf( __( 'Cache directory %s is not writeable!', 'powered-cache' ), '<code>' . $cache_dir . '</code>' );
+			$cache_dir_desc = sprintf( __( 'Cache directory %s is not writeable!', 'swiftpress' ), '<code>' . $cache_dir . '</code>' );
 		} else {
 			$cache_dir_status = true;
-			$cache_dir_desc   = sprintf( __( 'Cache directory %s exist and writable!', 'powered-cache' ), '<code>' . $cache_dir . '</code>' );
+			$cache_dir_desc   = sprintf( __( 'Cache directory %s exist and writable!', 'swiftpress' ), '<code>' . $cache_dir . '</code>' );
 		}
 
 		$checks[] = array(
@@ -826,12 +786,12 @@ function run_diagnostic() {
 			$htaccess_file        = get_home_path() . '.htaccess';
 			$htaccess_file_status = false;
 			if ( ! file_exists( $htaccess_file ) ) {
-				$htaccess_file_desc = sprintf( __( '.htaccess file %s is not exist!', 'powered-cache' ), '<code>' . $htaccess_file . '</code>' );
+				$htaccess_file_desc = sprintf( __( '.htaccess file %s is not exist!', 'swiftpress' ), '<code>' . $htaccess_file . '</code>' );
 			} elseif ( ! is_writeable( $htaccess_file ) ) {
-				$htaccess_file_desc = sprintf( __( '.htaccess file %s is not writeable!', 'powered-cache' ), '<code>' . $htaccess_file . '</code>' );
+				$htaccess_file_desc = sprintf( __( '.htaccess file %s is not writeable!', 'swiftpress' ), '<code>' . $htaccess_file . '</code>' );
 			} else {
 				$htaccess_file_status = true;
-				$htaccess_file_desc   = sprintf( __( '.htaccess file %s exist and writable!', 'powered-cache' ), '<code>' . $htaccess_file . '</code>' );
+				$htaccess_file_desc   = sprintf( __( '.htaccess file %s exist and writable!', 'swiftpress' ), '<code>' . $htaccess_file . '</code>' );
 			}
 
 			$checks[] = array(
@@ -846,12 +806,12 @@ function run_diagnostic() {
 			$advanced_cache_file        = untrailingslashit( WP_CONTENT_DIR ) . '/advanced-cache.php';
 			$advanced_cache_file_status = false;
 			if ( ! file_exists( $advanced_cache_file ) ) {
-				$advanced_cache_file_desc = sprintf( __( 'Required file for the page caching %s is not exist!', 'powered-cache' ), '<code>' . $advanced_cache_file . '</code>' );
+				$advanced_cache_file_desc = sprintf( __( 'Required file for the page caching %s is not exist!', 'swiftpress' ), '<code>' . $advanced_cache_file . '</code>' );
 			} elseif ( ! is_writeable( $advanced_cache_file ) ) {
-				$advanced_cache_file_desc = sprintf( __( 'Required file for the page caching %s is not writeable!', 'powered-cache' ), '<code>' . $advanced_cache_file . '</code>' );
+				$advanced_cache_file_desc = sprintf( __( 'Required file for the page caching %s is not writeable!', 'swiftpress' ), '<code>' . $advanced_cache_file . '</code>' );
 			} else {
 				$advanced_cache_file_status = true;
-				$advanced_cache_file_desc   = sprintf( __( 'Required file for the page caching %s exist and writable!', 'powered-cache' ), '<code>' . $advanced_cache_file . '</code>' );
+				$advanced_cache_file_desc   = sprintf( __( 'Required file for the page caching %s exist and writable!', 'swiftpress' ), '<code>' . $advanced_cache_file . '</code>' );
 			}
 
 			$checks[] = array(
@@ -861,77 +821,12 @@ function run_diagnostic() {
 			);
 		}
 
-		// check object cache
-		if ( 'off' !== $settings['object_cache'] ) {
-			$object_cache_file        = untrailingslashit( WP_CONTENT_DIR ) . '/object-cache.php';
-			$object_cache_file_status = false;
-			if ( ! file_exists( $object_cache_file ) ) {
-				$object_cache_file_desc = sprintf( __( 'Required file for the object caching %s is not exist!', 'powered-cache' ), '<code>' . $object_cache_file . '</code>' );
-			} elseif ( ! is_writeable( $object_cache_file ) ) {
-				$object_cache_file_desc = sprintf( __( 'Required file for the object caching %s is not writeable!', 'powered-cache' ), '<code>' . $object_cache_file . '</code>' );
-			} else {
-				$object_cache_file_status = true;
-				$object_cache_file_desc   = sprintf( __( 'Required file for the object caching %s exist and writable!', 'powered-cache' ), '<code>' . $object_cache_file . '</code>' );
-			}
-
-			$checks[] = array(
-				'check'       => 'object-cache',
-				'status'      => $object_cache_file_status,
-				'description' => $object_cache_file_desc,
-			);
-		}
-
 		wp_send_json_success( $checks );
 	}
 
-	wp_send_json_error( [ esc_html__( 'Invalid request', 'powered-cache' ) ] );
+	wp_send_json_error( [ esc_html__( 'Invalid request', 'swiftpress' ) ] );
 }
 
-/**
- * Check alloptions size like performance lab does.
- * It's critical to know this before enabling memcached based persistent object cache backends.
- * When alloptions size is too big (1mb in this case), it will cause performance degradation instead of improvement.
- *
- * @return void
- * @since 3.4
- */
-function check_alloptions() {
-	$nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
-	if ( ! wp_verify_nonce( $nonce, 'powered_cache_update_settings' ) || ! can_configure_object_cache() ) {
-		wp_send_json_error( [ 'message' => esc_html__( 'Invalid request', 'powered-cache' ) ] );
-
-		return;
-	}
-
-	$autoload_option_size  = \PoweredCache\Utils\autoloaded_options_size();
-	$autoload_option_count = count( wp_load_alloptions() );
-
-	if ( $autoload_option_size > ALLOPTIONS_CRITICAL_THRESHOLD ) {
-		$status = 'critical';
-	} elseif ( $autoload_option_size > ALLOPTIONS_WARNING_THRESHOLD && $autoload_option_size <= ALLOPTIONS_CRITICAL_THRESHOLD ) {
-		$status = 'warning';
-	} else {
-		$status = 'good';
-	}
-
-	$message = '<p><b>' . esc_html__( 'Autoloaded options could affect performance:', 'powered-cache' ) . '</b> ' .
-            sprintf(
-                esc_html__(
-		           /* translators: 1: Number of autoloaded options. 2: Size of autoloaded options. */
-                    'Your site has %1$s autoloaded options (size: %2$s) in the options table, which could cause your site to be slow. You can reduce the number of autoloaded options by cleaning up your site\'s options table.',
-                    'powered-cache'
-                ),
-                esc_html( number_format_i18n( $autoload_option_count ) ),
-                esc_html( size_format( $autoload_option_size ) )
-            ) . '</p>';
-
-	wp_send_json_success(
-        [
-			'status'  => $status,
-			'message' => $message,
-		]
-    );
-}
 
 
 /**
@@ -945,7 +840,7 @@ function deactivate_plugin() {
 	}
 
 	if ( ! current_user_can( 'activate_plugins' ) ) {
-		$redirect_url = add_query_arg( 'pc_action', 'generic_permission_err', wp_get_referer() );
+		$redirect_url = add_query_arg( 'sp_action', 'generic_permission_err', wp_get_referer() );
 		wp_safe_redirect( esc_url_raw( $redirect_url ) );
 		exit;
 	}
@@ -969,57 +864,11 @@ function deactivate_plugin() {
  */
 function action_links( $actions ) {
 
-	$settings_url      = POWERED_CACHE_IS_NETWORK ? network_admin_url( 'admin.php?page=powered-cache' ) : admin_url( 'admin.php?page=powered-cache' );
-	$powered_cache_url = 'https://poweredcache.com/?utm_source=wp_admin&utm_medium=plugin&utm_campaign=plugin_action_links';
+	$settings_url      = SWIFTPRESS_IS_NETWORK ? network_admin_url( 'admin.php?page=swiftpress' ) : admin_url( 'admin.php?page=swiftpress' );
+	$swiftpress_url = 'https://swiftpress.dev/?utm_source=wp_admin&utm_medium=plugin&utm_campaign=plugin_action_links';
 
-	$actions['powered_settings'] = sprintf( '<a href="%s">%s</a>', esc_url( $settings_url ), esc_html__( 'Settings', 'powered-cache' ) );
-
-	if ( ! is_premium() ) {
-		$actions['get_premium'] = sprintf( '<a href="%s" style="color: red;">%s</a>', esc_url( $powered_cache_url ), esc_html__( 'Get Premium', 'powered-cache' ) );
-	}
+	$actions['powered_settings'] = sprintf( '<a href="%s">%s</a>', esc_url( $settings_url ), esc_html__( 'Settings', 'swiftpress' ) );
 
 	return array_reverse( $actions );
 }
 
-/**
- * Conditionally process Cloudflare API key and token settings based on the form input.
- *
- * @param array $options The form options submitted by the user.
- *
- * @return array Updated options with processed Cloudflare settings.
- */
-function maybe_process_cloudflare_settings( $options ) {
-	// Retrieve the previous Cloudflare API key and token values.
-	$prev_cf_api_key   = \PoweredCache\Extensions\Cloudflare\Cloudflare::get_cf_api_key();
-	$prev_cf_api_token = \PoweredCache\Extensions\Cloudflare\Cloudflare::get_cf_api_token();
-
-	// Check if the submitted Cloudflare API key matches the masked version of the previous key.
-	if ( isset( $options['cloudflare_api_key'] ) && mask_string( $prev_cf_api_key, UNMASK_CHARACTER_LENGTH ) === $options['cloudflare_api_key'] ) {
-		$options['cloudflare_api_key'] = $prev_cf_api_key; // Use the unmasked value.
-	}
-
-	if ( isset( $options['cloudflare_api_token'] ) && mask_string( $prev_cf_api_token, UNMASK_CHARACTER_LENGTH ) === $options['cloudflare_api_token'] ) {
-		$options['cloudflare_api_token'] = $prev_cf_api_token; // Use the unmasked value.
-	}
-
-	$encryption = new Encryption();
-	// Encrypt sensitive data if it's not empty.
-	if ( ! empty( $options['cloudflare_api_key'] ) ) {
-		$options['cloudflare_api_key'] = $encryption->encrypt( $options['cloudflare_api_key'] );
-	}
-
-	if ( ! empty( $options['cloudflare_api_token'] ) ) {
-		$options['cloudflare_api_token'] = $encryption->encrypt( $options['cloudflare_api_token'] );
-	}
-
-	// Override with empty values if constants are defined.
-	if ( defined( 'POWERED_CACHE_CF_API_KEY' ) && POWERED_CACHE_CF_API_KEY ) {
-		$options['cloudflare_api_key'] = '';
-	}
-
-	if ( defined( 'POWERED_CACHE_CF_API_TOKEN' ) && POWERED_CACHE_CF_API_TOKEN ) {
-		$options['cloudflare_api_token'] = '';
-	}
-
-	return $options;
-}

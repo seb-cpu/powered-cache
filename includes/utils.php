@@ -2,13 +2,12 @@
 /**
  * Utils
  *
- * @package PoweredCache
+ * @package SwiftPress
  */
 
-namespace PoweredCache\Utils;
+namespace SwiftPress\Utils;
 
-use PoweredCache\Encryption;
-use const PoweredCache\Constants\SETTING_OPTION;
+use const SwiftPress\Constants\SETTING_OPTION;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
@@ -36,8 +35,8 @@ function is_network_wide( $plugin_file ) {
  * Get settings with defaults
  *
  * @param bool $force_network_wide Whether getting settings for network or not.
- *                                 The function respects `POWERED_CACHE_IS_NETWORK` by default.
- *                                 However, `POWERED_CACHE_IS_NETWORK` is not functional on
+ *                                 The function respects `SWIFTPRESS_IS_NETWORK` by default.
+ *                                 However, `SWIFTPRESS_IS_NETWORK` is not functional on
  *                                 (de)activation hooks.
  *
  * @return array
@@ -49,7 +48,6 @@ function get_settings( $force_network_wide = false ) {
 	$settings = [
 		// basic options
 		'enable_page_cache'                => true,
-		'object_cache'                     => 'off',
 		'cache_mobile'                     => true,
 		'cache_mobile_separate_file'       => false,
 		'loggedin_user_cache'              => false,
@@ -98,48 +96,28 @@ function get_settings( $force_network_wide = false ) {
 		'enable_image_optimization'        => false,
 		'image_optimizer_preferred_format' => '',
 		'add_missing_image_dimensions'     => false,
-		// lazyload
-		'enable_lazy_load'                 => false,
-		'lazy_load_post_content'           => true,
-		'lazy_load_images'                 => true,
-		'lazy_load_iframes'                => true,
-		'lazy_load_widgets'                => true,
-		'lazy_load_post_thumbnail'         => true,
-		'lazy_load_avatars'                => true,
-		'lazy_load_youtube'                => false,
-		'lazy_load_skip_first_nth_img'     => 3,
-		'lazy_load_exclusions'             => '',
-		'disable_wp_lazy_load'             => false,
 		'disable_wp_embeds'                => false,
 		'disable_emoji_scripts'            => false,
-		// cdn
+		// cdn (kept for backward compatibility with htaccess/nginx config)
 		'enable_cdn'                       => false,
-		'cdn_hostname'                     => array( '' ),
-		'cdn_zone'                         => array( '' ),
-		'cdn_rejected_files'               => '',
+		// font optimization
+		'enable_font_optimization'         => false,
+		'font_preload'                     => true,
+		'font_display_swap'                => true,
+		'self_host_google_fonts'           => true,
 		// preload
 		'enable_cache_preload'             => false,
 		'preload_homepage'                 => true,
 		'preload_public_posts'             => true,
 		'preload_public_tax'               => true,
-		'enable_sitemap_preload'           => false,
+		'enable_sitemap_preload'           => true,
 		'preload_request_interval'         => 2, // in seconds
+		'preload_crawl_interval'           => 60, // seconds between sitemap batch cron runs
 		'preload_sitemap'                  => '',
 		'prefetch_dns'                     => '',
 		'preconnect_resource'              => '',
 		'prefetch_links'                   => true,
 		'enable_lcp_optimization'          => false,
-		// db options
-		'db_cleanup_post_revisions'        => false,
-		'db_cleanup_auto_drafts'           => false,
-		'db_cleanup_trashed_posts'         => false,
-		'db_cleanup_spam_comments'         => false,
-		'db_cleanup_trashed_comments'      => false,
-		'db_cleanup_expired_transients'    => false,
-		'db_cleanup_all_transients'        => false,
-		'db_cleanup_optimize_tables'       => false,
-		'enable_scheduled_db_cleanup'      => false,
-		'scheduled_db_cleanup_frequency'   => 'daily',
 		// add-ons
 		'enable_cloudflare'                => false,
 		'cloudflare_api_token'             => '',
@@ -167,16 +145,16 @@ function get_settings( $force_network_wide = false ) {
 	/**
 	 * Filter default settings.
 	 *
-	 * @hook   powered_cache_default_settings
+	 * @hook   swiftpress_default_settings
 	 *
 	 * @param  {array} $settings Default settings.
 	 *
 	 * @return {array} New value
 	 * @since  2.0
 	 */
-	$default_settings = apply_filters( 'powered_cache_default_settings', $settings );
+	$default_settings = apply_filters( 'swiftpress_default_settings', $settings );
 
-	if ( POWERED_CACHE_IS_NETWORK || $force_network_wide ) {
+	if ( SWIFTPRESS_IS_NETWORK || $force_network_wide ) {
 		$settings = get_site_option( SETTING_OPTION, [] );
 	} else {
 		$settings = get_option( SETTING_OPTION, [] );
@@ -196,72 +174,13 @@ function get_settings( $force_network_wide = false ) {
  * @since 1.0
  */
 function get_cache_dir() {
-	if ( defined( 'POWERED_CACHE_CACHE_DIR' ) ) {
-		return POWERED_CACHE_CACHE_DIR; // don't change unless have a particular reason
+	if ( defined( 'SWIFTPRESS_CACHE_DIR' ) ) {
+		return SWIFTPRESS_CACHE_DIR; // don't change unless have a particular reason
 	}
 
 	return WP_CONTENT_DIR . '/cache/';
 }
 
-
-/**
- * Object cache methods keys will use as option
- *
- * @return array $object_caches
- * @since 1.2 apcu added
- * @since 1.0
- */
-function get_object_cache_dropins() {
-
-	$object_caches = array(
-		'memcache'  => POWERED_CACHE_DROPIN_DIR . 'memcache-object-cache.php',
-		'memcached' => POWERED_CACHE_DROPIN_DIR . 'memcached-object-cache.php',
-		'redis'     => POWERED_CACHE_DROPIN_DIR . 'redis-object-cache.php',
-		'apcu'      => POWERED_CACHE_DROPIN_DIR . 'apcu-object-cache.php',
-	);
-
-	/**
-	 * Filter object cache dropins.
-	 *
-	 * @hook   powered_cache_object_cache_dropins
-	 *
-	 * @param  {array} $object_caches The list of supported object-cache dropins.
-	 *
-	 * @return {array} New value
-	 * @since  1.0
-	 */
-	return apply_filters( 'powered_cache_object_cache_dropins', $object_caches );
-}
-
-
-/**
- * Get available object cache backends
- *
- * @return array
- * @since 1.2 unset apcu
- * @since 1.0
- */
-function get_available_object_caches() {
-	$object_cache_methods = get_object_cache_dropins();
-
-	if ( ! class_exists( '\Memcache' ) || version_compare( PHP_VERSION, '5.6.20', '<' ) ) {
-		unset( $object_cache_methods['memcache'] );
-	}
-
-	if ( ! class_exists( '\Memcached' ) ) {
-		unset( $object_cache_methods['memcached'] );
-	}
-
-	if ( ! class_exists( '\Redis' ) ) {
-		unset( $object_cache_methods['redis'] );
-	}
-
-	if ( ! function_exists( '\apcu_add' ) ) {
-		unset( $object_cache_methods['apcu'] );
-	}
-
-	return array_keys( $object_cache_methods );
-}
 
 
 /**
@@ -292,6 +211,51 @@ function get_timeout_with_interval( $timeout_in_minutes ) {
 	);
 }
 
+
+/**
+ * Supported mobile browsers
+ *
+ * @return mixed|void
+ * @since 1.0
+ */
+function mobile_browsers() {
+	$mobile_browsers
+		= '2.0 MMP, 240x320, 400X240, AvantGo, BlackBerry, Blazer, Cellphone, Danger, DoCoMo, Elaine/3.0, EudoraWeb, Googlebot-Mobile, hiptop, IEMobile, KYOCERA/WX310K, LG/U990, MIDP-2., MMEF20, MOT-V, NetFront, Newt, Nintendo Wii, Nitro, Nokia, Opera Mini, Palm, PlayStation Portable, portalmmm, Proxinet, ProxiNet, SHARP-TQ-GX10, SHG-i900, Small, SonyEricsson, Symbian OS, SymbianOS, TS21i-10, UP.Browser, UP.Link, webOS, Windows CE, WinWAP, YahooSeeker/M1A1-R2D2, iPhone, iPod, Android, BlackBerry9530, LG-TU915 Obigo, LGE VX, webOS, Nokia5800';
+
+	/**
+	 * Filters supported mobile browsers.
+	 *
+	 * @hook  swiftpress_mobile_browsers
+	 *
+	 * @param {string} $mobile_browsers Comma separated list of the defined mobile browsers.
+	 *
+	 * @since 1.0
+	 */
+	return apply_filters( 'swiftpress_mobile_browsers', $mobile_browsers );
+}
+
+/**
+ * Supported mobile prefixes
+ *
+ * @return mixed|void
+ * @since 1.0
+ */
+function mobile_prefixes() {
+	$mobile_prefixes
+		= 'w3c , w3c-, acs-, alav, alca, amoi, audi, avan, benq, bird, blac, blaz, brew, cell, cldc, cmd-, dang, doco, eric, hipt, htc_, inno, ipaq, ipod, jigs, kddi, keji, leno, lg-c, lg-d, lg-g, lge-, lg/u, maui, maxo, midp, mits, mmef, mobi, mot-, moto, mwbp, nec-, newt, noki, palm, pana, pant, phil, play, port, prox, qwap, sage, sams, sany, sch-, sec-, send, seri, sgh-, shar, sie-, siem, smal, smar, sony, sph-, symb, t-mo, teli, tim-, tosh, tsm-, upg1, upsi, vk-v, voda, wap-, wapa, wapi, wapp, wapr, webc, winw, winw, xda , xda-';
+
+	/**
+	 * Filters supported mobile prefixes.
+	 *
+	 * @hook  swiftpress_mobile_prefixes
+	 *
+	 * @param {string} $mobile_prefixes Comma separated list of the defined mobile prefixes.
+	 *
+	 * @since 1.0
+	 */
+	return apply_filters( 'swiftpress_mobile_prefixes', $mobile_prefixes );
+}
+
 /**
  * Determine whether display or not display htaccess configuration
  * .htaccess can affect the way of serving cached files.
@@ -306,11 +270,11 @@ function can_configure_htaccess() {
 		return false;
 	}
 
-	if ( POWERED_CACHE_IS_NETWORK && current_user_can( 'manage_network' ) ) {
+	if ( SWIFTPRESS_IS_NETWORK && current_user_can( 'manage_network' ) ) {
 		return true;
 	}
 
-	if ( is_multisite() && ! POWERED_CACHE_IS_NETWORK ) {
+	if ( is_multisite() && ! SWIFTPRESS_IS_NETWORK ) {
 		return false;
 	}
 
@@ -343,126 +307,9 @@ function can_control_all_settings() {
 }
 
 
-/**
- * Object cache has an effect on all WP
- * So, it should be available for the network admin on multisite
- * regardless of network-wide or individual activated
- *
- * @return bool
- */
-function can_configure_object_cache() {
-	if ( is_multisite() ) {
-		// only allow on network-wide activation
-		if ( POWERED_CACHE_IS_NETWORK && current_user_can( 'manage_network' ) ) {
-			return true;
-		}
-
-		return false;
-	}
-
-	if ( current_user_can( 'manage_options' ) ) {
-		return true;
-	}
-
-	return false;
-}
 
 /**
- * Supported js execution methods
- *
- * @depreacated since 3.2
- *
- * @return mixed|void
- */
-function js_execution_methods() {
-	$methods = [
-		'blocking' => esc_html__( 'Blocking – (default)', 'powered-cache' ),
-		'async'    => esc_html__( 'Non-blocking using async', 'powered-cache' ),
-		'defer'    => esc_html__( 'Non-blocking using defer', 'powered-cache' ),
-		'delayed'  => esc_html__( 'Delayed for user interaction', 'powered-cache' ),
-	];
-
-	/**
-	 * Filter supported JS execution methods.
-	 *
-	 * @hook   powered_cache_js_execution_methods
-	 *
-	 * @param  {array} $powered_cache_js_execution_methods JS execution methods.
-	 *
-	 * @return {array} New value
-	 * @since  2.0
-	 */
-	return apply_filters( 'powered_cache_js_execution_methods', $methods );
-}
-
-
-/**
- * Get available zones
- *
- * @return mixed|void
- * @since 1.0
- */
-function cdn_zones() {
-	$zones = [
-		'all'   => esc_html__( 'All files', 'powered-cache' ),
-		'image' => esc_html__( 'Images', 'powered-cache' ),
-		'js'    => esc_html__( 'JavaScript', 'powered-cache' ),
-		'css'   => esc_html__( 'CSS', 'powered-cache' ),
-	];
-
-	/**
-	 * Filter CDN zone options.
-	 *
-	 * @hook   powered_cache_cdn_zones
-	 *
-	 * @param  {array} $zones CDN Zones (all,image,js,css)
-	 *
-	 * @return {array} New value
-	 * @since  1.0
-	 */
-	return apply_filters( 'powered_cache_cdn_zones', $zones );
-}
-
-/**
- * Which version of plugin running
- *
- * @return bool
- */
-function is_premium() {
-	if ( defined( 'POWERED_CACHE_PREMIUM_PLUGIN_FILE' ) && POWERED_CACHE_PREMIUM_PLUGIN_FILE ) {
-		return true;
-	}
-
-	return false;
-}
-
-/**
- * Scheduled cleanup options
- *
- * @return array
- */
-function scheduled_cleanup_frequency_options() {
-	$options = [
-		'daily'   => esc_html__( 'Daily', 'powered-cache' ),
-		'weekly'  => esc_html__( 'Weekly', 'powered-cache' ),
-		'monthly' => esc_html__( 'Monthly', 'powered-cache' ),
-	];
-
-	/**
-	 * Filter scheduled cleanup options.
-	 *
-	 * @hook   powered_cache_scheduled_cleanup_frequency_options
-	 *
-	 * @param  {array} $options The list of supported schedules.
-	 *
-	 * @return {array} New value
-	 * @since  2.0
-	 */
-	return apply_filters( 'powered_cache_scheduled_cleanup_frequency_options', $options );
-}
-
-/**
- * ports \settings_errors for SUI
+ * Display settings errors using native WordPress admin notice markup.
  *
  * @param string $setting        Slug title of a specific setting
  * @param bool   $sanitize       Whether to re-sanitize the setting value before returning errors
@@ -486,11 +333,7 @@ function settings_errors( $setting = '', $sanitize = false, $hide_on_update = fa
 
 	foreach ( $settings_errors as $key => $details ) {
 		if ( 'updated' === $details['type'] ) {
-			$details['type'] = 'sui-notice-success';
-		}
-
-		if ( in_array( $details['type'], array( 'error', 'success', 'warning', 'info' ), true ) ) {
-			$details['type'] = 'sui-notice-' . $details['type'];
+			$details['type'] = 'success';
 		}
 
 		$css_id = sprintf(
@@ -499,14 +342,12 @@ function settings_errors( $setting = '', $sanitize = false, $hide_on_update = fa
 		);
 
 		$css_class = sprintf(
-			'sui-notice %s settings-error is-dismissible',
+			'notice notice-%s settings-error is-dismissible',
 			esc_attr( $details['type'] )
 		);
 
 		$output .= "<div id='$css_id' class='$css_class'> \n";
-		$output .= "<div class='sui-notice-content'><div class='sui-notice-message'>";
-		$output .= "<span class='sui-notice-icon sui-icon-info sui-md' aria-hidden='true'></span>";
-		$output .= "<p>{$details['message']}</p></div></div>";
+		$output .= "<p>{$details['message']}</p>";
 		$output .= "</div> \n";
 	}
 
@@ -579,14 +420,14 @@ function site_cache_dir() {
 	/**
 	 * Filter get base caching directory of site
 	 *
-	 * @hook   powered_cache_site_cache_dir
+	 * @hook   swiftpress_site_cache_dir
 	 *
 	 * @param  {string} $site_cache_dir Site cache dir.
 	 *
 	 * @return {string} New value
 	 * @since  1.1
 	 */
-	return apply_filters( 'powered_cache_site_cache_dir', $site_cache_dir );
+	return apply_filters( 'swiftpress_site_cache_dir', $site_cache_dir );
 }
 
 /**
@@ -597,19 +438,19 @@ function site_cache_dir() {
  * @since 1.0
  */
 function get_page_cache_dir() {
-	$path = get_cache_dir() . 'powered-cache/';
+	$path = get_cache_dir() . 'swiftpress/';
 
 	/**
 	 * Filter page cache base directory.
 	 *
-	 * @hook   powered_cache_get_page_cache_dir
+	 * @hook   swiftpress_get_page_cache_dir
 	 *
 	 * @param  {string} $path Page cache dir
 	 *
 	 * @return {string} New value
 	 * @since  1.0
 	 */
-	return apply_filters( 'powered_cache_get_page_cache_dir', $path );
+	return apply_filters( 'swiftpress_get_page_cache_dir', $path );
 }
 
 /**
@@ -655,59 +496,16 @@ function clean_site_cache_dir() {
 	/**
 	 * Fires after deleting site cache dir
 	 *
-	 * @hook  powered_cache_clean_site_cache_dir
+	 * @hook  swiftpress_clean_site_cache_dir
 	 *
 	 * @param {string} $site_cache_dir The caching directory of the current site.
 	 *
 	 * @since 2.0
 	 */
-	do_action( 'powered_cache_clean_site_cache_dir', $site_cache_dir );
+	do_action( 'swiftpress_clean_site_cache_dir', $site_cache_dir );
 }
 
 
-/**
- * Supported mobile browsers
- *
- * @return mixed|void
- * @since 1.0
- */
-function mobile_browsers() {
-	$mobile_browsers
-		= '2.0 MMP, 240x320, 400X240, AvantGo, BlackBerry, Blazer, Cellphone, Danger, DoCoMo, Elaine/3.0, EudoraWeb, Googlebot-Mobile, hiptop, IEMobile, KYOCERA/WX310K, LG/U990, MIDP-2., MMEF20, MOT-V, NetFront, Newt, Nintendo Wii, Nitro, Nokia, Opera Mini, Palm, PlayStation Portable, portalmmm, Proxinet, ProxiNet, SHARP-TQ-GX10, SHG-i900, Small, SonyEricsson, Symbian OS, SymbianOS, TS21i-10, UP.Browser, UP.Link, webOS, Windows CE, WinWAP, YahooSeeker/M1A1-R2D2, iPhone, iPod, Android, BlackBerry9530, LG-TU915 Obigo, LGE VX, webOS, Nokia5800';
-
-	/**
-	 * Filters supported mobile browsers.
-	 *
-	 * @hook  powered_cache_mobile_browsers
-	 *
-	 * @param {string} $mobile_browsers Comma separated list of the defined mobile browsers.
-	 *
-	 * @since 1.0
-	 */
-	return apply_filters( 'powered_cache_mobile_browsers', $mobile_browsers );
-}
-
-/**
- * Supported mobile prefixes
- *
- * @return mixed|void
- * @since 1.0
- */
-function mobile_prefixes() {
-	$mobile_prefixes
-		= 'w3c , w3c-, acs-, alav, alca, amoi, audi, avan, benq, bird, blac, blaz, brew, cell, cldc, cmd-, dang, doco, eric, hipt, htc_, inno, ipaq, ipod, jigs, kddi, keji, leno, lg-c, lg-d, lg-g, lge-, lg/u, maui, maxo, midp, mits, mmef, mobi, mot-, moto, mwbp, nec-, newt, noki, palm, pana, pant, phil, play, port, prox, qwap, sage, sams, sany, sch-, sec-, send, seri, sgh-, shar, sie-, siem, smal, smar, sony, sph-, symb, t-mo, teli, tim-, tosh, tsm-, upg1, upsi, vk-v, voda, wap-, wapa, wapi, wapp, wapr, webc, winw, winw, xda , xda-';
-
-	/**
-	 * Filters supported mobile prefixes.
-	 *
-	 * @hook  powered_cache_mobile_prefixes
-	 *
-	 * @param {string} $mobile_prefixes Comma separated list of the defined mobile prefixes.
-	 *
-	 * @since 1.0
-	 */
-	return apply_filters( 'powered_cache_mobile_prefixes', $mobile_prefixes );
-}
 
 
 /**
@@ -717,7 +515,7 @@ function mobile_prefixes() {
  *
  * @return array
  * @since 1.0
- * @since 1.1 powered_cache_post_related_urls filter added
+ * @since 1.1 swiftpress_post_related_urls filter added
  */
 function get_post_related_urls( $post_id ) {
 	// Valid post statuses that require cache purging.
@@ -878,14 +676,14 @@ function get_post_related_urls( $post_id ) {
 	/**
 	 * Filters post related urls.
 	 *
-	 * @hook   powered_cache_post_related_urls
+	 * @hook   swiftpress_post_related_urls
 	 *
 	 * @param  {array} $related_urls The list of the URLs that related with the post.
 	 *
 	 * @return {array} New value.
 	 * @since  1.0
 	 */
-	$related_urls = apply_filters( 'powered_cache_post_related_urls', $related_urls );
+	$related_urls = apply_filters( 'swiftpress_post_related_urls', $related_urls );
 
 	return $related_urls;
 }
@@ -948,49 +746,13 @@ function get_url_dir( $url ) {
 	/**
 	 * Filters the path of the given url in the cache directory.
 	 *
-	 * @hook  powered_cache_get_url_dir
+	 * @hook  swiftpress_get_url_dir
 	 *
 	 * @param {string} $path The cache directory of the given URL.
 	 *
 	 * @since 1.1
 	 */
-	return apply_filters( 'powered_cache_get_url_dir', $path );
-}
-
-/**
- * Prepare cdn addresses with hostname + zone
- *
- * @return mixed|void
- * @since 1.0
- */
-function cdn_addresses() {
-	$settings = get_settings(); // phpcs:ignore WordPress.WP.DeprecatedFunctions.get_settingsFound
-
-	$hostnames = $settings['cdn_hostname'];
-	$zones     = $settings['cdn_zone'];
-
-	$cdn_addresses = array();
-	foreach ( $hostnames as $host_key => $host ) {
-		if ( filter_var( $host, FILTER_VALIDATE_URL ) ) {
-			$host = wp_parse_url( $host, PHP_URL_HOST );
-		}
-
-		if ( ! empty( $host ) ) {
-			$cdn_addresses[ $zones[ $host_key ] ][] = $host;
-		}
-	}
-
-	/**
-	 * Filters CDN Addresses.
-	 *
-	 * @hook   powered_cache_cdn_addresses
-	 *
-	 * @param  {array} $cdn_addresses CDN Addresses.
-	 *
-	 * @return {array} New value.
-	 * @since  1.0
-	 */
-	return apply_filters( 'powered_cache_cdn_addresses', $cdn_addresses );
+	return apply_filters( 'swiftpress_get_url_dir', $path );
 }
 
 
@@ -1038,7 +800,7 @@ function get_expired_files( $path, $lifespan = 0 ) {
  *
  * @since 1.0
  */
-function powered_cache_flush() {
+function swiftpress_flush() {
 	if ( function_exists( 'wp_cache_flush' ) ) {
 		wp_cache_flush();
 	}
@@ -1048,10 +810,10 @@ function powered_cache_flush() {
 	/**
 	 * Fires after cache flush.
 	 *
-	 * @hook   powered_cache_flushed
+	 * @hook   swiftpress_flushed
 	 * @since  1.0
 	 */
-	do_action( 'powered_cache_flushed' );
+	do_action( 'swiftpress_flushed' );
 }
 
 /**
@@ -1062,11 +824,11 @@ function powered_cache_flush() {
  * @return bool
  */
 function log( $message ) {
-	if ( ! defined( 'POWERED_CACHE_ENABLE_LOG' ) ) {
+	if ( ! defined( 'SWIFTPRESS_ENABLE_LOG' ) ) {
 		return false;
 	}
 
-	if ( ! POWERED_CACHE_ENABLE_LOG ) {
+	if ( ! SWIFTPRESS_ENABLE_LOG ) {
 		return false;
 	}
 
@@ -1075,47 +837,47 @@ function log( $message ) {
 	/**
 	 * Filters log message.
 	 *
-	 * @hook   powered_cache_log_message
+	 * @hook   swiftpress_log_message
 	 *
 	 * @param  {string} $log_message The log message.
 	 *
 	 * @return {string} New value.
 	 * @since  2.0
 	 */
-	$log_message = apply_filters( 'powered_cache_log_message', $log_message );
+	$log_message = apply_filters( 'swiftpress_log_message', $log_message );
 
 	/**
 	 * Filters log message type.
 	 *
-	 * @hook   powered_cache_log_message_type
+	 * @hook   swiftpress_log_message_type
 	 *
 	 * @param  {int} 0 default message type since 3.6
 	 *
 	 * @return {int} New value.
 	 * @since  2.0
 	 */
-	$message_type = apply_filters( 'powered_cache_log_message_type', 0 );
+	$message_type = apply_filters( 'swiftpress_log_message_type', 0 );
 	$destination  = null;
 
-	if ( defined( 'POWERED_CACHE_LOG_FILE' ) ) {
-		$destination  = POWERED_CACHE_LOG_FILE;
+	if ( defined( 'SWIFTPRESS_LOG_FILE' ) ) {
+		$destination  = SWIFTPRESS_LOG_FILE;
 		$message_type = 3;
 	}
 
 	/**
 	 * Filters destination of the log.
 	 *
-	 * @hook   powered_cache_log_destination
+	 * @hook   swiftpress_log_destination
 	 *
 	 * @param  {null|string} $destination The destination of the log.
 	 *
 	 * @return {null|string} New value.
 	 * @since  2.0
 	 */
-	$log_destination = apply_filters( 'powered_cache_log_destination', $destination );
+	$log_destination = apply_filters( 'swiftpress_log_destination', $destination );
 
 	// don't log anything when it used for particular IP address
-	if ( defined( 'POWERED_CACHE_LOG_IP' ) && POWERED_CACHE_LOG_IP !== get_client_ip() ) {
+	if ( defined( 'SWIFTPRESS_LOG_IP' ) && SWIFTPRESS_LOG_IP !== get_client_ip() ) {
 		return false;
 	}
 
@@ -1139,31 +901,6 @@ function get_client_ip() {
 	}
 }
 
-/**
- * Fragment caching
- *
- * @link  https://gist.github.com/markjaquith/2653957
- * @see   https://gist.github.com/westonruter/5475349
- *
- * @param string   $key      Fragment key
- * @param int      $ttl      Cache TTL
- * @param callable $function callback
- *
- * @throws \Exception Exception
- * @since 1.2
- * @since 2.0 Renamed powered_cache_fragment -> \PoweredCache\Utils\cache_fragment
- */
-function cache_fragment( $key, $ttl, $function ) {
-	$group  = 'powered-fragments';
-	$output = wp_cache_get( $key, $group );
-	if ( empty( $output ) ) {
-		ob_start();
-		call_user_func( $function );
-		$output = ob_get_clean();
-		wp_cache_add( $key, $output, $group, $ttl );
-	}
-	echo $output; // phpcs:ignore
-}
 
 /**
  * Fetches known headers, ported from WP Super Cache but not using apache_response_headers
@@ -1225,14 +962,14 @@ function get_response_headers() {
 	/**
 	 * Filters known headers.
 	 *
-	 * @hook   powered_cache_known_headers
+	 * @hook   swiftpress_known_headers
 	 *
 	 * @param  {array} $known_headers The list of known HTTP headers.
 	 *
 	 * @return {array} New value.
 	 * @since  1.2
 	 */
-	$known_headers = apply_filters( 'powered_cache_known_headers', $known_headers );
+	$known_headers = apply_filters( 'swiftpress_known_headers', $known_headers );
 
 	if ( ! isset( $known_headers['age'] ) ) {
 		$known_headers = array_map( 'strtolower', $known_headers );
@@ -1342,7 +1079,7 @@ function is_dir_empty( $dir ) {
  * @return string final URL
  */
 function get_doc_url( $path = null, $fragment = '' ) {
-	$doc_site       = 'https://docs.poweredcache.com/';
+	$doc_site       = 'https://docs.swiftpress.dev/';
 	$utm_parameters = '?utm_source=wp_admin&utm_medium=plugin&utm_campaign=settings_page';
 
 	if ( ! empty( $path ) ) {
@@ -1377,29 +1114,6 @@ function sanitize_css( $css ) {
 }
 
 
-/**
- *  Test if the current browser runs on a mobile device (smart phone, tablet, etc.)
- *  Sort of custom version of wp_is_mobile
- */
-function powered_cache_is_mobile() {
-
-	global $powered_cache_mobile_browsers, $powered_cache_mobile_prefixes;
-
-	$mobile_browsers = addcslashes( implode( '|', preg_split( '/[\s*,\s*]*,+[\s*,\s*]*/', (string) $powered_cache_mobile_browsers ) ), ' ' );
-	$mobile_prefixes = addcslashes( implode( '|', preg_split( '/[\s*,\s*]*,+[\s*,\s*]*/', (string) $powered_cache_mobile_prefixes ) ), ' ' );
-
-	if ( ! isset( $_SERVER['HTTP_USER_AGENT'] ) ) {
-		return false;
-	}
-
-	$user_agent = wp_unslash( $_SERVER['HTTP_USER_AGENT'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-
-	if ( ( preg_match( '#^.*(' . $mobile_browsers . ').*#i', $user_agent ) || preg_match( '#^(' . $mobile_prefixes . ').*#i', substr( $user_agent, 0, 4 ) ) ) ) {
-		return true;
-	}
-
-	return false;
-}
 
 /**
  * If the site is a local site.
@@ -1445,9 +1159,22 @@ function is_local_site() {
 	 *
 	 * @since 2.2
 	 */
-	$is_local = apply_filters( 'powered_cache_is_local_site', $is_local );
+	$is_local = apply_filters( 'swiftpress_is_local_site', $is_local );
 
 	return $is_local;
+}
+
+/**
+ * Get sensitive data (encryption removed in Phase 3; returns raw value)
+ *
+ * @param string $field field name
+ *
+ * @return mixed|string
+ */
+function get_decrypted_setting( $field ) {
+	$settings = \SwiftPress\Utils\get_settings();
+
+	return isset( $settings[ $field ] ) ? $settings[ $field ] : '';
 }
 
 /**
@@ -1457,7 +1184,7 @@ function is_local_site() {
  * @since 3.0
  */
 function bypass_request() {
-	if ( isset( $_GET['nopoweredcache'] ) && $_GET['nopoweredcache'] ) { // phpcs:ignore
+	if ( isset( $_GET['noswiftpress'] ) && $_GET['noswiftpress'] ) { // phpcs:ignore
 		return true;
 	}
 
@@ -1465,58 +1192,6 @@ function bypass_request() {
 }
 
 
-/**
- * Calculate total amount of autoloaded data.
- *
- * @return int autoloaded data in bytes.
- * @global wpdb $wpdb WordPress database abstraction object.
- * @since 3.4
- */
-function autoloaded_options_size() {
-	global $wpdb;
-
-	return (int) $wpdb->get_var( 'SELECT SUM(LENGTH(option_value)) FROM ' . $wpdb->prefix . 'options WHERE autoload = \'yes\'' ); // phpcs:ignore
-}
-
-/**
- * Mask the string with asterisk
- *
- * @param string $input_string  String
- * @param int    $unmask_length The length of the string that will not be masked
- *
- * @return string
- * @since 3.4
- */
-function mask_string( $input_string, $unmask_length ) {
-	$output_string = substr( $input_string, 0, $unmask_length );
-
-	if ( strlen( $input_string ) > $unmask_length ) {
-		$output_string .= str_repeat( '*', strlen( $input_string ) - $unmask_length );
-	}
-
-	return $output_string;
-}
-
-/**
- * Get sensitive data in decrypted form
- *
- * @param string $field field name
- *
- * @return bool|mixed|string
- */
-function get_decrypted_setting( $field ) {
-	$settings = \PoweredCache\Utils\get_settings();
-	$value    = isset( $settings[ $field ] ) ? $settings[ $field ] : '';
-
-	// decrypt the value
-	$encryption      = new Encryption();
-	$decrypted_value = $encryption->decrypt( $value );
-	if ( false !== $decrypted_value ) {
-		return $decrypted_value;
-	}
-
-	return $value;
-}
 
 
 /**
@@ -1582,12 +1257,12 @@ function is_ip_in_range( $ip, $range ) {
  */
 function is_dev_mode_active() {
 	// Check global config first (fast)
-	if ( ! empty( $GLOBALS['powered_cache_options']['dev_mode'] ) ) {
+	if ( ! empty( $GLOBALS['swiftpress_options']['dev_mode'] ) ) {
 		return true;
 	}
 
 	// Fallback to database option
-	$settings = \PoweredCache\Utils\get_settings();
+	$settings = \SwiftPress\Utils\get_settings();
 
 	return ! empty( $settings['dev_mode'] );
 }

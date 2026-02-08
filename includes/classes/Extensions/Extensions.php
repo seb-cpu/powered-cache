@@ -2,13 +2,13 @@
 /**
  * Extension Loader
  *
- * @package PoweredCache\Extensions
+ * @package SwiftPress\Extensions
  */
 
-namespace PoweredCache\Extensions;
+namespace SwiftPress\Extensions;
 
-use PoweredCache\Extensions\Cloudflare;
-use PoweredCache\Extensions\Heartbeat\Heartbeat;
+use SwiftPress\Extensions\Cloudflare;
+use SwiftPress\Extensions\Heartbeat\Heartbeat;
 
 /**
  * Class Extensions
@@ -51,7 +51,7 @@ class Extensions {
 	 * Setup hooks
 	 */
 	public function setup() {
-		$this->settings = \PoweredCache\Utils\get_settings();
+		$this->settings = \SwiftPress\Utils\get_settings();
 		add_action( 'plugins_loaded', [ $this, 'initialize_active_extensions' ] );
 	}
 

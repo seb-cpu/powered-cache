@@ -9,12 +9,12 @@
  * file that was distributed with this source code.
  */
 
-namespace PoweredCache\Dependencies\Symfony\Component\CssSelector\Parser\Shortcut;
+namespace SwiftPress\Dependencies\Symfony\Component\CssSelector\Parser\Shortcut;
 
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Node\ElementNode;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Node\HashNode;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Node\SelectorNode;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Parser\ParserInterface;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Node\ElementNode;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Node\HashNode;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Node\SelectorNode;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Parser\ParserInterface;
 
 /**
  * CSS selector hash parser shortcut.

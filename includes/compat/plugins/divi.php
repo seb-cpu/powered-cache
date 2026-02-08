@@ -2,11 +2,11 @@
 /**
  * Compat with Divi Builder
  *
- * @package PoweredCache\Compat
+ * @package SwiftPress\Compat
  * @link    https://www.elegantthemes.com/
  */
 
-namespace PoweredCache\Compat\Divi;
+namespace SwiftPress\Compat\Divi;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
@@ -18,5 +18,5 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 2.5
  */
 if ( ! empty( $_GET['et_fb'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	add_filter( 'powered_cache_fo_disable', '__return_true' );
+	add_filter( 'swiftpress_fo_disable', '__return_true' );
 }

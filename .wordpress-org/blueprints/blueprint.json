@@ -1,5 +1,5 @@
 {
-  "landingPage": "\/wp-admin\/admin.php?page=powered-cache",
+  "landingPage": "\/wp-admin\/admin.php?page=swiftpress",
   "preferredVersions": {
     "php": "8.0",
     "wp": "latest"
@@ -15,7 +15,7 @@
       "step": "installPlugin",
       "pluginZipFile": {
         "resource": "url",
-        "url": "https:\/\/downloads.wordpress.org\/plugin\/powered-cache.zip"
+        "url": "https:\/\/downloads.wordpress.org\/plugin\/swiftpress.zip"
       },
       "options": {
         "activate": true
