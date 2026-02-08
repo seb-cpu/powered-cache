@@ -2,11 +2,11 @@
 /**
  * Compat with Elementor Builder
  *
- * @package PoweredCache\Compat
+ * @package SwiftPress\Compat
  * @link    https://elementor.com/
  */
 
-namespace PoweredCache\Compat\Elementor;
+namespace SwiftPress\Compat\Elementor;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
@@ -18,5 +18,5 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 2.5
  */
 if ( ! empty( $_GET['action'] ) && 'elementor' === $_GET['action'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	add_filter( 'powered_cache_fo_disable', '__return_true' );
+	add_filter( 'swiftpress_fo_disable', '__return_true' );
 }

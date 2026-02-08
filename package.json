@@ -1,11 +1,11 @@
 {
-  "name": "powered-cache",
-  "version": "3.7.2",
-  "description": "Comprehensive caching and performance plugin for WordPress.",
+  "name": "swiftpress",
+  "version": "1.0.0",
+  "description": "Lightweight WordPress performance optimization — page caching, file optimization, font optimization, and intelligent cache preloading.",
   "author": {
-    "name": "PoweredCache",
-    "email": "support@poweredcache.com",
-    "url": "https://poweredcache.com",
+    "name": "SwiftPress",
+    "email": "support@swiftpress.dev",
+    "url": "https://swiftpress.dev",
     "role": "developer"
   },
   "license": "GPL-2.0-or-later",
@@ -17,7 +17,7 @@
     "lint-js": "10up-toolkit lint-js",
     "lint-style": "10up-toolkit lint-style",
     "test": "10up-toolkit test-unit-jest",
-    "make-pot": "wp i18n make-pot . languages/powered-cache.pot --include='includes'",
+    "make-pot": "wp i18n make-pot . languages/swiftpress.pot --include='includes'",
     "build-release": "npm install --production=false && composer install && npm run build && npm run make-pot",
     "copy-defer": "cp node_modules/@shinsenter/defer.js/dist/defer_plus.min.js dist/js/script-loader.js"
   },
@@ -27,7 +27,6 @@
   "devDependencies": {
     "@shinsenter/defer.js": "^3.6.0",
     "@wordpress/element": "^4.0",
-    "@wpmudev/shared-ui": "2.12.24",
     "10up-toolkit": "^6.5"
   },
   "dependencies": {
@@ -35,12 +34,8 @@
   },
   "10up-toolkit": {
     "entry": {
-      "lazyload-youtube": "./assets/css/frontend/lazyload-youtube.css",
-      "admin": "./assets/js/admin/admin.js",
       "editor": "./assets/js/admin/editor.js",
-      "classic-editor": "./assets/js/admin/classic-editor.js",
-      "lazyload": "./assets/js/frontend/lazyload.js",
-      "admin-style": "./assets/css/admin/admin-style.css"
+      "classic-editor": "./assets/js/admin/classic-editor.js"
     },
     "wpDependencyExternals": false
   }

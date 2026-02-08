@@ -9,9 +9,9 @@
  * file that was distributed with this source code.
  */
 
-namespace PoweredCache\Dependencies\Symfony\Component\CssSelector\Node;
+namespace SwiftPress\Dependencies\Symfony\Component\CssSelector\Node;
 
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Parser\Token;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Parser\Token;
 
 /**
  * Represents a "<selector>:<name>(<arguments>)" node.

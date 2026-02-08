@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace PoweredCache\Dependencies\Symfony\Component\CssSelector\Node;
+namespace SwiftPress\Dependencies\Symfony\Component\CssSelector\Node;
 
 /**
  * Represents a "<selector>.<name>" node.

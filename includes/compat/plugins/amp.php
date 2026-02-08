@@ -2,10 +2,10 @@
 /**
  * Compat with AMP
  *
- * @package PoweredCache\Compat
+ * @package SwiftPress\Compat
  */
 
-namespace PoweredCache\Compat\AMP;
+namespace SwiftPress\Compat\AMP;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
@@ -31,4 +31,4 @@ function skip_delayed_js( $is_delay_skipped ) {
 	return $is_delay_skipped;
 }
 
-add_filter( 'powered_cache_delayed_js_skip', __NAMESPACE__ . '\\skip_delayed_js' );
+add_filter( 'swiftpress_delayed_js_skip', __NAMESPACE__ . '\\skip_delayed_js' );

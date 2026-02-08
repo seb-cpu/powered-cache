@@ -9,14 +9,14 @@
  * file that was distributed with this source code.
  */
 
-namespace PoweredCache\Dependencies\Symfony\Component\CssSelector;
+namespace SwiftPress\Dependencies\Symfony\Component\CssSelector;
 
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Parser\Shortcut\ClassParser;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Parser\Shortcut\ElementParser;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Parser\Shortcut\EmptyStringParser;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Parser\Shortcut\HashParser;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\XPath\Extension\HtmlExtension;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\XPath\Translator;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Parser\Shortcut\ClassParser;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Parser\Shortcut\ElementParser;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Parser\Shortcut\EmptyStringParser;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Parser\Shortcut\HashParser;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\XPath\Extension\HtmlExtension;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\XPath\Translator;
 
 /**
  * CssSelectorConverter is the main entry point of the component and can convert CSS

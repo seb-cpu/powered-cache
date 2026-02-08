@@ -9,11 +9,11 @@
  * file that was distributed with this source code.
  */
 
-namespace PoweredCache\Dependencies\Symfony\Component\CssSelector\Parser;
+namespace SwiftPress\Dependencies\Symfony\Component\CssSelector\Parser;
 
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Exception\SyntaxErrorException;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Node;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Parser\Tokenizer\Tokenizer;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Exception\SyntaxErrorException;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Node;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Parser\Tokenizer\Tokenizer;
 
 /**
  * CSS selector parser.

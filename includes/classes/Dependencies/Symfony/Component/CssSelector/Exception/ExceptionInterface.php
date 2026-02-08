@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace PoweredCache\Dependencies\Symfony\Component\CssSelector\Exception;
+namespace SwiftPress\Dependencies\Symfony\Component\CssSelector\Exception;
 
 /**
  * Interface for exceptions.

@@ -2,10 +2,10 @@
 /**
  * Cloudflare API functionalities
  *
- * @package PoweredCache\Extensions\Cloudflare
+ * @package SwiftPress\Extensions\Cloudflare
  */
 
-namespace PoweredCache\Extensions\Cloudflare;
+namespace SwiftPress\Extensions\Cloudflare;
 
 /**
  * Class API
@@ -139,7 +139,7 @@ class API {
 
 		$response = wp_remote_request( $url, $args );
 
-		\PoweredCache\Utils\log( sprintf( 'Cloudflare API Response: %s', print_r( wp_remote_retrieve_body( $response ), true ) ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
+		\SwiftPress\Utils\log( sprintf( 'Cloudflare API Response: %s', print_r( wp_remote_retrieve_body( $response ), true ) ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
 
 		return json_decode( wp_remote_retrieve_body( $response ), true );
 	}

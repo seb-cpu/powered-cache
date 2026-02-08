@@ -5,11 +5,11 @@ const { dispatch, useSelect } = wp.data;
 const { registerPlugin } = wp.plugins;
 
 /**
- * PoweredCacheMetaBox
+ * SwiftPressMetaBox
  *
  * @returns PluginDocumentSettingPanel
  */
-const PoweredCacheMetaBox = () => {
+const SwiftPressMetaBox = () => {
 	const meta = useSelect((select) => select('core/editor').getEditedPostAttribute('meta'));
 
 	if (!meta) {
@@ -17,162 +17,162 @@ const PoweredCacheMetaBox = () => {
 	}
 
 	if (
-		!('powered_cache_disable_cache' in meta) &&
-		!('powered_cache_disable_lazyload' in meta) &&
-		!('powered_cache_disable_css_optimization' in meta) &&
-		!('powered_cache_disable_js_optimization' in meta) &&
-		!('powered_cache_disable_js_defer' in meta) &&
-		!('powered_cache_disable_js_delay' in meta) &&
-		!('powered_cache_disable_critical_css' in meta) &&
-		!('powered_cache_specific_critical_css' in meta) &&
-		!('powered_cache_disable_ucss' in meta) &&
-		!('powered_cache_specific_ucss' in meta)
+		!('swiftpress_disable_cache' in meta) &&
+		!('swiftpress_disable_lazyload' in meta) &&
+		!('swiftpress_disable_css_optimization' in meta) &&
+		!('swiftpress_disable_js_optimization' in meta) &&
+		!('swiftpress_disable_js_defer' in meta) &&
+		!('swiftpress_disable_js_delay' in meta) &&
+		!('swiftpress_disable_critical_css' in meta) &&
+		!('swiftpress_specific_critical_css' in meta) &&
+		!('swiftpress_disable_ucss' in meta) &&
+		!('swiftpress_specific_ucss' in meta)
 	) {
 		return null; // nothing to control
 	}
 
-	const disableCache = meta.powered_cache_disable_cache || false;
-	const disableLazyLoad = meta.powered_cache_disable_lazyload || false;
-	const disableCSSOptimization = meta.powered_cache_disable_css_optimization || false;
-	const disableJSOptimization = meta.powered_cache_disable_js_optimization || false;
-	const disableJSDefer = meta.powered_cache_disable_js_defer || false;
-	const disableJSDelay = meta.powered_cache_disable_js_delay || false;
-	const disableCritical = meta.powered_cache_disable_critical_css || false;
-	const specificCritical = meta.powered_cache_specific_critical_css || false;
-	const disableUCSS = meta.powered_cache_disable_ucss || false;
-	const specificUCSS = meta.powered_cache_specific_ucss || false;
+	const disableCache = meta.swiftpress_disable_cache || false;
+	const disableLazyLoad = meta.swiftpress_disable_lazyload || false;
+	const disableCSSOptimization = meta.swiftpress_disable_css_optimization || false;
+	const disableJSOptimization = meta.swiftpress_disable_js_optimization || false;
+	const disableJSDefer = meta.swiftpress_disable_js_defer || false;
+	const disableJSDelay = meta.swiftpress_disable_js_delay || false;
+	const disableCritical = meta.swiftpress_disable_critical_css || false;
+	const specificCritical = meta.swiftpress_specific_critical_css || false;
+	const disableUCSS = meta.swiftpress_disable_ucss || false;
+	const specificUCSS = meta.swiftpress_specific_ucss || false;
 
 	return (
 		<PluginDocumentSettingPanel
 			icon="superhero"
-			title={__('Powered Cache', 'powered-cache')}
-			className="powered-cache-panel"
+			title={__('SwiftPress', 'swiftpress')}
+			className="swiftpress-panel"
 			name="cache-panel"
 		>
-			{'powered_cache_disable_cache' in meta && (
+			{'swiftpress_disable_cache' in meta && (
 				<CheckboxControl
-					label={__("Don't cache this post", 'powered-cache')}
+					label={__("Don't cache this post", 'swiftpress')}
 					checked={disableCache}
 					onChange={() => {
 						dispatch('core/editor').editPost({
-							meta: { powered_cache_disable_cache: !disableCache },
+							meta: { swiftpress_disable_cache: !disableCache },
 						});
 					}}
 				/>
 			)}
 
-			{'powered_cache_disable_lazyload' in meta && (
+			{'swiftpress_disable_lazyload' in meta && (
 				<CheckboxControl
-					label={__('Disable lazy loading for this post', 'powered-cache')}
+					label={__('Disable lazy loading for this post', 'swiftpress')}
 					checked={disableLazyLoad}
 					onChange={() => {
 						dispatch('core/editor').editPost({
-							meta: { powered_cache_disable_lazyload: !disableLazyLoad },
+							meta: { swiftpress_disable_lazyload: !disableLazyLoad },
 						});
 					}}
 				/>
 			)}
 
-			{'powered_cache_disable_css_optimization' in meta && (
+			{'swiftpress_disable_css_optimization' in meta && (
 				<CheckboxControl
-					label={__('Disable CSS optimization', 'powered-cache')}
+					label={__('Disable CSS optimization', 'swiftpress')}
 					checked={disableCSSOptimization}
 					onChange={() => {
 						dispatch('core/editor').editPost({
 							meta: {
-								powered_cache_disable_css_optimization: !disableCSSOptimization,
+								swiftpress_disable_css_optimization: !disableCSSOptimization,
 							},
 						});
 					}}
 				/>
 			)}
 
-			{'powered_cache_disable_js_optimization' in meta && (
+			{'swiftpress_disable_js_optimization' in meta && (
 				<CheckboxControl
-					label={__('Disable JS optimization', 'powered-cache')}
+					label={__('Disable JS optimization', 'swiftpress')}
 					checked={disableJSOptimization}
 					onChange={() => {
 						dispatch('core/editor').editPost({
-							meta: { powered_cache_disable_js_optimization: !disableJSOptimization },
+							meta: { swiftpress_disable_js_optimization: !disableJSOptimization },
 						});
 					}}
 				/>
 			)}
 
-			{'powered_cache_disable_js_defer' in meta && (
+			{'swiftpress_disable_js_defer' in meta && (
 				<CheckboxControl
-					label={__('Disable JS defer for this post', 'powered-cache')}
+					label={__('Disable JS defer for this post', 'swiftpress')}
 					checked={disableJSDefer}
 					onChange={() => {
 						dispatch('core/editor').editPost({
-							meta: { powered_cache_disable_js_defer: !disableJSDefer },
+							meta: { swiftpress_disable_js_defer: !disableJSDefer },
 						});
 					}}
 				/>
 			)}
 
-			{'powered_cache_disable_js_delay' in meta && (
+			{'swiftpress_disable_js_delay' in meta && (
 				<CheckboxControl
-					label={__('Disable JS delay for this post', 'powered-cache')}
+					label={__('Disable JS delay for this post', 'swiftpress')}
 					checked={disableJSDelay}
 					onChange={() => {
 						dispatch('core/editor').editPost({
-							meta: { powered_cache_disable_js_delay: !disableJSDelay },
+							meta: { swiftpress_disable_js_delay: !disableJSDelay },
 						});
 					}}
 				/>
 			)}
 
-			{'powered_cache_disable_critical_css' in meta && !specificCritical && (
+			{'swiftpress_disable_critical_css' in meta && !specificCritical && (
 				<CheckboxControl
-					label={__('Disable Critical CSS for this post', 'powered-cache')}
+					label={__('Disable Critical CSS for this post', 'swiftpress')}
 					checked={disableCritical}
 					onChange={() => {
 						dispatch('core/editor').editPost({
 							meta: {
-								powered_cache_disable_critical_css: !disableCritical,
+								swiftpress_disable_critical_css: !disableCritical,
 							},
 						});
 					}}
 				/>
 			)}
 
-			{'powered_cache_specific_critical_css' in meta && !disableCritical && (
+			{'swiftpress_specific_critical_css' in meta && !disableCritical && (
 				<CheckboxControl
-					label={__('Generate specific Critical CSS', 'powered-cache')}
+					label={__('Generate specific Critical CSS', 'swiftpress')}
 					checked={specificCritical}
 					onChange={() => {
 						dispatch('core/editor').editPost({
 							meta: {
-								powered_cache_specific_critical_css: !specificCritical,
+								swiftpress_specific_critical_css: !specificCritical,
 							},
 						});
 					}}
 				/>
 			)}
 
-			{'powered_cache_disable_ucss' in meta && !specificUCSS && (
+			{'swiftpress_disable_ucss' in meta && !specificUCSS && (
 				<CheckboxControl
-					label={__('Disable UCSS for this post', 'powered-cache')}
+					label={__('Disable UCSS for this post', 'swiftpress')}
 					checked={disableUCSS}
 					onChange={() => {
 						dispatch('core/editor').editPost({
 							meta: {
-								powered_cache_disable_ucss: !disableUCSS,
+								swiftpress_disable_ucss: !disableUCSS,
 							},
 						});
 					}}
 				/>
 			)}
 
-			{'powered_cache_specific_ucss' in meta && !disableUCSS && (
+			{'swiftpress_specific_ucss' in meta && !disableUCSS && (
 				<CheckboxControl
-					label={__('Generate specific UCSS', 'powered-cache')}
+					label={__('Generate specific UCSS', 'swiftpress')}
 					checked={specificUCSS}
 					onChange={() => {
 						dispatch('core/editor').editPost({
 							meta: {
-								powered_cache_specific_ucss: !specificUCSS,
+								swiftpress_specific_ucss: !specificUCSS,
 							},
 						});
 					}}
@@ -182,4 +182,4 @@ const PoweredCacheMetaBox = () => {
 	);
 };
 
-registerPlugin('powered-cache-post-meta', { render: PoweredCacheMetaBox });
+registerPlugin('swiftpress-post-meta', { render: SwiftPressMetaBox });

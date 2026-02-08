@@ -2,18 +2,16 @@
 /**
  * Core plugin functionality.
  *
- * @package PoweredCache
+ * @package SwiftPress
  */
 
-namespace PoweredCache\Core;
+namespace SwiftPress\Core;
 
-use PoweredCache\Async\CachePreloader;
-use PoweredCache\Async\CachePurger;
-use PoweredCache\Async\DatabaseOptimizer;
-use PoweredCache\Config;
-use const PoweredCache\Constants\DB_CLEANUP_COUNT_CACHE_KEY;
-use const PoweredCache\Constants\MENU_SLUG;
-use PoweredCache\Optimizer\JS;
+use SwiftPress\Async\CachePreloader;
+use SwiftPress\Async\CachePurger;
+use SwiftPress\Config;
+use const SwiftPress\Constants\MENU_SLUG;
+use SwiftPress\Optimizer\JS;
 use \WP_Error as WP_Error;
 
 /**
@@ -33,13 +31,13 @@ function setup() {
 	add_filter( 'script_loader_tag', __NAMESPACE__ . '\\script_loader_tag', 10, 2 );
 
 	/**
-	 * Fires after powered cache loaded
+	 * Fires after swiftpress loaded
 	 *
-	 * @hook  powered_cache_loaded
+	 * @hook  swiftpress_loaded
 	 *
 	 * @since 2.0
 	 */
-	do_action( 'powered_cache_loaded' );
+	do_action( 'swiftpress_loaded' );
 }
 
 /**
@@ -48,9 +46,9 @@ function setup() {
  * @return void
  */
 function i18n() {
-	$locale = apply_filters( 'plugin_locale', get_locale(), 'powered-cache' ); // This filter is documented in /wp-includes/l10n.php.
-	load_textdomain( 'powered-cache', WP_LANG_DIR . '/powered-cache/powered-cache-' . $locale . '.mo' );
-	load_plugin_textdomain( 'powered-cache', false, plugin_basename( POWERED_CACHE_PATH ) . '/languages/' );
+	$locale = apply_filters( 'plugin_locale', get_locale(), 'swiftpress' ); // This filter is documented in /wp-includes/l10n.php.
+	load_textdomain( 'swiftpress', WP_LANG_DIR . '/swiftpress/swiftpress-' . $locale . '.mo' );
+	load_plugin_textdomain( 'swiftpress', false, plugin_basename( SWIFTPRESS_PATH ) . '/languages/' );
 }
 
 /**
@@ -62,23 +60,23 @@ function init() {
 	/**
 	 * Fires during init
 	 *
-	 * @hook  powered_cache_init
+	 * @hook  swiftpress_init
 	 *
 	 * @since 2.0
 	 */
-	do_action( 'powered_cache_init' );
+	do_action( 'swiftpress_init' );
 }
 
 /**
  * Activate the plugin
- *  `POWERED_CACHE_IS_NETWORK` useless on networkwide activation at first
+ *  `SWIFTPRESS_IS_NETWORK` useless on networkwide activation at first
  *
  * @param bool $network_wide Whether network-wide configuration or not
  *
  * @return void
  */
 function activate( $network_wide ) {
-	$settings = \PoweredCache\Utils\get_settings( $network_wide );
+	$settings = \SwiftPress\Utils\get_settings( $network_wide );
 	Config::factory()->save_configuration( $settings, $network_wide );
 }
 
@@ -97,12 +95,6 @@ function deactivate( $network_wide ) {
 	// cancel async jobs
 	$cache_preloader = CachePreloader::factory();
 	$cache_preloader->cancel_process();
-	$db_optimizer = DatabaseOptimizer::factory();
-	$db_optimizer->cancel_process();
-
-	// cleanup transients
-	delete_site_transient( DB_CLEANUP_COUNT_CACHE_KEY );
-	delete_transient( DB_CLEANUP_COUNT_CACHE_KEY );
 }
 
 
@@ -126,10 +118,10 @@ function get_enqueue_contexts() {
 function script_url( $script, $context ) {
 
 	if ( ! in_array( $context, get_enqueue_contexts(), true ) ) {
-		return new WP_Error( 'invalid_enqueue_context', 'Invalid $context specified in PoweredCache script loader.' );
+		return new WP_Error( 'invalid_enqueue_context', 'Invalid $context specified in SwiftPress script loader.' );
 	}
 
-	return POWERED_CACHE_URL . "dist/js/{$script}.js";
+	return SWIFTPRESS_URL . "dist/js/{$script}.js";
 
 }
 
@@ -144,10 +136,10 @@ function script_url( $script, $context ) {
 function style_url( $stylesheet, $context ) {
 
 	if ( ! in_array( $context, get_enqueue_contexts(), true ) ) {
-		return new WP_Error( 'invalid_enqueue_context', 'Invalid $context specified in PoweredCache stylesheet loader.' );
+		return new WP_Error( 'invalid_enqueue_context', 'Invalid $context specified in SwiftPress stylesheet loader.' );
 	}
 
-	return POWERED_CACHE_URL . "dist/css/{$stylesheet}.css";
+	return SWIFTPRESS_URL . "dist/css/{$stylesheet}.css";
 
 }
 
@@ -164,12 +156,12 @@ function admin_scripts( $hook ) {
 
 	if ( in_array( $hook, $classic_editor_hooks, true ) ) {
 		wp_enqueue_script(
-			'powered-cache-classic-editor',
+			'swiftpress-classic-editor',
 			script_url( 'classic-editor', 'classic-editor' ),
 			[
 				'jquery',
 			],
-			POWERED_CACHE_VERSION,
+			SWIFTPRESS_VERSION,
 			true
 		);
 	}
@@ -179,21 +171,30 @@ function admin_scripts( $hook ) {
 	}
 
 	wp_enqueue_script(
-		'powered-cache-admin',
-		script_url( 'admin', 'admin' ),
-		[
-			'jquery',
-			'lodash',
-			'wp-i18n',
-		],
-		POWERED_CACHE_VERSION,
+		'swiftpress-settings',
+		SWIFTPRESS_URL . 'assets/js/admin/swiftpress-settings.js',
+		[ 'jquery' ],
+		SWIFTPRESS_VERSION,
 		true
 	);
 
-	wp_set_script_translations(
-		'powered-cache-admin',
-		'powered-cache',
-		plugin_dir_path( POWERED_CACHE_PLUGIN_FILE ) . 'languages'
+	wp_localize_script(
+		'swiftpress-settings',
+		'swiftpressSettings',
+		[
+			'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+			'nonce'   => wp_create_nonce( 'swiftpress_settings_ajax' ),
+			'i18n'    => [
+				'clearing'         => esc_html__( 'Clearing...', 'swiftpress' ),
+				'cacheCleared'     => esc_html__( 'All cache cleared successfully.', 'swiftpress' ),
+				'fontCacheCleared' => esc_html__( 'Font cache cleared successfully.', 'swiftpress' ),
+				'refreshing'       => esc_html__( 'Refreshing...', 'swiftpress' ),
+				'sitemapRefreshed' => esc_html__( 'Sitemap refreshed successfully.', 'swiftpress' ),
+				'refreshSitemap'   => esc_html__( 'Refresh Sitemap', 'swiftpress' ),
+				'clearAllCache'    => esc_html__( 'Clear All Cache', 'swiftpress' ),
+				'error'            => esc_html__( 'An error occurred. Please try again.', 'swiftpress' ),
+			],
+		]
 	);
 
 }
@@ -216,7 +217,7 @@ function block_editor_assets() {
 	 */
 	if ( version_compare( get_bloginfo( 'version' ), '5.3', '>=' ) ) {
 		wp_register_script(
-			'powered-cache-editor',
+			'swiftpress-editor',
 			script_url( 'editor', 'admin' ),
 			[
 				'jquery',
@@ -230,16 +231,16 @@ function block_editor_assets() {
 				'wp-element',
 				'wp-plugins',
 			],
-			POWERED_CACHE_VERSION,
+			SWIFTPRESS_VERSION,
 			true
 		);
 
-		wp_enqueue_script( 'powered-cache-editor' );
+		wp_enqueue_script( 'swiftpress-editor' );
 
 		wp_set_script_translations(
-			'powered-cache-editor',
-			'powered-cache',
-			plugin_dir_path( POWERED_CACHE_PLUGIN_FILE ) . 'languages'
+			'swiftpress-editor',
+			'swiftpress',
+			plugin_dir_path( SWIFTPRESS_PLUGIN_FILE ) . 'languages'
 		);
 
 	}
@@ -251,16 +252,16 @@ function block_editor_assets() {
  * @return void
  */
 function admin_styles() {
-	// load on the powered cache page only
+	// load on the swiftpress page only
 	if ( empty( $_GET['page'] ) || MENU_SLUG !== $_GET['page'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		return;
 	}
 
 	wp_enqueue_style(
-		'powered-cache-admin',
-		style_url( 'admin-style', 'admin' ),
+		'swiftpress-settings',
+		SWIFTPRESS_URL . 'assets/css/admin/swiftpress-settings.css',
 		[],
-		POWERED_CACHE_VERSION
+		SWIFTPRESS_VERSION
 	);
 
 }
@@ -305,6 +306,5 @@ function script_loader_tag( $tag, $handle ) {
  * Invoke async classes
  */
 function register_async_process() {
-	DatabaseOptimizer::factory();
 	CachePurger::factory();
 }

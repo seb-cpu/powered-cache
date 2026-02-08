@@ -6,11 +6,11 @@
  */
 
 /**
- * Abstract Powered_Cache_WP_Async_Request class.
+ * Abstract SwiftPress_WP_Async_Request class.
  *
  * @abstract
  */
-abstract class Powered_Cache_WP_Async_Request {
+abstract class SwiftPress_WP_Async_Request {
 
 	/**
 	 * Prefix

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PoweredCache\Dependencies\voku\helper;
+namespace SwiftPress\Dependencies\voku\helper;
 
 /**
  * HtmlMinDomObserverOptimizeAttributes: Optimize html attributes. [protected html is still protected]
@@ -133,7 +133,7 @@ final class HtmlMinDomObserverOptimizeAttributes implements HtmlMinDomObserverIn
             }
 
             // -------------------------------------------------------------------------
-            // Sort css-class-Powered_Cache_names, for better gzip results.
+            // Sort css-class-SwiftPress_names, for better gzip results.
             // -------------------------------------------------------------------------
 
             if ($htmlMin->isDoSortCssClassNames()) {

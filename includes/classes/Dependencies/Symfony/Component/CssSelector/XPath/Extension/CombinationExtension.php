@@ -9,9 +9,9 @@
  * file that was distributed with this source code.
  */
 
-namespace PoweredCache\Dependencies\Symfony\Component\CssSelector\XPath\Extension;
+namespace SwiftPress\Dependencies\Symfony\Component\CssSelector\XPath\Extension;
 
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\XPath\XPathExpr;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\XPath\XPathExpr;
 
 /**
  * XPath expression translator combination extension.

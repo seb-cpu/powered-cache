@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PoweredCache\Dependencies\voku\helper;
+namespace SwiftPress\Dependencies\voku\helper;
 
 /**
  * {@inheritdoc}

@@ -2,26 +2,26 @@
 /**
  * Domain mapping compatibility.
  *
- * @package PoweredCache\Compat
+ * @package SwiftPress\Compat
  */
 
-namespace PoweredCache\Compat;
+namespace SwiftPress\Compat;
 
-use function PoweredCache\Utils\delete_page_cache;
-use function PoweredCache\Utils\get_page_cache_dir;
-use function PoweredCache\Utils\remove_dir;
+use function SwiftPress\Utils\delete_page_cache;
+use function SwiftPress\Utils\get_page_cache_dir;
+use function SwiftPress\Utils\remove_dir;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
 add_action( 'mercator.mapping.deleted', __NAMESPACE__ . '\\mapping_cleanup' );
-add_action( 'powered_cache_clean_site_cache_dir', __NAMESPACE__ . '\\maybe_clean_mapped_domain_dir' );
-add_action( 'powered_cache_advanced_cache_purge_post', __NAMESPACE__ . '\\maybe_purge_on_post_update', 10, 2 );
-add_action( 'powered_cache_advanced_cache_purge_on_comment_update', __NAMESPACE__ . '\\maybe_purge_on_comment_update', 10, 2 );
-add_action( 'powered_cache_create_config_file', __NAMESPACE__ . '\\maybe_create_config_files', 10, 3 );
+add_action( 'swiftpress_clean_site_cache_dir', __NAMESPACE__ . '\\maybe_clean_mapped_domain_dir' );
+add_action( 'swiftpress_advanced_cache_purge_post', __NAMESPACE__ . '\\maybe_purge_on_post_update', 10, 2 );
+add_action( 'swiftpress_advanced_cache_purge_on_comment_update', __NAMESPACE__ . '\\maybe_purge_on_comment_update', 10, 2 );
+add_action( 'swiftpress_create_config_file', __NAMESPACE__ . '\\maybe_create_config_files', 10, 3 );
 add_action( 'wp_delete_site', __NAMESPACE__ . '\\purge_on_site_delete' ); // works on WP 5.1+
-add_action( 'powered_cache_after_clean_up', __NAMESPACE__ . '\\maybe_delete_config' );
+add_action( 'swiftpress_after_clean_up', __NAMESPACE__ . '\\maybe_delete_config' );
 
 
 /**
@@ -43,7 +43,7 @@ function mapping_cleanup( $mapping ) {
 		remove_dir( $site_cache_dir );
 	}
 
-	$config_dir       = WP_CONTENT_DIR . '/pc-config';
+	$config_dir       = WP_CONTENT_DIR . '/sp-config';
 	$config_file_name = 'config-' . $site_path . '.php';
 	$config_file      = trailingslashit( $config_dir ) . $config_file_name;
 
@@ -150,7 +150,7 @@ function get_mapped_domains() {
  * @since 2.0
  */
 function maybe_create_config_files( $config_file, $config_file_string, $network_wide ) {
-	$config_dir = WP_CONTENT_DIR . '/pc-config';
+	$config_dir = WP_CONTENT_DIR . '/sp-config';
 
 	// skip on network-wide?
 	if ( $network_wide ) {
@@ -200,7 +200,7 @@ function maybe_delete_config() {
 		return;
 	}
 
-	$config_dir = WP_CONTENT_DIR . '/pc-config';
+	$config_dir = WP_CONTENT_DIR . '/sp-config';
 
 	foreach ( $mapped_domains as $domain ) {
 		$url_parts        = wp_parse_url( $domain );

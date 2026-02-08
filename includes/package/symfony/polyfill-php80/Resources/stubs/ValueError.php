@@ -10,7 +10,7 @@
  */
 
 if (\PHP_VERSION_ID < 80000) {
-    class Powered_Cache_ValueError extends Error
+    class SwiftPress_ValueError extends Error
     {
     }
 }

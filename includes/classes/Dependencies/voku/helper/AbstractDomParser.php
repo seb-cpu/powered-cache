@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PoweredCache\Dependencies\voku\helper;
+namespace SwiftPress\Dependencies\voku\helper;
 
 abstract class AbstractDomParser implements DomParserInterface
 {
@@ -57,7 +57,7 @@ abstract class AbstractDomParser implements DomParserInterface
     /**
      * @var callable|null
      *
-     * @phpstan-var null|callable(\PoweredCache\Dependencies\voku\helper\XmlDomParser|\PoweredCache\Dependencies\voku\helper\HtmlDomParser): void
+     * @phpstan-var null|callable(\SwiftPress\Dependencies\voku\helper\XmlDomParser|\SwiftPress\Dependencies\voku\helper\HtmlDomParser): void
      */
     protected static $callback;
 
@@ -152,7 +152,7 @@ abstract class AbstractDomParser implements DomParserInterface
     protected function decodeHtmlEntity(string $content, bool $multiDecodeNewHtmlEntity): string
     {
         if ($multiDecodeNewHtmlEntity) {
-            if (\class_exists('\PoweredCache\Dependencies\voku\helper\UTF8')) {
+            if (\class_exists('\SwiftPress\Dependencies\voku\helper\UTF8')) {
                 $content = UTF8::rawurldecode($content, true);
             } else {
                 do {
@@ -168,7 +168,7 @@ abstract class AbstractDomParser implements DomParserInterface
             }
         } else {
             /** @noinspection NestedPositiveIfStatementsInspection */
-            if (\class_exists('\PoweredCache\Dependencies\voku\helper\UTF8')) {
+            if (\class_exists('\SwiftPress\Dependencies\voku\helper\UTF8')) {
                 $content = UTF8::rawurldecode($content, false);
             } else {
                 $content = \rawurldecode(
@@ -332,7 +332,7 @@ abstract class AbstractDomParser implements DomParserInterface
     /**
      * @param callable $functionName
      *
-     * @phpstan-param callable(\PoweredCache\Dependencies\voku\helper\XmlDomParser|\PoweredCache\Dependencies\voku\helper\HtmlDomParser): void $functionName
+     * @phpstan-param callable(\SwiftPress\Dependencies\voku\helper\XmlDomParser|\SwiftPress\Dependencies\voku\helper\HtmlDomParser): void $functionName
      *
      * @return void
      */

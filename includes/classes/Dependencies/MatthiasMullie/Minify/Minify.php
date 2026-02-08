@@ -10,10 +10,10 @@
  * @license MIT License
  */
 
-namespace PoweredCache\Dependencies\MatthiasMullie\Minify;
+namespace SwiftPress\Dependencies\MatthiasMullie\Minify;
 
-use PoweredCache\Dependencies\MatthiasMullie\Minify\Exceptions\IOException;
-use PoweredCache\Dependencies\MatthiasMullie\Minify\Exceptions\PatternMatchException;
+use SwiftPress\Dependencies\MatthiasMullie\Minify\Exceptions\IOException;
+use SwiftPress\Dependencies\MatthiasMullie\Minify\Exceptions\PatternMatchException;
 use Psr\Cache\CacheItemInterface;
 
 /**

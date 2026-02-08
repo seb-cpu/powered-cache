@@ -1,13 +1,13 @@
 {
-  "name": "poweredcache/powered-cache",
-  "description": "Comprehensive caching and performance plugin for WordPress.",
+  "name": "swiftpress/swiftpress",
+  "description": "Lightweight WordPress performance optimization — page caching, file optimization, font optimization, and intelligent cache preloading.",
   "type": "wordpress-plugin",
   "license": "GPL-2.0-or-later",
   "authors": [
     {
-      "name": "poweredcache",
-      "email": "support@poweredcache.com",
-      "homepage": "https://poweredcache.com",
+      "name": "SwiftPress",
+      "email": "support@swiftpress.dev",
+      "homepage": "https://swiftpress.dev",
       "role": "Developer"
     }
   ],
@@ -16,7 +16,7 @@
   },
   "autoload": {
     "psr-4": {
-      "PoweredCache\\": "includes/classes/"
+      "SwiftPress\\": "includes/classes/"
     }
   },
   "require-dev": {
@@ -29,9 +29,9 @@
     "voku/html-min": "^4.5"
   },
   "scripts": {
-    "lint": "phpcs powered-cache.php uninstall.php ./includes -s",
-    "lint-fix": "phpcbf powered-cache.php uninstall.php ./includes",
-    "setup-local-tests": "bash bin/install-wp-tests.sh pc_wp_test root root localhost trunk true",
+    "lint": "phpcs swiftpress.php uninstall.php ./includes -s",
+    "lint-fix": "phpcbf swiftpress.php uninstall.php ./includes",
+    "setup-local-tests": "bash bin/install-wp-tests.sh swiftpress_test root root localhost trunk true",
     "post-install-cmd": [
       "\"vendor/bin/mozart\" compose",
       "composer dump-autoload"
@@ -43,10 +43,10 @@
   },
   "extra": {
     "mozart": {
-      "dep_namespace": "PoweredCache\\Dependencies\\",
+      "dep_namespace": "SwiftPress\\Dependencies\\",
       "dep_directory": "/includes/classes/Dependencies/",
       "classmap_directory": "/includes/package/",
-      "classmap_prefix": "Powered_Cache_",
+      "classmap_prefix": "SwiftPress_",
       "packages": [
         "matthiasmullie/minify",
         "deliciousbrains/wp-background-processing",

@@ -9,9 +9,9 @@
  * file that was distributed with this source code.
  */
 
-namespace PoweredCache\Dependencies\Symfony\Component\CssSelector\Parser;
+namespace SwiftPress\Dependencies\Symfony\Component\CssSelector\Parser;
 
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Node\SelectorNode;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Node\SelectorNode;
 
 /**
  * CSS selector parser interface.

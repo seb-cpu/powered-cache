@@ -6,12 +6,12 @@
  */
 
 /**
- * Abstract Powered_Cache_WP_Background_Process class.
+ * Abstract SwiftPress_WP_Background_Process class.
  *
  * @abstract
- * @extends Powered_Cache_WP_Async_Request
+ * @extends SwiftPress_WP_Async_Request
  */
-abstract class Powered_Cache_WP_Background_Process extends Powered_Cache_WP_Async_Request {
+abstract class SwiftPress_WP_Background_Process extends SwiftPress_WP_Async_Request {
 	/**
 	 * The default query arg name used for passing the chain ID to new processes.
 	 */
@@ -84,7 +84,7 @@ abstract class Powered_Cache_WP_Background_Process extends Powered_Cache_WP_Asyn
 	/**
 	 * Initiate new background process.
 	 *
-	 * @param bool|array $allowed_batch_data_classes Optional. Array of class Powered_Cache_names that can be unserialized. Default true (any class).
+	 * @param bool|array $allowed_batch_data_classes Optional. Array of class SwiftPress_names that can be unserialized. Default true (any class).
 	 */
 	public function __construct( $allowed_batch_data_classes = true ) {
 		parent::__construct();
@@ -863,7 +863,7 @@ abstract class Powered_Cache_WP_Background_Process extends Powered_Cache_WP_Asyn
 	 * Maybe unserialize data, but not if an object.
 	 *
 	 * @param mixed      $data            Data to be unserialized.
-	 * @param bool|array $allowed_classes Array of class Powered_Cache_names that can be unserialized.
+	 * @param bool|array $allowed_classes Array of class SwiftPress_names that can be unserialized.
 	 *
 	 * @return mixed
 	 */

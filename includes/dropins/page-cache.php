@@ -5,18 +5,18 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$powered_cache_start_time = microtime( true );
+$swiftpress_start_time = microtime( true );
 
 // Don't cache robots.txt or htacesss
 if ( strpos( $_SERVER['REQUEST_URI'], 'robots.txt' ) !== false || strpos( $_SERVER['REQUEST_URI'], '.htaccess' ) !== false ) {
-	powered_cache_add_cache_miss_header( "Uncacheable file" );
+	swiftpress_add_cache_miss_header( "Uncacheable file" );
 
 	return;
 }
 
 // Don't cache non-GET requests
 if ( ! isset( $_SERVER['REQUEST_METHOD'] ) || 'GET' !== $_SERVER['REQUEST_METHOD'] ) {
-	powered_cache_add_cache_miss_header( "Invalid request method" );
+	swiftpress_add_cache_miss_header( "Invalid request method" );
 
 	return;
 }
@@ -36,56 +36,56 @@ $file_extension = trim( preg_replace( '#^.*\.(.*)$#', '$1', $file_extension ) );
 
 // Don't cache disallowed extensions. Prevents wp-cron.php, xmlrpc.php, etc.
 if ( ! preg_match( '#index\.php$#i', $_SERVER['REQUEST_URI'] ) && in_array( $file_extension, array( 'php', 'xml', 'xsl' ), true ) ) {
-	powered_cache_add_cache_miss_header( "Disallowed file extension" );
+	swiftpress_add_cache_miss_header( "Disallowed file extension" );
 
 	return;
 }
 
-if ( ! $GLOBALS['powered_cache_options']['enable_page_cache'] ) {
-	powered_cache_add_cache_miss_header( "Page Caching is not enabled" );
+if ( ! $GLOBALS['swiftpress_options']['enable_page_cache'] ) {
+	swiftpress_add_cache_miss_header( "Page Caching is not enabled" );
 
 	return;
 }
 
-if ( ! empty( $GLOBALS['powered_cache_options']['dev_mode'] ) ) {
-	powered_cache_add_cache_miss_header( "Dev mode is enabled" );
+if ( ! empty( $GLOBALS['swiftpress_options']['dev_mode'] ) ) {
+	swiftpress_add_cache_miss_header( "Dev mode is enabled" );
 
 	return;
 }
 
-if ( isset( $_GET['nopoweredcache'] ) && $_GET['nopoweredcache'] ) {
-	powered_cache_add_cache_miss_header( "Passing nopoweredcache with the query" );
+if ( isset( $_GET['noswiftpress'] ) && $_GET['noswiftpress'] ) {
+	swiftpress_add_cache_miss_header( "Passing noswiftpress with the query" );
 
 	return;
 }
 
 // Don't cache page with these user agents
-if ( isset( $powered_cache_rejected_user_agents ) && ! empty( $powered_cache_rejected_user_agents ) ) {
-	$rejected_user_agents = implode( '|', $powered_cache_rejected_user_agents );
+if ( isset( $swiftpress_rejected_user_agents ) && ! empty( $swiftpress_rejected_user_agents ) ) {
+	$rejected_user_agents = implode( '|', $swiftpress_rejected_user_agents );
 	if ( ! empty( $rejected_user_agents ) && isset( $_SERVER['HTTP_USER_AGENT'] ) && preg_match( '#(' . $rejected_user_agents . ')#', $_SERVER['HTTP_USER_AGENT'] ) ) {
-		powered_cache_add_cache_miss_header( "Rejected user agent" );
+		swiftpress_add_cache_miss_header( "Rejected user agent" );
 
 		return;
 	}
 }
 
 // dont cache mobile
-if ( empty( $GLOBALS['powered_cache_options']['cache_mobile'] ) ) {
-	global $powered_cache_mobile_browsers, $powered_cache_mobile_prefixes;
+if ( empty( $GLOBALS['swiftpress_options']['cache_mobile'] ) ) {
+	global $swiftpress_mobile_browsers, $swiftpress_mobile_prefixes;
 
-	$mobile_browsers = addcslashes( implode( '|', preg_split( '/[\s*,\s*]*,+[\s*,\s*]*/', $powered_cache_mobile_browsers ) ), ' ' );
-	$mobile_prefixes = addcslashes( implode( '|', preg_split( '/[\s*,\s*]*,+[\s*,\s*]*/', $powered_cache_mobile_prefixes ) ), ' ' );
+	$mobile_browsers = addcslashes( implode( '|', preg_split( '/[\s*,\s*]*,+[\s*,\s*]*/', $swiftpress_mobile_browsers ) ), ' ' );
+	$mobile_prefixes = addcslashes( implode( '|', preg_split( '/[\s*,\s*]*,+[\s*,\s*]*/', $swiftpress_mobile_prefixes ) ), ' ' );
 	// Don't cache if mobile detection is activated
 	if ( ( preg_match( '#^.*(' . $mobile_browsers . ').*#i', $_SERVER['HTTP_USER_AGENT'] ) || preg_match( '#^(' . $mobile_prefixes . ').*#i', substr( $_SERVER['HTTP_USER_AGENT'], 0, 4 ) ) ) ) {
-		powered_cache_add_cache_miss_header( "Mobile request" );
+		swiftpress_add_cache_miss_header( "Mobile request" );
 
 		return;
 	}
 }
 
 // Exclude caching based on HTTP_REFERER
-if ( ! empty( $powered_cache_rejected_referrers ) && isset( $_SERVER['HTTP_REFERER'] ) && $_SERVER['HTTP_REFERER'] ) {
-	foreach ( $powered_cache_rejected_referrers as $referrer_rule ) {
+if ( ! empty( $swiftpress_rejected_referrers ) && isset( $_SERVER['HTTP_REFERER'] ) && $_SERVER['HTTP_REFERER'] ) {
+	foreach ( $swiftpress_rejected_referrers as $referrer_rule ) {
 		$referrer_rule = trim( $referrer_rule );
 		if ( $referrer_rule === '' ) {
 			continue;
@@ -94,7 +94,7 @@ if ( ! empty( $powered_cache_rejected_referrers ) && isset( $_SERVER['HTTP_REFER
 		if ( preg_match( '/[\\^$.|?*+()\[\]]/', $referrer_rule ) ) {
 			if ( @preg_match( '#' . $referrer_rule . '#i', $_SERVER['HTTP_REFERER'] ) ) {
 				if ( preg_match( '#' . $referrer_rule . '#i', $_SERVER['HTTP_REFERER'] ) ) {
-					powered_cache_add_cache_miss_header( "Rejected referer: $referrer_rule" );
+					swiftpress_add_cache_miss_header( "Rejected referer: $referrer_rule" );
 
 					return;
 				}
@@ -102,7 +102,7 @@ if ( ! empty( $powered_cache_rejected_referrers ) && isset( $_SERVER['HTTP_REFER
 		} else {
 			// Plain string match
 			if ( strpos( $_SERVER['HTTP_REFERER'], $referrer_rule ) !== false ) {
-				powered_cache_add_cache_miss_header( "Rejected referer: $referrer_rule" );
+				swiftpress_add_cache_miss_header( "Rejected referer: $referrer_rule" );
 
 				return;
 			}
@@ -115,12 +115,12 @@ if ( ! empty( $_COOKIE ) ) {
 	$comment_cookies = [ 'comment_author_', 'comment_author_email_', 'comment_author_url_' ];
 
 	// Check if logged-in caching is disabled or the user is not logged in
-	if ( empty( $GLOBALS['powered_cache_options']['loggedin_user_cache'] ) || false === powered_cache_get_user_cookie() ) {
+	if ( empty( $GLOBALS['swiftpress_options']['loggedin_user_cache'] ) || false === swiftpress_get_user_cookie() ) {
 		// Standard check for logged-in status
 		foreach ( $_COOKIE as $key => $value ) {
 			foreach ( $wp_cookies as $cookie ) {
 				if ( strpos( $key, $cookie ) !== false ) {
-					powered_cache_add_cache_miss_header( "User logged-in" );
+					swiftpress_add_cache_miss_header( "User logged-in" );
 					return;
 				}
 			}
@@ -128,7 +128,7 @@ if ( ! empty( $_COOKIE ) ) {
 			// Check if the user has commented on the site
 			foreach ( $comment_cookies as $cookie ) {
 				if ( strpos( $key, $cookie ) !== false ) {
-					powered_cache_add_cache_miss_header( "User left a comment" );
+					swiftpress_add_cache_miss_header( "User left a comment" );
 					return;
 				}
 			}
@@ -136,10 +136,10 @@ if ( ! empty( $_COOKIE ) ) {
 
 		// Avoid caching pages with specific post comments from users
 		// it's a bit different from $comment_cookies since we are checking the post path
-		if ( ! empty( $_COOKIE['powered_cache_commented_posts'] ) ) {
-			foreach ( $_COOKIE['powered_cache_commented_posts'] as $path ) {
+		if ( ! empty( $_COOKIE['swiftpress_commented_posts'] ) ) {
+			foreach ( $_COOKIE['swiftpress_commented_posts'] as $path ) {
 				if ( rtrim( $path, '/' ) === rtrim( $_SERVER['REQUEST_URI'], '/' ) ) {
-					powered_cache_add_cache_miss_header( "User commented" );
+					swiftpress_add_cache_miss_header( "User commented" );
 					return;
 				}
 			}
@@ -147,19 +147,19 @@ if ( ! empty( $_COOKIE ) ) {
 	}
 
 	// Skip caching if there are specific rejected cookies, regardless of logged-in status
-	if ( ! empty( $powered_cache_rejected_cookies ) ) {
-		$rejected_cookies = array_diff( $powered_cache_rejected_cookies, $wp_cookies, $comment_cookies, ['powered_cache_commented_posts'] );
+	if ( ! empty( $swiftpress_rejected_cookies ) ) {
+		$rejected_cookies = array_diff( $swiftpress_rejected_cookies, $wp_cookies, $comment_cookies, ['swiftpress_commented_posts'] );
 		$rejected_cookies = implode( '|', $rejected_cookies );
 		if ( preg_match( '#(' . $rejected_cookies . ')#', var_export( $_COOKIE, true ) ) ) {
-			powered_cache_add_cache_miss_header( "Rejected cookie" );
+			swiftpress_add_cache_miss_header( "Rejected cookie" );
 			return;
 		}
 	}
 }
 
 // Don't cache rejected pages
-if ( ! empty( $powered_cache_rejected_uri ) ) {
-	foreach ( (array) $powered_cache_rejected_uri as $exception ) {
+if ( ! empty( $swiftpress_rejected_uri ) ) {
+	foreach ( (array) $swiftpress_rejected_uri as $exception ) {
 		if ( preg_match( '#^[\s]*$#', $exception ) ) {
 			continue;
 		}
@@ -174,7 +174,7 @@ if ( ! empty( $powered_cache_rejected_uri ) ) {
 		}
 
 		if ( preg_match( '#^(' . $exception . ')$#', $_SERVER['REQUEST_URI'] ) ) {
-			powered_cache_add_cache_miss_header( "Rejected page" );
+			swiftpress_add_cache_miss_header( "Rejected page" );
 
 			return;
 		}
@@ -183,27 +183,27 @@ if ( ! empty( $powered_cache_rejected_uri ) ) {
 
 
 if ( ! empty( $_GET ) ) {
-	if ( ! isset( $powered_cache_ignored_query_strings ) ) {
-		$powered_cache_ignored_query_strings = [];
+	if ( ! isset( $swiftpress_ignored_query_strings ) ) {
+		$swiftpress_ignored_query_strings = [];
 	}
 
-	$query_params = array_diff_key( $_GET, array_flip( $powered_cache_ignored_query_strings ) );
+	$query_params = array_diff_key( $_GET, array_flip( $swiftpress_ignored_query_strings ) );
 
-	if ( ! isset( $powered_cache_cache_query_strings ) ) {
-		$powered_cache_cache_query_strings = [];
+	if ( ! isset( $swiftpress_cache_query_strings ) ) {
+		$swiftpress_cache_query_strings = [];
 	}
 
 	// don't cache when there is not allowed query parameter exists
-	if ( ! empty( $query_params ) && ! array_intersect_key( $_GET, array_flip( $powered_cache_cache_query_strings ) ) ) {
-		powered_cache_add_cache_miss_header( "Disallowed query parameter exists" );
+	if ( ! empty( $query_params ) && ! array_intersect_key( $_GET, array_flip( $swiftpress_cache_query_strings ) ) ) {
+		swiftpress_add_cache_miss_header( "Disallowed query parameter exists" );
 
 		return;
 	}
 }
 
-powered_cache_serve_cache();
+swiftpress_serve_cache();
 
-ob_start( 'powered_cache_page_buffer' );
+ob_start( 'swiftpress_page_buffer' );
 
 /**
  * Cache output before it goes to the browser
@@ -214,8 +214,8 @@ ob_start( 'powered_cache_page_buffer' );
  * @return string
  * @since  1.0
  */
-function powered_cache_page_buffer( $buffer, $flags ) {
-	global $powered_cache_start_time, $post;
+function swiftpress_page_buffer( $buffer, $flags ) {
+	global $swiftpress_start_time, $post;
 
 	if ( strlen( $buffer ) < 255 ) {
 		return $buffer;
@@ -224,34 +224,34 @@ function powered_cache_page_buffer( $buffer, $flags ) {
 	// maybe we shouldn't cache template file has this constant
 	// dont check DONOTCACHEPAGE strictly some plugins define string instead bool flag
 	if ( defined( 'DONOTCACHEPAGE' ) && DONOTCACHEPAGE ) {
-		powered_cache_add_cache_miss_header( "DONOTCACHEPAGE defined" );
+		swiftpress_add_cache_miss_header( "DONOTCACHEPAGE defined" );
 
 		return $buffer;
 	}
 
-	if ( ! empty( $GLOBALS['powered_cache_options']['dev_mode'] ) ) {
-		powered_cache_add_cache_miss_header( "Dev mode is enabled" );
+	if ( ! empty( $GLOBALS['swiftpress_options']['dev_mode'] ) ) {
+		swiftpress_add_cache_miss_header( "Dev mode is enabled" );
 
 		return $buffer;
 	}
 
 	// Don't cache password protected posts
 	if ( ! empty( $post->post_password ) ) {
-		powered_cache_add_cache_miss_header( "Password protected posts are not cached" );
+		swiftpress_add_cache_miss_header( "Password protected posts are not cached" );
 
 		return $buffer;
 	}
 
 	// Don't cache 404 results
 	if ( function_exists( 'is_404' ) && is_404() ) {
-		powered_cache_add_cache_miss_header( "404 pages are not cached" );
+		swiftpress_add_cache_miss_header( "404 pages are not cached" );
 
 		return $buffer;
 	}
 
 	// Don't cache search results
 	if ( function_exists( 'is_search' ) && is_search() ) {
-		powered_cache_add_cache_miss_header( "Search result page is not cached" );
+		swiftpress_add_cache_miss_header( "Search result page is not cached" );
 
 		return $buffer;
 	}
@@ -259,43 +259,43 @@ function powered_cache_page_buffer( $buffer, $flags ) {
 	/**
 	 * Filter whether to enable page cache for this request
 	 *
-	 * @hook  powered_cache_page_cache_enable
+	 * @hook  swiftpress_page_cache_enable
 	 *
 	 * @param {boolean} $enable true for caching
 	 *
 	 * @since 1.0
 	 */
-	if ( true !== apply_filters( 'powered_cache_page_cache_enable', true ) ) {
-		powered_cache_add_cache_miss_header( "Page Cache not enabled for this post" );
+	if ( true !== apply_filters( 'swiftpress_page_cache_enable', true ) ) {
+		swiftpress_add_cache_miss_header( "Page Cache not enabled for this post" );
 
 		return $buffer;
 	}
 
 	// only cache when http ok
 	if ( 200 !== http_response_code() ) {
-		powered_cache_add_cache_miss_header( "Response code is not 200" );
+		swiftpress_add_cache_miss_header( "Response code is not 200" );
 
 		return $buffer;
 	}
 
-	if ( ! function_exists( '\PoweredCache\Utils\get_cache_dir' ) ) {
+	if ( ! function_exists( '\SwiftPress\Utils\get_cache_dir' ) ) {
 		return $buffer;
 	}
 
 	// Make sure we can read/write files and that proper folders exist
-	if ( ! file_exists( untrailingslashit( \PoweredCache\Utils\get_cache_dir() ) ) ) {
-		if ( ! @mkdir( untrailingslashit( \PoweredCache\Utils\get_cache_dir() ) ) ) {
+	if ( ! file_exists( untrailingslashit( \SwiftPress\Utils\get_cache_dir() ) ) ) {
+		if ( ! @mkdir( untrailingslashit( \SwiftPress\Utils\get_cache_dir() ) ) ) {
 			// Can not cache!
-			powered_cache_add_cache_miss_header( "The cache directory does not exist for storing cached output" );
+			swiftpress_add_cache_miss_header( "The cache directory does not exist for storing cached output" );
 
 			return $buffer;
 		}
 	}
 
-	if ( ! file_exists( \PoweredCache\Utils\get_page_cache_dir() ) ) {
-		if ( ! @mkdir( \PoweredCache\Utils\get_page_cache_dir() ) ) {
+	if ( ! file_exists( \SwiftPress\Utils\get_page_cache_dir() ) ) {
+		if ( ! @mkdir( \SwiftPress\Utils\get_page_cache_dir() ) ) {
 			// Can not cache!
-			powered_cache_add_cache_miss_header( "The page cache directory does not exist for storing cached output" );
+			swiftpress_add_cache_miss_header( "The page cache directory does not exist for storing cached output" );
 
 			return $buffer;
 		}
@@ -304,20 +304,20 @@ function powered_cache_page_buffer( $buffer, $flags ) {
 	/**
 	 * Filters HTML buffer
 	 *
-	 * @hook   powered_cache_page_caching_buffer
+	 * @hook   swiftpress_page_caching_buffer
 	 *
 	 * @param  {string} $buffer Output buffer.
 	 *
 	 * @return {string} New value.
 	 * @since  1.0
 	 */
-	$buffer = apply_filters( 'powered_cache_page_caching_buffer', $buffer );
+	$buffer = apply_filters( 'swiftpress_page_caching_buffer', $buffer );
 
-	$url_path = powered_cache_get_url_path();
+	$url_path = swiftpress_get_url_path();
 
 	$dirs = explode( '/', $url_path );
 
-	$path = untrailingslashit( \PoweredCache\Utils\get_page_cache_dir() );
+	$path = untrailingslashit( \SwiftPress\Utils\get_page_cache_dir() );
 
 	foreach ( $dirs as $dir ) {
 		if ( ! empty( $dir ) ) {
@@ -333,7 +333,7 @@ function powered_cache_page_buffer( $buffer, $flags ) {
 	}
 
 	$modified_time   = time(); // Make sure modified time is consistent
-	$generation_time = number_format( microtime( true ) - $powered_cache_start_time, 3 );
+	$generation_time = number_format( microtime( true ) - $swiftpress_start_time, 3 );
 
 	$home_url = get_home_url();
 	// prevent mixed content
@@ -343,19 +343,19 @@ function powered_cache_page_buffer( $buffer, $flags ) {
 		$buffer         = str_replace( esc_url( $http_home_url ), esc_url( $https_home_url ), $buffer );
 	}
 
-	if ( array_key_exists( 'cache_footprint', $GLOBALS['powered_cache_options'] ) && true === $GLOBALS['powered_cache_options']['cache_footprint'] ) {
+	if ( array_key_exists( 'cache_footprint', $GLOBALS['swiftpress_options'] ) && true === $GLOBALS['swiftpress_options']['cache_footprint'] ) {
 		if ( preg_match( '#</html>#i', $buffer ) ) {
 			$buffer .= PHP_EOL;
-			$buffer .= "<!-- Cache served by Powered Cache -->";
+			$buffer .= "<!-- Cache served by SwiftPress -->";
 			$buffer .= PHP_EOL;
-			$buffer .= "<!-- If you like fast websites like this, visit: https://poweredcache.com -->";
+			$buffer .= "<!-- If you like fast websites like this, visit: https://swiftpress.dev -->";
 			$buffer .= PHP_EOL;
 			$buffer .= "<!-- Last modified: " . gmdate( 'D, d M Y H:i:s', $modified_time ) . " GMT -->";
 			$buffer .= PHP_EOL;
 			$buffer .= "<!-- Dynamic page generated in $generation_time -->";
 			$buffer .= PHP_EOL;
-			if ( false !== stripos( $_SERVER['HTTP_USER_AGENT'], 'Powered Cache Preloader' ) ) {
-				$buffer .= "<!-- This page is preloaded by Powered Cache Preloader -->";
+			if ( false !== stripos( $_SERVER['HTTP_USER_AGENT'], 'SwiftPress Preloader' ) ) {
+				$buffer .= "<!-- This page is preloaded by SwiftPress Preloader -->";
 				$buffer .= PHP_EOL;
 			}
 		}
@@ -367,7 +367,7 @@ function powered_cache_page_buffer( $buffer, $flags ) {
 
 	$meta_params = array(); // holds to metadata for cached file
 
-	$response_headers = \PoweredCache\Utils\get_response_headers();
+	$response_headers = \SwiftPress\Utils\get_response_headers();
 
 	foreach ( (array) $response_headers as $key => $value ) {
 		$meta_params['headers'][ $key ] = "$key: $value";
@@ -376,7 +376,7 @@ function powered_cache_page_buffer( $buffer, $flags ) {
 	/**
 	 * Filters meta parameters.
 	 *
-	 * @hook   powered_cache_page_cache_meta_params
+	 * @hook   swiftpress_page_cache_meta_params
 	 *
 	 * @param  {array} $meta_params Meta parameters.
 	 * @param  {array} $response_headers Supported response header list.
@@ -384,31 +384,31 @@ function powered_cache_page_buffer( $buffer, $flags ) {
 	 * @return {array} New value.
 	 * @since  1.2
 	 */
-	$meta_params        = apply_filters( 'powered_cache_page_cache_meta_params', $meta_params, $response_headers );
+	$meta_params        = apply_filters( 'swiftpress_page_cache_meta_params', $meta_params, $response_headers );
 	$meta_file_contents = $meta_file . json_encode( $meta_params );
 
 	/**
 	 * Filters meta file contents.
 	 *
-	 * @hook   powered_cache_page_cache_meta_info
+	 * @hook   swiftpress_page_cache_meta_info
 	 *
 	 * @param  {string} $meta_file_contents The content of the meta file.*
 	 *
 	 * @return {array} New value.
 	 * @since  1.2
 	 */
-	$meta_file_contents = apply_filters( 'powered_cache_page_cache_meta_info', $meta_file_contents );
+	$meta_file_contents = apply_filters( 'swiftpress_page_cache_meta_info', $meta_file_contents );
 
 	file_put_contents( $path . '/' . $meta_file_name, $meta_file_contents );
 	touch( $path . '/' . $meta_file_name, $modified_time );
 
 	if ( ! empty( $meta_params['headers']['Content-Type'] ) ) {
-		$index_name = powered_cache_index_file( $meta_params['headers']['Content-Type'] );
+		$index_name = swiftpress_index_file( $meta_params['headers']['Content-Type'] );
 	} else {
-		$index_name = powered_cache_index_file();
+		$index_name = swiftpress_index_file();
 	}
 
-	if ( $GLOBALS['powered_cache_options']['gzip_compression'] && function_exists( 'gzencode' ) ) {
+	if ( $GLOBALS['swiftpress_options']['gzip_compression'] && function_exists( 'gzencode' ) ) {
 		file_put_contents( $path . '/' . $index_name, gzencode( $buffer, 3 ) );
 		touch( $path . '/' . $index_name, $modified_time );
 	} else {
@@ -419,21 +419,21 @@ function powered_cache_page_buffer( $buffer, $flags ) {
 	/**
 	 * Fires after caching a page.
 	 *
-	 * @hook  powered_cache_page_cached
+	 * @hook  swiftpress_page_cached
 	 *
 	 * @param {string} $buffer HTML Output.
 	 *
 	 * @since 1.0
 	 */
-	do_action( 'powered_cache_page_cached', $buffer );
+	do_action( 'swiftpress_page_cached', $buffer );
 
 	header( 'Cache-Control: no-cache' ); // Check back every time to see if re-download is necessary
 
-	header( 'X-Powered-Cache: MISS' );
+	header( 'X-SwiftPress-Cache: MISS' );
 
 	header( 'Last-Modified: ' . gmdate( 'D, d M Y H:i:s', $modified_time ) . ' GMT' );
 
-	if ( function_exists( 'ob_gzhandler' ) && $GLOBALS['powered_cache_options']['gzip_compression'] ) {
+	if ( function_exists( 'ob_gzhandler' ) && $GLOBALS['swiftpress_options']['gzip_compression'] ) {
 		return ob_gzhandler( $buffer, $flags );
 	} else {
 		return $buffer;
@@ -446,10 +446,10 @@ function powered_cache_page_buffer( $buffer, $flags ) {
  *
  * @since 1.0
  */
-function powered_cache_serve_cache() {
-	global $powered_cache_slash_check;
+function swiftpress_serve_cache() {
+	global $swiftpress_slash_check;
 
-	$path = rtrim( $GLOBALS['powered_cache_options']['cache_location'], '/' ) . '/powered-cache/' . rtrim( powered_cache_get_url_path(), '/' ) . '/';
+	$path = rtrim( $GLOBALS['swiftpress_options']['cache_location'], '/' ) . '/swiftpress/' . rtrim( swiftpress_get_url_path(), '/' ) . '/';
 
 	$meta_file = $path . '/meta.php';
 
@@ -468,7 +468,7 @@ function powered_cache_serve_cache() {
 	}
 
 
-	$file_name = powered_cache_index_file( $content_type );
+	$file_name = swiftpress_index_file( $content_type );
 	$file_path = $path . $file_name;
 
 	// check file exists?
@@ -486,16 +486,16 @@ function powered_cache_serve_cache() {
 	}
 
 	// trailingslash check
-	if ( isset( $powered_cache_slash_check ) ) {
+	if ( isset( $swiftpress_slash_check ) ) {
 		$current_path = parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH );
-		if ( $powered_cache_slash_check && ! empty( $current_path ) && '/' !== substr( $current_path, - 1 ) ) {
-			header( 'X-Powered-Cache: Passing to WordPress' );
+		if ( $swiftpress_slash_check && ! empty( $current_path ) && '/' !== substr( $current_path, - 1 ) ) {
+			header( 'X-SwiftPress-Cache: Passing to WordPress' );
 
 			return;
 		}
 
-		if ( ! $powered_cache_slash_check && ! empty( $current_path ) && '/' === substr( $current_path, - 1 ) ) {
-			header( 'X-Powered-Cache: Passing to WordPress' );
+		if ( ! $swiftpress_slash_check && ! empty( $current_path ) && '/' === substr( $current_path, - 1 ) ) {
+			header( 'X-SwiftPress-Cache: Passing to WordPress' );
 
 			return;
 		}
@@ -509,11 +509,11 @@ function powered_cache_serve_cache() {
 			}
 		}
 
-		header( 'X-Powered-Cache: PHP' );
+		header( 'X-SwiftPress-Cache: PHP' );
 		header( 'X-Cache-Enabled: true' );
 		header( sprintf( "age: %d",  time() - filemtime( $file_path ) ) );
 
-		if ( function_exists( 'gzencode' ) && $GLOBALS['powered_cache_options']['gzip_compression'] ) {
+		if ( function_exists( 'gzencode' ) && $GLOBALS['swiftpress_options']['gzip_compression'] ) {
 			header( 'Content-Encoding: gzip' );
 		}
 
@@ -530,7 +530,7 @@ function powered_cache_serve_cache() {
  * @since  1.0
  * @since  2.0 $request_uri without query string
  */
-function powered_cache_get_url_path() {
+function swiftpress_get_url_path() {
 	$host        = ( isset( $_SERVER['HTTP_HOST'] ) ? $_SERVER['HTTP_HOST'] : '' );
 	$request_uri = explode( '?', $_SERVER['REQUEST_URI'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 	$request_uri = reset( $request_uri );
@@ -540,7 +540,7 @@ function powered_cache_get_url_path() {
 	return rtrim( $host, '/' ) . $request_uri;
 }
 
-function powered_cache_get_user_cookie() {
+function swiftpress_get_user_cookie() {
 	if ( empty( $_COOKIE ) ) {
 		return false;
 	}
@@ -564,8 +564,8 @@ function powered_cache_get_user_cookie() {
  * @since 1.2 `$content_type`
  * @since 1.0
  */
-function powered_cache_index_file( $content_type = 'text/html' ) {
-	global $powered_cache_mobile_browsers, $powered_cache_mobile_prefixes, $powered_cache_vary_cookies, $powered_cache_cache_query_strings;
+function swiftpress_index_file( $content_type = 'text/html' ) {
+	global $swiftpress_mobile_browsers, $swiftpress_mobile_prefixes, $swiftpress_vary_cookies, $swiftpress_cache_query_strings;
 
 	$file_name = 'index';
 
@@ -574,9 +574,9 @@ function powered_cache_index_file( $content_type = 'text/html' ) {
 	}
 
 	// separate file for mobile cache
-	if ( ! empty( $GLOBALS['powered_cache_options']['cache_mobile'] ) && ! empty( $GLOBALS['powered_cache_options']['cache_mobile_separate_file'] ) ) {
-		$mobile_browsers = addcslashes( implode( '|', preg_split( '/[\s*,\s*]*,+[\s*,\s*]*/', $powered_cache_mobile_browsers ) ), ' ' );
-		$mobile_prefixes = addcslashes( implode( '|', preg_split( '/[\s*,\s*]*,+[\s*,\s*]*/', $powered_cache_mobile_prefixes ) ), ' ' );
+	if ( ! empty( $GLOBALS['swiftpress_options']['cache_mobile'] ) && ! empty( $GLOBALS['swiftpress_options']['cache_mobile_separate_file'] ) ) {
+		$mobile_browsers = addcslashes( implode( '|', preg_split( '/[\s*,\s*]*,+[\s*,\s*]*/', $swiftpress_mobile_browsers ) ), ' ' );
+		$mobile_prefixes = addcslashes( implode( '|', preg_split( '/[\s*,\s*]*,+[\s*,\s*]*/', $swiftpress_mobile_prefixes ) ), ' ' );
 
 		// Don't cache if mobile detection is activated
 		if ( ( preg_match( '#^.*(' . $mobile_browsers . ').*#i', $_SERVER['HTTP_USER_AGENT'] ) || preg_match( '#^(' . $mobile_prefixes . ').*#i', substr( $_SERVER['HTTP_USER_AGENT'], 0, 4 ) ) ) ) {
@@ -584,8 +584,8 @@ function powered_cache_index_file( $content_type = 'text/html' ) {
 		}
 	}
 
-	if ( ! empty( $GLOBALS['powered_cache_options']['loggedin_user_cache'] ) ) {
-		$usr_cookie = powered_cache_get_user_cookie();
+	if ( ! empty( $GLOBALS['swiftpress_options']['loggedin_user_cache'] ) ) {
+		$usr_cookie = swiftpress_get_user_cookie();
 		if ( false !== $usr_cookie ) {
 			$cookie_info = explode( '|', $usr_cookie );
 
@@ -595,9 +595,9 @@ function powered_cache_index_file( $content_type = 'text/html' ) {
 	}
 
 	// change filename based on vary cookies
-	if ( ! empty( $powered_cache_vary_cookies ) ) {
+	if ( ! empty( $swiftpress_vary_cookies ) ) {
 		$cookie_file_name = '';
-		foreach ( $powered_cache_vary_cookies as $key => $vary_cookie ) {
+		foreach ( $swiftpress_vary_cookies as $key => $vary_cookie ) {
 			if ( is_array( $vary_cookie ) ) {
 				if ( ! empty( $_COOKIE[ $key ] ) ) {
 					foreach ( $vary_cookie as $vary_sub_cookie ) {
@@ -632,8 +632,8 @@ function powered_cache_index_file( $content_type = 'text/html' ) {
 	if ( ! empty( $_SERVER['QUERY_STRING'] ) ) {
 		parse_str( $_SERVER['QUERY_STRING'], $query_string );
 		$qs_variable = '';
-		sort( $powered_cache_cache_query_strings );
-		foreach ( $powered_cache_cache_query_strings as $query_parameter ) {
+		sort( $swiftpress_cache_query_strings );
+		foreach ( $swiftpress_cache_query_strings as $query_parameter ) {
 			if ( isset( $query_string[ $query_parameter ] ) ) {
 				$qs_variable .= '_' . $query_parameter;
 				$qs_variable .= is_array( $query_string[ $query_parameter ] ) ? implode( '|', $query_string[ $query_parameter ] ) : $query_string[ $query_parameter ];
@@ -659,7 +659,7 @@ function powered_cache_index_file( $content_type = 'text/html' ) {
 
 	$file_name .= '.html';
 
-	if ( function_exists( 'gzencode' ) && $GLOBALS['powered_cache_options']['gzip_compression'] ) {
+	if ( function_exists( 'gzencode' ) && $GLOBALS['swiftpress_options']['gzip_compression'] ) {
 		$file_name .= '.gz';
 	}
 
@@ -673,16 +673,16 @@ function powered_cache_index_file( $content_type = 'text/html' ) {
  *
  * @since 2.2
  */
-function powered_cache_add_cache_miss_header( $reason ) {
+function swiftpress_add_cache_miss_header( $reason ) {
 	if ( headers_sent() ) {
 		return;
 	}
 
-	header( 'X-Powered-Cache: MISS' );
+	header( 'X-SwiftPress-Cache: MISS' );
 
-	if ( ( defined( 'POWERED_CACHE_ENABLE_LOG' ) && POWERED_CACHE_ENABLE_LOG )
-	     || ( defined( 'POWERED_CACHE_MISS_REASON' ) && POWERED_CACHE_MISS_REASON )
+	if ( ( defined( 'SWIFTPRESS_ENABLE_LOG' ) && SWIFTPRESS_ENABLE_LOG )
+	     || ( defined( 'SWIFTPRESS_MISS_REASON' ) && SWIFTPRESS_MISS_REASON )
 	) {
-		header( "X-Powered-Cache-Miss-Reason: $reason" );
+		header( "X-SwiftPress-Cache-Miss-Reason: $reason" );
 	}
 }

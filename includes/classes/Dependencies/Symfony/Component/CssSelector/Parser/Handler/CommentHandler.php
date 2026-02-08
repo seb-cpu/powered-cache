@@ -9,10 +9,10 @@
  * file that was distributed with this source code.
  */
 
-namespace PoweredCache\Dependencies\Symfony\Component\CssSelector\Parser\Handler;
+namespace SwiftPress\Dependencies\Symfony\Component\CssSelector\Parser\Handler;
 
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Parser\Reader;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Parser\TokenStream;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Parser\Reader;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Parser\TokenStream;
 
 /**
  * CSS selector comment handler.

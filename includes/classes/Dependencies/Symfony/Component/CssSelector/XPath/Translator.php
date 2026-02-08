@@ -9,14 +9,14 @@
  * file that was distributed with this source code.
  */
 
-namespace PoweredCache\Dependencies\Symfony\Component\CssSelector\XPath;
+namespace SwiftPress\Dependencies\Symfony\Component\CssSelector\XPath;
 
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Exception\ExpressionErrorException;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Node\FunctionNode;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Node\NodeInterface;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Node\SelectorNode;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Parser\Parser;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Parser\ParserInterface;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Exception\ExpressionErrorException;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Node\FunctionNode;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Node\NodeInterface;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Node\SelectorNode;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Parser\Parser;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Parser\ParserInterface;
 
 /**
  * XPath expression translator interface.
@@ -206,7 +206,7 @@ class Translator implements TranslatorInterface
     public function addAttributeMatching(XPathExpr $xpath, string $operator, string $attribute, ?string $value): XPathExpr
     {
         if (!isset($this->attributeMatchingTranslators[$operator])) {
-            throw new ExpressionErrorException(sprintf('Powered_Cache_Attribute matcher operator "%s" not supported.', $operator));
+            throw new ExpressionErrorException(sprintf('SwiftPress_Attribute matcher operator "%s" not supported.', $operator));
         }
 
         return $this->attributeMatchingTranslators[$operator]($xpath, $attribute, $value);

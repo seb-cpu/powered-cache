@@ -2,11 +2,11 @@
 /**
  * Compat with Beaver Builder
  *
- * @package PoweredCache\Compat
+ * @package SwiftPress\Compat
  * @link    https://www.wpbeaverbuilder.com/
  */
 
-namespace PoweredCache\Compat\BeaverBuilder;
+namespace SwiftPress\Compat\BeaverBuilder;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
@@ -18,5 +18,5 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 2.5
  */
 if ( isset( $_GET['fl_builder'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	add_filter( 'powered_cache_fo_disable', '__return_true' );
+	add_filter( 'swiftpress_fo_disable', '__return_true' );
 }

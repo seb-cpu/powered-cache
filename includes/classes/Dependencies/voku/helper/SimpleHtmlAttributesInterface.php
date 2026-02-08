@@ -1,6 +1,6 @@
 <?php
 
-namespace PoweredCache\Dependencies\voku\helper;
+namespace SwiftPress\Dependencies\voku\helper;
 
 /**
  * Represents a set of space-separated attributes of an element attribute.

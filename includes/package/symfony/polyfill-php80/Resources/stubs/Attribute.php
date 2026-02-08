@@ -9,8 +9,8 @@
  * file that was distributed with this source code.
  */
 
-#[Powered_Cache_Attribute(Attribute::TARGET_CLASS)]
-final class Powered_Cache_Attribute
+#[SwiftPress_Attribute(Attribute::TARGET_CLASS)]
+final class SwiftPress_Attribute
 {
     public const TARGET_CLASS = 1;
     public const TARGET_FUNCTION = 2;

@@ -2,21 +2,21 @@
 /**
  * Compat with WooCommerce
  *
- * @package PoweredCache\Compat
+ * @package SwiftPress\Compat
  * @link    https://wordpress.org/plugins/woocommerce/
  * @since   3.0
  */
 
-namespace PoweredCache\Compat\WooCommerce;
+namespace SwiftPress\Compat\WooCommerce;
 
-use PoweredCache\Config;
+use SwiftPress\Config;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
 if ( class_exists( 'WooCommerce' ) ) {
-	add_filter( 'powered_cache_cache_query_strings', __NAMESPACE__ . '\\maybe_add_version_query_string' );
+	add_filter( 'swiftpress_cache_query_strings', __NAMESPACE__ . '\\maybe_add_version_query_string' );
 	add_action( 'woocommerce_settings_saved', __NAMESPACE__ . '\\update_config' );
 }
 
@@ -44,8 +44,8 @@ function maybe_add_version_query_string( $cache_query_strings ) {
  * @since 3.0
  */
 function update_config() {
-	$settings = \PoweredCache\Utils\get_settings();
-	Config::factory()->save_configuration( $settings, POWERED_CACHE_IS_NETWORK );
+	$settings = \SwiftPress\Utils\get_settings();
+	Config::factory()->save_configuration( $settings, SWIFTPRESS_IS_NETWORK );
 }
 
 /**
@@ -55,7 +55,7 @@ function update_config() {
  * @since 3.0
  */
 function activate() {
-	add_filter( 'powered_cache_cache_query_strings', __NAMESPACE__ . '\\maybe_add_version_query_string' );
+	add_filter( 'swiftpress_cache_query_strings', __NAMESPACE__ . '\\maybe_add_version_query_string' );
 	update_config();
 }
 
@@ -66,7 +66,7 @@ function activate() {
  * @since 3.0
  */
 function deactivate() {
-	remove_filter( 'powered_cache_cache_query_strings', __NAMESPACE__ . '\\maybe_add_version_query_string' );
+	remove_filter( 'swiftpress_cache_query_strings', __NAMESPACE__ . '\\maybe_add_version_query_string' );
 	update_config();
 }
 

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace PoweredCache\Dependencies\voku\helper;
+namespace SwiftPress\Dependencies\voku\helper;
 
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\CssSelectorConverter;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\CssSelectorConverter;
 
 class SelectorConverter
 {

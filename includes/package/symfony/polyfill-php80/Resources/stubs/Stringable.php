@@ -10,7 +10,7 @@
  */
 
 if (\PHP_VERSION_ID < 80000) {
-    interface Powered_Cache_Stringable
+    interface SwiftPress_Stringable
     {
         /**
          * @return string

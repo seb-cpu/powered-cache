@@ -10,7 +10,7 @@
  */
 
 if (\PHP_VERSION_ID < 80000 && extension_loaded('tokenizer')) {
-    class Powered_Cache_PhpToken extends Symfony\Polyfill\Php80\Powered_Cache_PhpToken
+    class SwiftPress_PhpToken extends Symfony\Polyfill\Php80\SwiftPress_PhpToken
     {
     }
 }

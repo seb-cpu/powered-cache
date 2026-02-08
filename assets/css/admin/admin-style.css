@@ -1,12 +1,11 @@
 /**
- * PoweredCache - Admin Styles
+ * SwiftPress - Admin Styles
  */
-@import url("@wpmudev/shared-ui/dist/css/shared-ui.css");
 
-#powered-cache-meta-box label {
+#swiftpress-meta-box label {
 	vertical-align: middle;
 }
 
-#powered-cache-meta-box input[type="checkbox"] {
+#swiftpress-meta-box input[type="checkbox"] {
 	margin: unset;
 }

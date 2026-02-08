@@ -2,13 +2,13 @@
 /**
  * Compat with WPS Hide Login
  *
- * @package PoweredCache\Compat
+ * @package SwiftPress\Compat
  * @link    https://wordpress.org/plugins/wps-hide-login/
  */
 
-namespace PoweredCache\Compat\WPSHideLogin;
+namespace SwiftPress\Compat\WPSHideLogin;
 
-use PoweredCache\Config;
+use SwiftPress\Config;
 
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 if ( class_exists( '\WPS\WPS_Hide_Login\Plugin' ) || defined( 'WPS_HIDE_LOGIN_VERSION' ) ) {
-	add_filter( 'powered_cache_rejected_uri_list', __NAMESPACE__ . '\\add_rejected_uri' );
+	add_filter( 'swiftpress_rejected_uri_list', __NAMESPACE__ . '\\add_rejected_uri' );
 }
 
 /**
@@ -44,8 +44,8 @@ function add_rejected_uri( $urls ) {
  * @return void
  */
 function update_config() {
-	$settings = \PoweredCache\Utils\get_settings();
-	Config::factory()->save_configuration( $settings, POWERED_CACHE_IS_NETWORK );
+	$settings = \SwiftPress\Utils\get_settings();
+	Config::factory()->save_configuration( $settings, SWIFTPRESS_IS_NETWORK );
 }
 
 /**
@@ -54,7 +54,7 @@ function update_config() {
  * @return void
  */
 function activate() {
-	add_filter( 'powered_cache_rejected_uri_list', __NAMESPACE__ . '\\add_rejected_uri' );
+	add_filter( 'swiftpress_rejected_uri_list', __NAMESPACE__ . '\\add_rejected_uri' );
 	update_config();
 }
 
@@ -64,7 +64,7 @@ function activate() {
  * @return void
  */
 function deactivate() {
-	remove_filter( 'powered_cache_rejected_uri_list', __NAMESPACE__ . '\\add_rejected_uri' );
+	remove_filter( 'swiftpress_rejected_uri_list', __NAMESPACE__ . '\\add_rejected_uri' );
 	update_config();
 }
 

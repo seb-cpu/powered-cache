@@ -2,18 +2,18 @@
 /**
  * Admin
  *
- * @package PoweredCache
+ * @package SwiftPress
  */
 
-namespace PoweredCache;
+namespace SwiftPress;
 
-use PoweredCache\Async\CachePurger;
-use const PoweredCache\Constants\POST_META_DISABLE_CACHE_KEY;
-use function PoweredCache\Utils\clean_page_cache_dir;
-use function PoweredCache\Utils\clean_site_cache_dir;
-use function PoweredCache\Utils\delete_page_cache;
-use function PoweredCache\Utils\get_post_related_urls;
-use const PoweredCache\Constants\PURGE_CACHE_PLUGIN_NOTICE_TRANSIENT;
+use SwiftPress\Async\CachePurger;
+use const SwiftPress\Constants\POST_META_DISABLE_CACHE_KEY;
+use function SwiftPress\Utils\clean_page_cache_dir;
+use function SwiftPress\Utils\clean_site_cache_dir;
+use function SwiftPress\Utils\delete_page_cache;
+use function SwiftPress\Utils\get_post_related_urls;
+use const SwiftPress\Constants\PURGE_CACHE_PLUGIN_NOTICE_TRANSIENT;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Class Admin
  *
- * @package PoweredCache
+ * @package SwiftPress
  */
 class AdvancedCache {
 
@@ -65,7 +65,7 @@ class AdvancedCache {
 	 * @since 1.0
 	 */
 	public function setup() {
-		$this->settings = \PoweredCache\Utils\get_settings();
+		$this->settings = \SwiftPress\Utils\get_settings();
 
 		if ( ! $this->settings['enable_page_cache'] ) {
 			return;
@@ -74,16 +74,16 @@ class AdvancedCache {
 		$this->cache_purger = CachePurger::factory();
 
 		add_action( 'admin_bar_menu', array( $this, 'admin_bar_menu' ) );
-		add_action( 'admin_post_powered_cache_purge_page_cache', array( $this, 'purge_page_cache' ) );
-		add_action( 'admin_post_powered_cache_purge_page_cache_network', array( $this, 'purge_page_cache_network_wide' ) );
+		add_action( 'admin_post_swiftpress_purge_page_cache', array( $this, 'purge_page_cache' ) );
+		add_action( 'admin_post_swiftpress_purge_page_cache_network', array( $this, 'purge_page_cache_network_wide' ) );
 		add_action( 'transition_post_status', array( $this, 'purge_on_post_update' ), 9999, 3 );
 		add_action( 'switch_theme', array( $this, 'purge_on_switch_theme' ) );
 		add_action( 'wp_set_comment_status', array( $this, 'purge_post_on_comment_update' ) );
 		add_action( 'edit_comment', array( $this, 'purge_post_on_comment_update' ) );
 		add_action( 'set_comment_cookies', array( $this, 'set_comment_cookie' ), 10, 2 );
-		add_filter( 'powered_cache_post_related_urls', array( $this, 'powered_cache_post_related_urls' ) );
-		add_filter( 'powered_cache_page_cache_enable', array( $this, 'maybe_caching_disabled' ) );
-		add_filter( 'powered_cache_mod_rewrite', array( $this, 'maybe_disable_mod_rewrite' ), 99 );
+		add_filter( 'swiftpress_post_related_urls', array( $this, 'swiftpress_post_related_urls' ) );
+		add_filter( 'swiftpress_page_cache_enable', array( $this, 'maybe_caching_disabled' ) );
+		add_filter( 'swiftpress_mod_rewrite', array( $this, 'maybe_disable_mod_rewrite' ), 99 );
 		add_action( 'wp_update_site', array( $this, 'purge_on_site_update' ), 10, 2 );
 		add_action( 'create_term', array( $this, 'purge_on_term_change' ), 10, 3 );
 		add_action( 'edit_term', array( $this, 'purge_on_term_change' ), 10, 3 );
@@ -98,13 +98,13 @@ class AdvancedCache {
 	 * @since 1.0
 	 */
 	public function admin_bar_menu( $wp_admin_bar ) {
-		if ( POWERED_CACHE_IS_NETWORK && current_user_can( 'manage_network' ) ) {
+		if ( SWIFTPRESS_IS_NETWORK && current_user_can( 'manage_network' ) ) {
 			$wp_admin_bar->add_menu(
 				array(
 					'id'     => 'advanced-cache-purge-network',
-					'title'  => __( 'Purge Page Cache [Network Wide - All Sites]', 'powered-cache' ),
-					'href'   => wp_nonce_url( admin_url( 'admin-post.php?action=powered_cache_purge_page_cache_network' ), 'powered_cache_purge_page_cache_network' ),
-					'parent' => 'powered-cache',
+					'title'  => __( 'Purge Page Cache [Network Wide - All Sites]', 'swiftpress' ),
+					'href'   => wp_nonce_url( admin_url( 'admin-post.php?action=swiftpress_purge_page_cache_network' ), 'swiftpress_purge_page_cache_network' ),
+					'parent' => 'swiftpress',
 				)
 			);
 		}
@@ -113,9 +113,9 @@ class AdvancedCache {
 			$wp_admin_bar->add_menu(
 				array(
 					'id'     => 'advanced-cache-purge',
-					'title'  => __( 'Purge Page Cache', 'powered-cache' ),
-					'href'   => wp_nonce_url( admin_url( 'admin-post.php?action=powered_cache_purge_page_cache' ), 'powered_cache_purge_page_cache' ),
-					'parent' => 'powered-cache',
+					'title'  => __( 'Purge Page Cache', 'swiftpress' ),
+					'href'   => wp_nonce_url( admin_url( 'admin-post.php?action=swiftpress_purge_page_cache' ), 'swiftpress_purge_page_cache' ),
+					'parent' => 'swiftpress',
 				)
 			);
 
@@ -123,9 +123,9 @@ class AdvancedCache {
 				$wp_admin_bar->add_menu(
 					array(
 						'id'     => 'advanced-cache-current-page-purge',
-						'title'  => esc_html__( 'Purge Current Page', 'powered-cache' ),
-						'href'   => wp_nonce_url( admin_url( sprintf( 'admin-post.php?action=powered_cache_purge_page_cache&type=current-page&post=%d', get_the_ID() ) ), 'powered_cache_purge_page_cache' ),
-						'parent' => 'powered-cache',
+						'title'  => esc_html__( 'Purge Current Page', 'swiftpress' ),
+						'href'   => wp_nonce_url( admin_url( sprintf( 'admin-post.php?action=swiftpress_purge_page_cache&type=current-page&post=%d', get_the_ID() ) ), 'swiftpress_purge_page_cache' ),
+						'parent' => 'swiftpress',
 					)
 				);
 			}
@@ -139,7 +139,7 @@ class AdvancedCache {
 	 * @since 2.0
 	 */
 	public function purge_page_cache_network_wide() {
-		if ( ! wp_verify_nonce( $_GET['_wpnonce'], 'powered_cache_purge_page_cache_network' ) ) { // phpcs:ignore
+		if ( ! wp_verify_nonce( $_GET['_wpnonce'], 'swiftpress_purge_page_cache_network' ) ) { // phpcs:ignore
 			wp_nonce_ays( '' );
 		}
 
@@ -150,9 +150,9 @@ class AdvancedCache {
 			} else {
 				clean_page_cache_dir();
 			}
-			$redirect_url = add_query_arg( 'pc_action', 'flush_page_cache_network', wp_get_referer() );
+			$redirect_url = add_query_arg( 'sp_action', 'flush_page_cache_network', wp_get_referer() );
 		} else {
-			$redirect_url = add_query_arg( 'pc_action', 'flush_page_cache_network_err_permission', wp_get_referer() );
+			$redirect_url = add_query_arg( 'sp_action', 'flush_page_cache_network_err_permission', wp_get_referer() );
 		}
 
 		delete_site_transient( PURGE_CACHE_PLUGIN_NOTICE_TRANSIENT );
@@ -168,7 +168,7 @@ class AdvancedCache {
 	 * @since 1.1 clean site dir instead of root page caching dir
 	 */
 	public function purge_page_cache() {
-		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'powered_cache_purge_page_cache' ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'swiftpress_purge_page_cache' ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated
 			wp_nonce_ays( '' );
 		}
 
@@ -182,9 +182,9 @@ class AdvancedCache {
 				clean_site_cache_dir();
 			}
 
-			$redirect_url = add_query_arg( 'pc_action', 'flush_page_cache', wp_get_referer() );
+			$redirect_url = add_query_arg( 'sp_action', 'flush_page_cache', wp_get_referer() );
 		} else {
-			$redirect_url = add_query_arg( 'pc_action', 'flush_page_cache_err_permission', wp_get_referer() );
+			$redirect_url = add_query_arg( 'sp_action', 'flush_page_cache_err_permission', wp_get_referer() );
 		}
 
 		delete_transient( PURGE_CACHE_PLUGIN_NOTICE_TRANSIENT );
@@ -242,7 +242,7 @@ class AdvancedCache {
 		/**
 		 * Page cache purge urls.
 		 *
-		 * @hook   powered_cache_advanced_cache_purge_urls
+		 * @hook   swiftpress_advanced_cache_purge_urls
 		 *
 		 * @param  {array} $urls The list of URLs that will purged
 		 * @param  {int} $post_id Post ID.
@@ -250,7 +250,7 @@ class AdvancedCache {
 		 * @return {array} New value
 		 * @since  1.0
 		 */
-		$urls         = apply_filters( 'powered_cache_advanced_cache_purge_urls', $urls, $post_id );
+		$urls         = apply_filters( 'swiftpress_advanced_cache_purge_urls', $urls, $post_id );
 		$deleted_urls = [];
 
 		if ( $this->settings['async_cache_cleaning'] ) {
@@ -273,7 +273,7 @@ class AdvancedCache {
 		/**
 		 * Fires after purging cache on post update.
 		 *
-		 * @hook  powered_cache_advanced_cache_purge_post
+		 * @hook  swiftpress_advanced_cache_purge_post
 		 *
 		 * @param {int} $post_id The Post ID.
 		 * @param {array} $deleted_urls The list of purged urls with the updated post.
@@ -281,7 +281,7 @@ class AdvancedCache {
 		 *
 		 * @since 1.0
 		 */
-		do_action( 'powered_cache_advanced_cache_purge_post', $post_id, $deleted_urls, $urls );
+		do_action( 'swiftpress_advanced_cache_purge_post', $post_id, $deleted_urls, $urls );
 	}
 
 	/**
@@ -301,7 +301,7 @@ class AdvancedCache {
 		$post_id  = $comment->comment_post_ID;
 		$post_url = get_permalink( $post_id );
 
-		do_action( 'powered_cache_advanced_cache_purge_on_comment_update', $post_id, $post_url, $comment_id );
+		do_action( 'swiftpress_advanced_cache_purge_on_comment_update', $post_id, $post_url, $comment_id );
 	}
 
 	/**
@@ -320,7 +320,7 @@ class AdvancedCache {
 		/**
 		 * Fires after purging cache for a post that associated a comment
 		 *
-		 * @hook  powered_cache_advanced_cache_purge_on_comment_update
+		 * @hook  swiftpress_advanced_cache_purge_on_comment_update
 		 *
 		 * @param {int} $post_id Post ID.
 		 * @param {string} $post_url Post permalink.
@@ -328,7 +328,7 @@ class AdvancedCache {
 		 *
 		 * @since 3.4.4
 		 */
-		do_action( 'powered_cache_advanced_cache_purge_on_comment_update', $post_id, $post_url, $comment_id );
+		do_action( 'swiftpress_advanced_cache_purge_on_comment_update', $post_id, $post_url, $comment_id );
 	}
 
 	/**
@@ -378,7 +378,7 @@ class AdvancedCache {
 	public function set_comment_cookie( $comment, $user ) {
 		$post_id = $comment->comment_post_ID;
 		$path    = wp_parse_url( get_permalink( $post_id ), PHP_URL_PATH );
-		setcookie( 'powered_cache_commented_posts[' . $post_id . ']', $path, ( time() + DAY_IN_SECONDS * 30 ), $path );
+		setcookie( 'swiftpress_commented_posts[' . $post_id . ']', $path, ( time() + DAY_IN_SECONDS * 30 ), $path );
 	}
 
 
@@ -390,8 +390,8 @@ class AdvancedCache {
 	 * @return array urls
 	 * @since 1.1
 	 */
-	public function powered_cache_post_related_urls( $urls ) {
-		$settings = \PoweredCache\Utils\get_settings();
+	public function swiftpress_post_related_urls( $urls ) {
+		$settings = \SwiftPress\Utils\get_settings();
 
 		$additional_pages = $settings['purge_additional_pages'];
 
@@ -421,7 +421,7 @@ class AdvancedCache {
 	 * @since 2.0
 	 */
 	public static function get_rejected_cookies() {
-		$settings = \PoweredCache\Utils\get_settings();
+		$settings = \SwiftPress\Utils\get_settings();
 		$cookies  = [];
 
 		if ( ! empty( $settings['rejected_cookies'] ) ) {
@@ -434,7 +434,7 @@ class AdvancedCache {
 			'wordpresspass_',
 			'wordpress_sec_',
 			'wordpress_logged_in_',
-			'powered_cache_commented_posts',
+			'swiftpress_commented_posts',
 			'comment_author_',
 			'comment_author_email_',
 			'comment_author_url_',
@@ -447,14 +447,14 @@ class AdvancedCache {
 		/**
 		 * Filter rejected cookie list.
 		 *
-		 * @hook   powered_cache_rejected_cookies
+		 * @hook   swiftpress_rejected_cookies
 		 *
 		 * @param  {array} $wp_cookies The rejected cookie list from the caching.
 		 *
 		 * @return {array} Rejected cookie list
 		 * @since  2.0
 		 */
-		return apply_filters( 'powered_cache_rejected_cookies', $wp_cookies );
+		return apply_filters( 'swiftpress_rejected_cookies', $wp_cookies );
 	}
 
 	/**
@@ -464,7 +464,7 @@ class AdvancedCache {
 	 * @since 2.0
 	 */
 	public static function get_vary_cookies() {
-		$settings = \PoweredCache\Utils\get_settings();
+		$settings = \SwiftPress\Utils\get_settings();
 		$cookies  = [];
 
 		if ( ! empty( $settings['vary_cookies'] ) ) {
@@ -474,14 +474,14 @@ class AdvancedCache {
 		/**
 		 * Filter vary cookie list.
 		 *
-		 * @hook   powered_cache_vary_cookies
+		 * @hook   swiftpress_vary_cookies
 		 *
 		 * @param  {array} $cookies The varied cookie list, which allows to create separate cache based on the match.
 		 *
 		 * @return {array} Vary cookie list
 		 * @since  2.0
 		 */
-		return apply_filters( 'powered_cache_vary_cookies', $cookies );
+		return apply_filters( 'swiftpress_vary_cookies', $cookies );
 	}
 
 	/**
@@ -491,7 +491,7 @@ class AdvancedCache {
 	 * @since 3.6
 	 */
 	public static function get_rejected_referrers() {
-		$settings           = \PoweredCache\Utils\get_settings();
+		$settings           = \SwiftPress\Utils\get_settings();
 		$rejected_referrers = [];
 
 		if ( ! empty( $settings['rejected_referrers'] ) ) {
@@ -501,14 +501,14 @@ class AdvancedCache {
 		/**
 		 * Filter rejected referrer list.
 		 *
-		 * @hook   powered_cache_rejected_referrers
+		 * @hook   swiftpress_rejected_referrers
 		 *
 		 * @param  {array} $rejected_referrers The referrer that will not see the cached page.
 		 *
 		 * @return {array} Rejected referrer list.
 		 * @since  3.6
 		 */
-		return apply_filters( 'powered_cache_rejected_referrers', $rejected_referrers );
+		return apply_filters( 'swiftpress_rejected_referrers', $rejected_referrers );
 	}
 
 	/**
@@ -518,7 +518,7 @@ class AdvancedCache {
 	 * @since 2.0
 	 */
 	public static function get_rejected_user_agents() {
-		$settings             = \PoweredCache\Utils\get_settings();
+		$settings             = \SwiftPress\Utils\get_settings();
 		$rejected_user_agents = [];
 
 		if ( ! empty( $settings['rejected_user_agents'] ) ) {
@@ -530,14 +530,14 @@ class AdvancedCache {
 		/**
 		 * Filter rejected user agent list.
 		 *
-		 * @hook   powered_cache_rejected_user_agents
+		 * @hook   swiftpress_rejected_user_agents
 		 *
 		 * @param  {array} $rejected_user_agents The user agents that will not see the cached page.
 		 *
 		 * @return {array} Rejected user agent list.
 		 * @since  2.0
 		 */
-		return apply_filters( 'powered_cache_rejected_user_agents', $rejected_user_agents );
+		return apply_filters( 'swiftpress_rejected_user_agents', $rejected_user_agents );
 	}
 
 	/**
@@ -547,7 +547,7 @@ class AdvancedCache {
 	 * @since 2.0
 	 */
 	public static function get_rejected_uri() {
-		$settings          = \PoweredCache\Utils\get_settings();
+		$settings          = \SwiftPress\Utils\get_settings();
 		$rejected_uri_list = [];
 
 		if ( ! empty( $settings['rejected_uri'] ) ) {
@@ -557,14 +557,14 @@ class AdvancedCache {
 		/**
 		 * Filter rejected uri list
 		 *
-		 * @hook   powered_cache_rejected_uri_list
+		 * @hook   swiftpress_rejected_uri_list
 		 *
 		 * @param  {array} $rejected_uri_list The list of rejected uri that never get cached.
 		 *
 		 * @return {array} New value
 		 * @since  2.0
 		 */
-		return apply_filters( 'powered_cache_rejected_uri_list', $rejected_uri_list );
+		return apply_filters( 'swiftpress_rejected_uri_list', $rejected_uri_list );
 	}
 
 
@@ -575,7 +575,7 @@ class AdvancedCache {
 	 * @since 3.0
 	 */
 	public static function get_cache_query_string() {
-		$settings            = \PoweredCache\Utils\get_settings();
+		$settings            = \SwiftPress\Utils\get_settings();
 		$cache_query_strings = [];
 
 		if ( ! empty( $settings['cache_query_strings'] ) ) {
@@ -593,14 +593,14 @@ class AdvancedCache {
 		/**
 		 * Filter accepted query strings.
 		 *
-		 * @hook   powered_cache_cache_query_strings
+		 * @hook   swiftpress_cache_query_strings
 		 *
 		 * @param  {array} $query_strings The list of query strings that will be cached based on their value
 		 *
 		 * @return {array} New value
 		 * @since  3.0
 		 */
-		return apply_filters( 'powered_cache_cache_query_strings', $cache_query_strings );
+		return apply_filters( 'swiftpress_cache_query_strings', $cache_query_strings );
 	}
 
 	/**
@@ -611,7 +611,7 @@ class AdvancedCache {
 	 * @deprecated Use `self::get_ignored_query_strings` instead
 	 */
 	public static function get_accepted_query_strings() {
-		_deprecated_function( '\PoweredCache\AdvancedCache::get_accepted_query_strings', '3.0', '\PoweredCache\AdvancedCache::get_ignored_query_strings' );
+		_deprecated_function( '\SwiftPress\AdvancedCache::get_accepted_query_strings', '3.0', '\SwiftPress\AdvancedCache::get_ignored_query_strings' );
 
 		return self::get_ignored_query_strings();
 	}
@@ -623,7 +623,7 @@ class AdvancedCache {
 	 * @since 3.0
 	 */
 	public static function get_ignored_query_strings() {
-		$settings              = \PoweredCache\Utils\get_settings();
+		$settings              = \SwiftPress\Utils\get_settings();
 		$ignored_query_strings = [];
 
 		if ( ! empty( $settings['ignored_query_strings'] ) ) {
@@ -662,7 +662,7 @@ class AdvancedCache {
 		/**
 		 * Filters ignored query strings.
 		 *
-		 * @hook        powered_cache_accepted_query_strings
+		 * @hook        swiftpress_accepted_query_strings
 		 *
 		 * @param       {array} $query_strings The list of query strings will be ignored during the caching
 		 *
@@ -670,19 +670,19 @@ class AdvancedCache {
 		 * @since       2.0
 		 * @depreacated since 3.0
 		 */
-		$query_strings = apply_filters( 'powered_cache_accepted_query_strings', $query_strings );
+		$query_strings = apply_filters( 'swiftpress_accepted_query_strings', $query_strings );
 
 		/**
 		 * Filters ignored query strings.
 		 *
-		 * @hook   powered_cache_ignored_query_strings
+		 * @hook   swiftpress_ignored_query_strings
 		 *
 		 * @param  {array} $query_strings The list of query strings will be ignored during the caching
 		 *
 		 * @return {array} New value
 		 * @since  3.0
 		 */
-		$query_strings = apply_filters( 'powered_cache_ignored_query_strings', $query_strings );
+		$query_strings = apply_filters( 'swiftpress_ignored_query_strings', $query_strings );
 
 		return $query_strings;
 	}

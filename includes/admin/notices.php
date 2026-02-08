@@ -2,17 +2,14 @@
 /**
  * Admin Notices
  *
- * @package PoweredCache
+ * @package SwiftPress
  */
 
-namespace PoweredCache\Admin\Notices;
+namespace SwiftPress\Admin\Notices;
 
-use function PoweredCache\Utils\can_configure_htaccess;
-use function PoweredCache\Utils\can_configure_object_cache;
-use function PoweredCache\Utils\can_control_all_settings;
-use function PoweredCache\Utils\get_object_cache_dropins;
-use function PoweredCache\Utils\is_premium;
-use const PoweredCache\Constants\PURGE_CACHE_PLUGIN_NOTICE_TRANSIENT;
+use function SwiftPress\Utils\can_configure_htaccess;
+use function SwiftPress\Utils\can_control_all_settings;
+use const SwiftPress\Constants\PURGE_CACHE_PLUGIN_NOTICE_TRANSIENT;
 
 /**
  * Default setup routine
@@ -20,17 +17,15 @@ use const PoweredCache\Constants\PURGE_CACHE_PLUGIN_NOTICE_TRANSIENT;
  * @return void
  */
 function setup() {
-	if ( POWERED_CACHE_IS_NETWORK ) {
+	if ( SWIFTPRESS_IS_NETWORK ) {
 		add_action( 'network_admin_notices', __NAMESPACE__ . '\\maybe_display_plugin_compatibility_notices' );
 		add_action( 'network_admin_notices', __NAMESPACE__ . '\\maybe_display_advanced_cache_notices' );
-		add_action( 'network_admin_notices', __NAMESPACE__ . '\\maybe_display_object_cache_notices' );
 		add_action( 'network_admin_notices', __NAMESPACE__ . '\\maybe_display_htaccess_notice' );
 		add_action( 'network_admin_notices', __NAMESPACE__ . '\\maybe_display_purge_cache_plugin_notice' );
 		add_action( 'network_admin_notices', __NAMESPACE__ . '\\maybe_display_dev_mode_notice' );
 	} else {
 		add_action( 'admin_notices', __NAMESPACE__ . '\\maybe_display_plugin_compatibility_notices' );
 		add_action( 'admin_notices', __NAMESPACE__ . '\\maybe_display_advanced_cache_notices' );
-		add_action( 'admin_notices', __NAMESPACE__ . '\\maybe_display_object_cache_notices' );
 		add_action( 'admin_notices', __NAMESPACE__ . '\\maybe_display_htaccess_notice' );
 		add_action( 'admin_notices', __NAMESPACE__ . '\\maybe_display_purge_cache_plugin_notice' );
 		add_action( 'admin_notices', __NAMESPACE__ . '\\maybe_display_dev_mode_notice' );
@@ -38,8 +33,8 @@ function setup() {
 
 	add_action( 'activated_plugin', __NAMESPACE__ . '\\observe_plugin_changes', 10, 2 );
 	add_action( 'deactivated_plugin', __NAMESPACE__ . '\\observe_plugin_changes', 10, 2 );
-	add_action( 'admin_post_powered_cache_dismiss_notice', __NAMESPACE__ . '\\dismiss_notice' );
-	add_action( 'wp_ajax_powered_cache_dismiss_notice_ajax', __NAMESPACE__ . '\\dismiss_notice_ajax' );
+	add_action( 'admin_post_swiftpress_dismiss_notice', __NAMESPACE__ . '\\dismiss_notice' );
+	add_action( 'wp_ajax_swiftpress_dismiss_notice_ajax', __NAMESPACE__ . '\\dismiss_notice_ajax' );
 }
 
 /**
@@ -48,7 +43,7 @@ function setup() {
  * @since 1.0
  */
 function maybe_display_plugin_compatibility_notices() {
-	$settings = \PoweredCache\Utils\get_settings();
+	$settings = \SwiftPress\Utils\get_settings();
 
 	$plugins = array(
 		'hummingbird-performance'           => 'hummingbird-performance/wp-hummingbird.php',
@@ -72,13 +67,13 @@ function maybe_display_plugin_compatibility_notices() {
 		'wp-optimize'                       => 'wp-optimize/wp-optimize.php',
 	);
 
-	if ( $settings['prefetch_links'] && is_premium() ) {
+	if ( $settings['prefetch_links'] ) {
 		$plugins['quicklink']    = 'quicklink/quicklink.php';
 		$plugins['flying-pages'] = 'flying-pages/flying-pages.php';
 		$plugins['instant-page'] = 'instant-page/instantpage.php';
 	}
 
-	$callback = POWERED_CACHE_IS_NETWORK ? 'is_plugin_active_for_network' : 'is_plugin_active';
+	$callback = SWIFTPRESS_IS_NETWORK ? 'is_plugin_active_for_network' : 'is_plugin_active';
 
 	$plugins = array_filter( $plugins, $callback );
 
@@ -89,12 +84,12 @@ function maybe_display_plugin_compatibility_notices() {
 
 	<?php if ( current_user_can( 'activate_plugins' ) ) : ?>
 		<div class="error">
-			<p><?php esc_html_e( 'The following plugins are not compatible with Powered Cache and may cause unintended results:', 'powered-cache' ); ?></p>
+			<p><?php esc_html_e( 'The following plugins are not compatible with SwiftPress and may cause unintended results:', 'swiftpress' ); ?></p>
 			<ul class="incompatible-plugin-list">
 				<?php
 				foreach ( $plugins as $plugin ) {
 					$plugin_data = get_plugin_data( WP_PLUGIN_DIR . DIRECTORY_SEPARATOR . $plugin );
-					echo '<li>' . esc_attr( $plugin_data['Name'] ) . '</span> <a href="' . esc_url_raw( wp_nonce_url( admin_url( 'admin-post.php?action=deactivate_plugin&plugin=' . rawurlencode( $plugin ) ), 'deactivate_plugin' ) ) . '" class="button-secondary">' . esc_html__( 'Deactivate', 'powered-cache' ) . '</a></li>'; // phpcs:ignore WordPressVIPMinimum.Security.ProperEscapingFunction.notAttrEscAttr
+					echo '<li>' . esc_attr( $plugin_data['Name'] ) . '</span> <a href="' . esc_url_raw( wp_nonce_url( admin_url( 'admin-post.php?action=deactivate_plugin&plugin=' . rawurlencode( $plugin ) ), 'deactivate_plugin' ) ) . '" class="button-secondary">' . esc_html__( 'Deactivate', 'swiftpress' ) . '</a></li>'; // phpcs:ignore WordPressVIPMinimum.Security.ProperEscapingFunction.notAttrEscAttr
 				}
 				?>
 			</ul>
@@ -115,25 +110,25 @@ function maybe_display_advanced_cache_notices() {
 	 * Determine whether show or not show advanced cache related notices
 	 * eg: Varnish users don't need to turning on page cache.
 	 *
-	 * @hook   powered_cache_disable_advanced_cache_notices
+	 * @hook   swiftpress_disable_advanced_cache_notices
 	 *
 	 * @param  {boolean} $status false
 	 *
 	 * @return {boolean} New value
 	 * @since  1.2
 	 */
-	if ( apply_filters( 'powered_cache_disable_advanced_cache_notices', false ) ) {
+	if ( apply_filters( 'swiftpress_disable_advanced_cache_notices', false ) ) {
 		return;
 	}
 
-	$settings = \PoweredCache\Utils\get_settings();
+	$settings = \SwiftPress\Utils\get_settings();
 
 	if ( ! $settings['enable_page_cache'] ) {
 
-		$settings_page = POWERED_CACHE_IS_NETWORK ? network_admin_url( 'admin.php?page=powered-cache#basic-options' ) : admin_url( 'admin.php?page=powered-cache#basic-options' );
+		$settings_page = SWIFTPRESS_IS_NETWORK ? network_admin_url( 'admin.php?page=swiftpress#basic-options' ) : admin_url( 'admin.php?page=swiftpress#basic-options' );
 
-		/* translators: %s: Powered Cache settings page URL */
-		$message = sprintf( __( '<strong>Powered Cache:</strong> Page caching needs to be activated in order to speed up your website. Please activate it on <a href="%s">settings page</a>', 'powered-cache' ), esc_url( $settings_page ) );
+		/* translators: %s: SwiftPress settings page URL */
+		$message = sprintf( __( '<strong>SwiftPress:</strong> Page caching needs to be activated in order to speed up your website. Please activate it on <a href="%s">settings page</a>', 'swiftpress' ), esc_url( $settings_page ) );
 		?>
 		<div class="notice notice-warning">
 			<p>
@@ -162,17 +157,17 @@ function maybe_display_advanced_cache_notices() {
 
 	if ( ! defined( 'WP_CACHE' ) || true !== WP_CACHE ) {
 		/* translators: %s: WP_CACHE definition*/
-		$err['wp_cache'] = sprintf( __( '<code>%s</code> is not found in wp-config.php.', 'powered-cache' ), 'define("WP_CACHE", true);' );
+		$err['wp_cache'] = sprintf( __( '<code>%s</code> is not found in wp-config.php.', 'swiftpress' ), 'define("WP_CACHE", true);' );
 	}
 
-	if ( defined( 'WP_CACHE' ) && WP_CACHE && ( ! defined( 'POWERED_CACHE_PAGE_CACHING' ) || true !== POWERED_CACHE_PAGE_CACHING ) ) {
+	if ( defined( 'WP_CACHE' ) && WP_CACHE && ( ! defined( 'SWIFTPRESS_PAGE_CACHING' ) || true !== SWIFTPRESS_PAGE_CACHING ) ) {
 		/* translators: %s: advanced-cache.php drop-in path */
-		$err['powered_cache_page_cache'] = sprintf( __( '<code>%s</code> file was edited or deleted. You can recreate the correct configuration files by saving Powered Cache settings.', 'powered-cache' ), basename( WP_CONTENT_DIR ) . '/advanced-cache.php' );
+		$err['swiftpress_page_cache'] = sprintf( __( '<code>%s</code> file was edited or deleted. You can recreate the correct configuration files by saving SwiftPress settings.', 'swiftpress' ), basename( WP_CONTENT_DIR ) . '/advanced-cache.php' );
 	}
 
-	if ( defined( 'POWERED_CACHE_PAGE_CACHING_HAS_PROBLEM' ) && POWERED_CACHE_PAGE_CACHING_HAS_PROBLEM ) {
+	if ( defined( 'SWIFTPRESS_PAGE_CACHING_HAS_PROBLEM' ) && SWIFTPRESS_PAGE_CACHING_HAS_PROBLEM ) {
 		/* translators: %s: page-cache.php drop-in path */
-		$err['powered_cache_page_cache_has_problem'] = sprintf( __( 'Powered Cache could not access dropin. Please check <code>%s</code> exist and accessible on your server.', 'powered-cache' ), POWERED_CACHE_DROPIN_DIR . 'page-cache.php' );
+		$err['swiftpress_page_cache_has_problem'] = sprintf( __( 'SwiftPress could not access dropin. Please check <code>%s</code> exist and accessible on your server.', 'swiftpress' ), SWIFTPRESS_DROPIN_DIR . 'page-cache.php' );
 	}
 
 	// everything ok
@@ -181,11 +176,11 @@ function maybe_display_advanced_cache_notices() {
 	}
 
 	// dont show when settings just saved
-	if ( did_action( 'powered_cache_settings_saved' ) ) {
+	if ( did_action( 'swiftpress_settings_saved' ) ) {
 		return;
 	}
 
-	$capability = POWERED_CACHE_IS_NETWORK ? 'manage_network' : 'manage_options';
+	$capability = SWIFTPRESS_IS_NETWORK ? 'manage_network' : 'manage_options';
 
 	if ( ! current_user_can( $capability ) ) {
 		return;
@@ -193,7 +188,7 @@ function maybe_display_advanced_cache_notices() {
 	?>
 	<div class="error">
 		<p>
-			<strong><?php esc_html_e( 'Page Cache is not working, because:', 'powered-cache' ); ?></strong>
+			<strong><?php esc_html_e( 'Page Cache is not working, because:', 'swiftpress' ); ?></strong>
 		</p>
 		<?php foreach ( $err as $error_msg ) : ?>
 			<p><?php echo wp_kses_post( $error_msg ); ?></p>
@@ -204,66 +199,6 @@ function maybe_display_advanced_cache_notices() {
 }
 
 
-/**
- * Display object cache broken msg
- *
- * @since 1.0
- */
-function maybe_display_object_cache_notices() {
-	$settings = \PoweredCache\Utils\get_settings();
-
-	$object_cache_backends = get_object_cache_dropins();
-	$object_cache_driver   = $settings['object_cache'];
-	$object_cache_dropin   = untrailingslashit( WP_CONTENT_DIR ) . '/object-cache.php';
-
-	if ( ! can_configure_object_cache() ) {
-		return;
-	}
-
-	// dont show when settings just saved
-	if ( did_action( 'powered_cache_settings_saved' ) ) {
-		return;
-	}
-
-	if ( file_exists( $object_cache_dropin ) ) {
-		$modify_time = filemtime( $object_cache_dropin );
-		if ( time() - absint( $modify_time ) < 10 ) { // just created
-			return;
-		}
-	}
-
-	// first check object cache file exist
-	if ( isset( $object_cache_backends[ $object_cache_driver ] ) && ! file_exists( $object_cache_dropin ) ) {
-		/* translators: %s: object cache dropin path */
-		$message = sprintf( __( 'The object cache file seems missing. Please check <code>%s</code> exist, writable and accessible on your server.', 'powered-cache' ), $object_cache_dropin );
-		?>
-		<div class="error">
-			<p><strong><?php esc_html_e( 'Powered Cache:', 'powered-cache' ); ?></strong>
-				<?php echo wp_kses_post( $message ); ?>
-			</p>
-		</div>
-		<?php
-		return;
-	}
-
-	if ( defined( 'POWERED_OBJECT_CACHE_HAS_PROBLEM' ) && POWERED_OBJECT_CACHE_HAS_PROBLEM ) {
-		$broken_file = '';
-
-		if ( isset( $object_cache_backends[ $object_cache_driver ] ) ) {
-			$broken_file = $object_cache_backends[ $object_cache_driver ];
-		}
-		/* translators: %s: object cache dropin path */
-		$message = sprintf( __( 'The object cache file couldn\'t be loaded. Please check <code>%s</code> exist and accessible on your server.', 'powered-cache' ), $broken_file );
-		?>
-		<div class="error">
-			<p><strong><?php esc_html_e( 'Powered Cache:', 'powered-cache' ); ?></strong>
-				<?php echo wp_kses_post( $message ); ?>
-			</p>
-		</div>
-		<?php
-	}
-
-}
 
 /**
  * Notices for the .htaccess
@@ -277,7 +212,7 @@ function maybe_display_htaccess_notice() {
 		return;
 	}
 
-	$settings = \PoweredCache\Utils\get_settings();
+	$settings = \SwiftPress\Utils\get_settings();
 
 	if ( ! $settings['auto_configure_htaccess'] ) {
 		return;
@@ -288,7 +223,7 @@ function maybe_display_htaccess_notice() {
 	}
 
 	// dont show when settings just saved
-	if ( did_action( 'powered_cache_settings_saved' ) ) {
+	if ( did_action( 'swiftpress_settings_saved' ) ) {
 		return;
 	}
 
@@ -304,9 +239,9 @@ function maybe_display_htaccess_notice() {
 	$message = '';
 
 	if ( ! file_exists( $htaccess_file ) ) {
-		$message = __( 'The <code>.htaccess</code> couldn\'t be found on your server. Please create a new <code>.htaccess</code> file. (<a href="https://wordpress.org/support/article/htaccess/" target="_blank" rel="noopener">?</a>)', 'powered-cache' );
+		$message = __( 'The <code>.htaccess</code> couldn\'t be found on your server. Please create a new <code>.htaccess</code> file. (<a href="https://wordpress.org/support/article/htaccess/" target="_blank" rel="noopener">?</a>)', 'swiftpress' );
 	} elseif ( ! is_writeable( $htaccess_file ) ) {
-		$message = __( 'Oh no! It looks <code>.htaccess</code> file is not writable. Please make sure it is writable by the application server. Your website will be much faster when .htaccess is configured for Powered Cache.', 'powered-cache' );
+		$message = __( 'Oh no! It looks <code>.htaccess</code> file is not writable. Please make sure it is writable by the application server. Your website will be much faster when .htaccess is configured for SwiftPress.', 'swiftpress' );
 	}
 
 	if ( empty( $message ) ) {
@@ -316,7 +251,7 @@ function maybe_display_htaccess_notice() {
 	?>
 
 	<div class="error">
-		<p><strong><?php esc_html_e( 'Powered Cache:', 'powered-cache' ); ?></strong>
+		<p><strong><?php esc_html_e( 'SwiftPress:', 'swiftpress' ); ?></strong>
 			<?php echo wp_kses_post( $message ); ?>
 		</p>
 	</div>
@@ -334,7 +269,7 @@ function maybe_display_htaccess_notice() {
  * @since 3.2
  */
 function observe_plugin_changes( $plugin, $network_wide ) {
-	if ( false !== stripos( $plugin, 'powered-cache' ) ) {
+	if ( false !== stripos( $plugin, 'swiftpress' ) ) {
 		return;
 	}
 
@@ -356,40 +291,40 @@ function observe_plugin_changes( $plugin, $network_wide ) {
 function maybe_display_purge_cache_plugin_notice() {
 	$has_notice = false;
 
-	if ( POWERED_CACHE_IS_NETWORK && current_user_can( 'manage_network' ) ) {
+	if ( SWIFTPRESS_IS_NETWORK && current_user_can( 'manage_network' ) ) {
 		$has_notice = get_site_transient( PURGE_CACHE_PLUGIN_NOTICE_TRANSIENT );
-		$purge_url  = wp_nonce_url( admin_url( 'admin-post.php?action=powered_cache_purge_page_cache_network' ), 'powered_cache_purge_page_cache_network' );
+		$purge_url  = wp_nonce_url( admin_url( 'admin-post.php?action=swiftpress_purge_page_cache_network' ), 'swiftpress_purge_page_cache_network' );
 	} elseif ( current_user_can( 'activate_plugins' ) ) {
 		$has_notice = get_transient( PURGE_CACHE_PLUGIN_NOTICE_TRANSIENT );
-		$purge_url  = wp_nonce_url( admin_url( 'admin-post.php?action=powered_cache_purge_all_cache' ), 'powered_cache_purge_all_cache' );
+		$purge_url  = wp_nonce_url( admin_url( 'admin-post.php?action=swiftpress_purge_all_cache' ), 'swiftpress_purge_all_cache' );
 	}
 
 	if ( $has_notice ) {
-		$message       = __( '<strong>Powered Cache:</strong> One or more plugins have been activated or deactivated; consider clearing the cache if these changes impact your site\'s front end.', 'powered-cache' );
-		$dismiss_nonce = wp_create_nonce( 'powered_cache_dismiss_notice_ajax' );
+		$message       = __( '<strong>SwiftPress:</strong> One or more plugins have been activated or deactivated; consider clearing the cache if these changes impact your site\'s front end.', 'swiftpress' );
+		$dismiss_nonce = wp_create_nonce( 'swiftpress_dismiss_notice_ajax' );
 		?>
-		<div class="notice notice-warning is-dismissible powered-cache-dismissible-notice" data-notice-id="<?php echo esc_attr( PURGE_CACHE_PLUGIN_NOTICE_TRANSIENT ); ?>" data-nonce="<?php echo esc_attr( $dismiss_nonce ); ?>">
+		<div class="notice notice-warning is-dismissible swiftpress-dismissible-notice" data-notice-id="<?php echo esc_attr( PURGE_CACHE_PLUGIN_NOTICE_TRANSIENT ); ?>" data-nonce="<?php echo esc_attr( $dismiss_nonce ); ?>">
 			<p>
 				<?php echo wp_kses_post( $message ); ?>
 			</p>
 			<p>
 				<a href="<?php echo esc_url_raw( $purge_url ); ?>" class="button-primary">
-					<?php esc_html_e( 'Purge Cache', 'powered-cache' ); ?>
+					<?php esc_html_e( 'Purge Cache', 'swiftpress' ); ?>
 				</a>
-				<a href="<?php echo esc_url_raw( wp_nonce_url( admin_url( 'admin-post.php?action=powered_cache_dismiss_notice&notice=' . PURGE_CACHE_PLUGIN_NOTICE_TRANSIENT ), 'powered_cache_dismiss_notice' ) ); ?>" class="button-secondary powered-cache-dismiss-button">
-					<?php esc_html_e( 'Dismiss this notice', 'powered-cache' ); ?>
+				<a href="<?php echo esc_url_raw( wp_nonce_url( admin_url( 'admin-post.php?action=swiftpress_dismiss_notice&notice=' . PURGE_CACHE_PLUGIN_NOTICE_TRANSIENT ), 'swiftpress_dismiss_notice' ) ); ?>" class="button-secondary swiftpress-dismiss-button">
+					<?php esc_html_e( 'Dismiss this notice', 'swiftpress' ); ?>
 				</a>
 			</p>
 		</div>
 		<script type="text/javascript">
 			(function() {
 				document.addEventListener('click', function(e) {
-					var button = e.target.closest('.notice-dismiss, .powered-cache-dismiss-button');
+					var button = e.target.closest('.notice-dismiss, .swiftpress-dismiss-button');
 					if (!button) {
 						return;
 					}
 
-					var notice = button.closest('.powered-cache-dismissible-notice');
+					var notice = button.closest('.swiftpress-dismissible-notice');
 					if (!notice) {
 						return;
 					}
@@ -399,7 +334,7 @@ function maybe_display_purge_cache_plugin_notice() {
 					var noticeId = notice.getAttribute('data-notice-id');
 					var nonce    = notice.getAttribute('data-nonce');
 
-					if (button.classList.contains('powered-cache-dismiss-button')) {
+					if (button.classList.contains('swiftpress-dismiss-button')) {
 						e.preventDefault();
 						notice.style.opacity = '1';
 						notice.style.transition = 'opacity 0.3s';
@@ -422,7 +357,7 @@ function maybe_display_purge_cache_plugin_notice() {
 					};
 
 					xhr.send(
-						'action=powered_cache_dismiss_notice_ajax'
+						'action=swiftpress_dismiss_notice_ajax'
 						+ '&notice=' + encodeURIComponent(noticeId)
 						+ '&nonce=' + encodeURIComponent(nonce)
 					);
@@ -440,14 +375,14 @@ function maybe_display_purge_cache_plugin_notice() {
  * @since 3.2
  */
 function dismiss_notice() {
-	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'powered_cache_dismiss_notice' ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'swiftpress_dismiss_notice' ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated
 		wp_nonce_ays( '' );
 	}
 
 	if ( current_user_can( 'manage_options' ) && ! empty( $_GET['notice'] ) ) {
 		$notice = sanitize_text_field( wp_unslash( $_GET['notice'] ) );
 
-		if ( POWERED_CACHE_IS_NETWORK ) {
+		if ( SWIFTPRESS_IS_NETWORK ) {
 			delete_site_transient( $notice );
 		} else {
 			delete_transient( $notice );
@@ -465,25 +400,25 @@ function dismiss_notice() {
  * @since 3.7
  */
 function dismiss_notice_ajax() {
-	check_ajax_referer( 'powered_cache_dismiss_notice_ajax', 'nonce' );
+	check_ajax_referer( 'swiftpress_dismiss_notice_ajax', 'nonce' );
 
 	if ( ! current_user_can( 'manage_options' ) ) {
-		wp_send_json_error( array( 'message' => esc_html__( 'Permission denied', 'powered-cache' ) ) );
+		wp_send_json_error( array( 'message' => esc_html__( 'Permission denied', 'swiftpress' ) ) );
 	}
 
 	if ( empty( $_POST['notice'] ) ) {
-		wp_send_json_error( array( 'message' => esc_html__( 'Notice ID missing', 'powered-cache' ) ) );
+		wp_send_json_error( array( 'message' => esc_html__( 'Notice ID missing', 'swiftpress' ) ) );
 	}
 
 	$notice = sanitize_text_field( wp_unslash( $_POST['notice'] ) );
 
-	if ( POWERED_CACHE_IS_NETWORK ) {
+	if ( SWIFTPRESS_IS_NETWORK ) {
 		delete_site_transient( $notice );
 	} else {
 		delete_transient( $notice );
 	}
 
-	wp_send_json_success( array( 'message' => esc_html__( 'Notice dismissed', 'powered-cache' ) ) );
+	wp_send_json_success( array( 'message' => esc_html__( 'Notice dismissed', 'swiftpress' ) ) );
 }
 
 /**
@@ -491,10 +426,9 @@ function dismiss_notice_ajax() {
  *
  * @return void
  * @since   3.6
- * @related \PoweredCache\DevMode
  */
 function maybe_display_dev_mode_notice() {
-	if ( ! \PoweredCache\Utils\is_dev_mode_active() ) {
+	if ( ! \SwiftPress\Utils\is_dev_mode_active() ) {
 		return;
 	}
 
@@ -502,20 +436,20 @@ function maybe_display_dev_mode_notice() {
 		return;
 	}
 
-	// Only display on Powered Cache settings page
+	// Only display on SwiftPress settings page
 	$current_screen = get_current_screen();
 
 	if (
 		! $current_screen
-		|| ( ! isset( $current_screen->id ) || false === strpos( $current_screen->id, 'powered-cache' ) )
+		|| ( ! isset( $current_screen->id ) || false === strpos( $current_screen->id, 'swiftpress' ) )
 	) {
 		return;
 	}
 
 	?>
 	<div class="notice notice-warning is-dismissible">
-		<p><strong><?php esc_html_e( 'Development Mode is active.', 'powered-cache' ); ?></strong>
-			<?php esc_html_e( 'Caching and optimizations are currently disabled. Don’t forget to disable it when done.', 'powered-cache' ); ?>
+		<p><strong><?php esc_html_e( 'Development Mode is active.', 'swiftpress' ); ?></strong>
+			<?php esc_html_e( 'Caching and optimizations are currently disabled. Don’t forget to disable it when done.', 'swiftpress' ); ?>
 		</p>
 	</div>
 	<?php

@@ -1,6 +1,6 @@
 <?php
 
-namespace PoweredCache\Dependencies\voku\helper;
+namespace SwiftPress\Dependencies\voku\helper;
 
 /**
  * @property string      $outertext

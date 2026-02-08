@@ -2,11 +2,11 @@
 /**
  * Compat with ShortPixel Adaptive Images
  *
- * @package PoweredCache\Compat
+ * @package SwiftPress\Compat
  * @link    https://wordpress.org/plugins/shortpixel-adaptive-images/
  */
 
-namespace PoweredCache\Compat\ShortPixelAI;
+namespace SwiftPress\Compat\ShortPixelAI;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
@@ -16,7 +16,7 @@ if ( ! class_exists( 'ShortPixelAI' ) ) {
 	return;
 }
 
-add_filter( 'powered_cache_delay_exclusions', __NAMESPACE__ . '\\delay_exclusions' );
+add_filter( 'swiftpress_delay_exclusions', __NAMESPACE__ . '\\delay_exclusions' );
 
 /**
  * Add ShortPixel Adaptive Images to the delay exclusions

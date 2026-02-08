@@ -2,21 +2,21 @@
 /**
  * File optimizer (minify, contact) related functionalities
  *
- * @package PoweredCache
+ * @package SwiftPress
  */
 
-namespace PoweredCache;
+namespace SwiftPress;
 
-use PoweredCache\Dependencies\voku\helper\HtmlMin;
-use const PoweredCache\Constants\POST_META_DISABLE_CSS_OPTIMIZATION;
-use const PoweredCache\Constants\POST_META_DISABLE_JS_DEFER;
-use const PoweredCache\Constants\POST_META_DISABLE_JS_DELAY;
-use const PoweredCache\Constants\POST_META_DISABLE_JS_OPTIMIZATION;
-use PoweredCache\Optimizer\CSS;
-use PoweredCache\Optimizer\Helper;
-use PoweredCache\Optimizer\JS;
-use function PoweredCache\Utils\get_cache_dir;
-use function PoweredCache\Utils\remove_dir;
+use SwiftPress\Dependencies\voku\helper\HtmlMin;
+use const SwiftPress\Constants\POST_META_DISABLE_CSS_OPTIMIZATION;
+use const SwiftPress\Constants\POST_META_DISABLE_JS_DEFER;
+use const SwiftPress\Constants\POST_META_DISABLE_JS_DELAY;
+use const SwiftPress\Constants\POST_META_DISABLE_JS_OPTIMIZATION;
+use SwiftPress\Optimizer\CSS;
+use SwiftPress\Optimizer\Helper;
+use SwiftPress\Optimizer\JS;
+use function SwiftPress\Utils\get_cache_dir;
+use function SwiftPress\Utils\remove_dir;
 
 
 /**
@@ -59,7 +59,7 @@ class FileOptimizer {
 	 * Setup routine
 	 */
 	public function setup() {
-		$this->settings = \PoweredCache\Utils\get_settings();
+		$this->settings = \SwiftPress\Utils\get_settings();
 
 		// Check request method
 		if ( ! isset( $_SERVER['REQUEST_METHOD'] ) || ! in_array( $_SERVER['REQUEST_METHOD'], [ 'GET', 'HEAD' ], true ) ) {
@@ -77,16 +77,16 @@ class FileOptimizer {
 		/**
 		 * Filters whether apply or not apply file optimizations on wp-admin.
 		 *
-		 * @hook   powered_cache_fo_dashboard
+		 * @hook   swiftpress_fo_dashboard
 		 *
 		 * @param  {boolean} true to enable optimizations for dashboard.
 		 *
 		 * @return {boolean} New value.
 		 * @since  2.0
 		 */
-		$this->optimize_dashboard = apply_filters( 'powered_cache_fo_dashboard', false );
+		$this->optimize_dashboard = apply_filters( 'swiftpress_fo_dashboard', false );
 
-		add_action( 'powered_cache_purge_all_cache', [ $this, 'maybe_purge_fo_cache' ] );
+		add_action( 'swiftpress_purge_all_cache', [ $this, 'maybe_purge_fo_cache' ] );
 
 		/**
 		 * Don't optimize wp-admin by default
@@ -101,7 +101,7 @@ class FileOptimizer {
 		 * Don't optimize in customizer preview
 		 */
 		if ( ! empty( $_GET['customize_changeset_uuid'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			\PoweredCache\Utils\log( 'Do not run file optimizer in customizer preview' );
+			\SwiftPress\Utils\log( 'Do not run file optimizer in customizer preview' );
 
 			return;
 		}
@@ -109,14 +109,14 @@ class FileOptimizer {
 		/**
 		 * Filters FileOptimizer integration
 		 *
-		 * @hook   powered_cache_fo_disable
+		 * @hook   swiftpress_fo_disable
 		 *
 		 * @param  {boolean} False by default.
 		 *
 		 * @return {boolean} New value.
 		 * @since  2.2
 		 */
-		$disable_file_optimizer = apply_filters( 'powered_cache_fo_disable', false );
+		$disable_file_optimizer = apply_filters( 'swiftpress_fo_disable', false );
 
 		if ( $disable_file_optimizer ) {
 			return;
@@ -126,17 +126,17 @@ class FileOptimizer {
 		add_action( 'init', [ $this, 'setup_js_combine' ] );
 		add_filter( 'script_loader_tag', [ $this, 'js_minify' ], 10, 3 );
 		add_filter( 'style_loader_tag', [ $this, 'css_minify' ], 10, 4 );
-		add_filter( 'powered_cache_fo_script_loader_tag', [ $this, 'change_js_execute_method' ] );
+		add_filter( 'swiftpress_fo_script_loader_tag', [ $this, 'change_js_execute_method' ] );
 		add_filter( 'script_loader_tag', [ $this, 'change_js_execute_method' ], 99 );
 		add_action( 'after_setup_theme', [ $this, 'maybe_start_buffer' ], 999 );
 		add_action( 'template_redirect', [ $this, 'maybe_suppress_optimizations' ] );
 
 		if ( ! $this->settings['combine_js'] ) {
-			add_filter( 'powered_cache_fo_js_do_concat', '__return_false' );
+			add_filter( 'swiftpress_fo_js_do_concat', '__return_false' );
 		}
 
 		if ( ! $this->settings['combine_css'] ) {
-			add_filter( 'powered_cache_fo_css_do_concat', '__return_false' );
+			add_filter( 'swiftpress_fo_css_do_concat', '__return_false' );
 		}
 
 		if ( $this->settings['combine_google_fonts'] ) {
@@ -232,22 +232,22 @@ class FileOptimizer {
 			$disable_js_delay         = (bool) get_post_meta( get_the_ID(), POST_META_DISABLE_JS_DELAY, true );
 
 			if ( $disable_css_optimization ) {
-				add_filter( 'powered_cache_fo_css_do_concat', '__return_false' );
-				add_filter( 'powered_cache_fo_disable_css_minify', '__return_true' );
+				add_filter( 'swiftpress_fo_css_do_concat', '__return_false' );
+				add_filter( 'swiftpress_fo_disable_css_minify', '__return_true' );
 			}
 
 			if ( $disable_js_optimization ) {
-				add_filter( 'powered_cache_fo_js_do_concat', '__return_false' );
-				add_filter( 'powered_cache_fo_disable_js_minify', '__return_true' );
+				add_filter( 'swiftpress_fo_js_do_concat', '__return_false' );
+				add_filter( 'swiftpress_fo_disable_js_minify', '__return_true' );
 			}
 
 			if ( $disable_js_defer ) {
-				add_filter( 'powered_cache_disable_js_defer', '__return_true' );
-				add_filter( 'powered_cache_disable_js_defer_inline', '__return_true' );
+				add_filter( 'swiftpress_disable_js_defer', '__return_true' );
+				add_filter( 'swiftpress_disable_js_defer_inline', '__return_true' );
 			}
 
 			if ( $disable_js_delay ) {
-				add_filter( 'powered_cache_delayed_js_skip', '__return_true' );
+				add_filter( 'swiftpress_delayed_js_skip', '__return_true' );
 			}
 		}
 	}
@@ -258,8 +258,8 @@ class FileOptimizer {
 	 * @since 2.0
 	 */
 	public function maybe_purge_fo_cache() {
-		if ( file_exists( POWERED_CACHE_FO_CACHE_DIR ) ) {
-			remove_dir( POWERED_CACHE_FO_CACHE_DIR );
+		if ( file_exists( SWIFTPRESS_FO_CACHE_DIR ) ) {
+			remove_dir( SWIFTPRESS_FO_CACHE_DIR );
 		}
 	}
 
@@ -282,14 +282,14 @@ class FileOptimizer {
 		/**
 		 * Filters whether disable or not disable HTML minification.
 		 *
-		 * @hook   powered_cache_fo_disable_html_minify
+		 * @hook   swiftpress_fo_disable_html_minify
 		 *
 		 * @param  {boolean} true to disable html minify
 		 *
 		 * @return {boolean} New value.
 		 * @since  2.0
 		 */
-		if ( apply_filters( 'powered_cache_fo_disable_html_minify', false ) ) {
+		if ( apply_filters( 'swiftpress_fo_disable_html_minify', false ) ) {
 			return $buffer;
 		}
 
@@ -336,14 +336,14 @@ class FileOptimizer {
 		/**
 		 * Filters whether disable or not disable Defer
 		 *
-		 * @hook   powered_cache_disable_js_defer
+		 * @hook   swiftpress_disable_js_defer
 		 *
 		 * @param  {boolean} true to disable defer
 		 *
 		 * @return {boolean} New value.
 		 * @since  3.2
 		 */
-		if ( apply_filters( 'powered_cache_disable_js_defer', false, $tag ) ) {
+		if ( apply_filters( 'swiftpress_disable_js_defer', false, $tag ) ) {
 			return $tag;
 		}
 
@@ -372,14 +372,14 @@ class FileOptimizer {
 		/**
 		 * Filters whether disable or not disable CSS minification.
 		 *
-		 * @hook   powered_cache_fo_disable_css_minify
+		 * @hook   swiftpress_fo_disable_css_minify
 		 *
 		 * @param  {boolean} true to disable CSS minify
 		 *
 		 * @return {boolean} New value.
 		 * @since  2.0
 		 */
-		if ( apply_filters( 'powered_cache_fo_disable_css_minify', false ) ) {
+		if ( apply_filters( 'swiftpress_fo_disable_css_minify', false ) ) {
 			return $tag;
 		}
 
@@ -428,7 +428,7 @@ class FileOptimizer {
 		/**
 		 * Filters whether disable or not disable JS minification.
 		 *
-		 * @hook   powered_cache_fo_disable_js_minify
+		 * @hook   swiftpress_fo_disable_js_minify
 		 *
 		 * @param  {boolean} true to disable JS minify
 		 * @param  {string} $tag    script tag <script...
@@ -438,7 +438,7 @@ class FileOptimizer {
 		 * @return {boolean} New value.
 		 * @since  2.0
 		 */
-		if ( apply_filters( 'powered_cache_fo_disable_js_minify', false, $tag, $handle, $src ) ) {
+		if ( apply_filters( 'swiftpress_fo_disable_js_minify', false, $tag, $handle, $src ) ) {
 			return $tag;
 		}
 
@@ -482,14 +482,14 @@ class FileOptimizer {
 		/**
 		 * Filters whether disable or not disable JS combine
 		 *
-		 * @hook   powered_cache_fo_disable_js_combine
+		 * @hook   swiftpress_fo_disable_js_combine
 		 *
 		 * @param  {boolean} true to disable JS combine
 		 *
 		 * @return {boolean} New value.
 		 * @since  2.0
 		 */
-		if ( apply_filters( 'powered_cache_fo_disable_js_combine', false ) ) {
+		if ( apply_filters( 'swiftpress_fo_disable_js_combine', false ) ) {
 			return;
 		}
 
@@ -499,14 +499,14 @@ class FileOptimizer {
 		/**
 		 * Filters whether allow or not allow gzip compression for combined file names.
 		 *
-		 * @hook   powered_cache_fo_allow_gzip_compression
+		 * @hook   swiftpress_fo_allow_gzip_compression
 		 *
 		 * @param  {boolean} true to enable gzip compression on filenames
 		 *
 		 * @return {boolean} New value.
 		 * @since  2.0
 		 */
-		$wp_scripts->allow_gzip_compression = apply_filters( 'powered_cache_fo_allow_gzip_compression', true );
+		$wp_scripts->allow_gzip_compression = apply_filters( 'swiftpress_fo_allow_gzip_compression', true );
 		$wp_scripts->do_minify              = $this->settings['minify_js'];
 
 	}
@@ -522,21 +522,21 @@ class FileOptimizer {
 		/**
 		 * Filters whether disable or not disable CSS combine
 		 *
-		 * @hook   powered_cache_fo_disable_css_combine
+		 * @hook   swiftpress_fo_disable_css_combine
 		 *
 		 * @param  {boolean} true to disable CSS combine
 		 *
 		 * @return {boolean} New value.
 		 * @since  2.0
 		 */
-		if ( apply_filters( 'powered_cache_fo_disable_css_combine', false ) ) {
+		if ( apply_filters( 'swiftpress_fo_disable_css_combine', false ) ) {
 			return;
 		}
 
 		global $wp_styles;
 
 		$wp_styles                         = new CSS( $wp_styles );
-		$wp_styles->allow_gzip_compression = apply_filters( 'powered_cache_fo_allow_gzip_compression', true );
+		$wp_styles->allow_gzip_compression = apply_filters( 'swiftpress_fo_allow_gzip_compression', true );
 		$wp_styles->do_minify              = $this->settings['minify_css'];
 		$wp_styles->enable_cdn             = $this->settings['enable_cdn'];
 
@@ -642,14 +642,14 @@ class FileOptimizer {
 					/**
 					 * Filters font display attribute of the google fonts.
 					 *
-					 * @hook   powered_cache_fo_google_font_display
+					 * @hook   swiftpress_fo_google_font_display
 					 *
 					 * @param  {string} $font_display font display attribute.
 					 *
 					 * @return {string} New value.
 					 * @since  2.0
 					 */
-					$font_display = apply_filters( 'powered_cache_fo_google_font_display', $font_display );
+					$font_display = apply_filters( 'swiftpress_fo_google_font_display', $font_display );
 
 					if ( ! empty( $font_display ) ) {
 						$font_args['display'] = $font_display;
@@ -658,14 +658,14 @@ class FileOptimizer {
 					/**
 					 * Filters google font's domain
 					 *
-					 * @hook   powered_cache_fo_google_fonts_domain
+					 * @hook   swiftpress_fo_google_fonts_domain
 					 *
 					 * @param  {string} $font_display font display attribute.
 					 *
 					 * @return {string} New value.
 					 * @since  3.0
 					 */
-					$fonts_domain = apply_filters( 'powered_cache_fo_google_fonts_domain', $google_fonts_domain );
+					$fonts_domain = apply_filters( 'swiftpress_fo_google_fonts_domain', $google_fonts_domain );
 
 					$src = esc_url_raw( add_query_arg( $font_args, $fonts_domain ) );
 
@@ -716,14 +716,14 @@ class FileOptimizer {
 			/**
 			 * Whether skip or not skip js for delay
 			 *
-			 * @hook   powered_cache_delayed_js_skip
+			 * @hook   swiftpress_delayed_js_skip
 			 *
 			 * @param  {bool} Depends on logged-in status by default.
 			 *
 			 * @return {bool} New value.
 			 * @since  3.0
 			 */
-			if ( apply_filters( 'powered_cache_delayed_js_skip', $is_delay_skipped, $script, $attributes, $content ) ) {
+			if ( apply_filters( 'swiftpress_delayed_js_skip', $is_delay_skipped, $script, $attributes, $content ) ) {
 				continue;
 			}
 
@@ -736,9 +736,9 @@ class FileOptimizer {
 
 				// Check if script has a src attribute
 				if ( strpos( $attributes, 'src=' ) !== false ) {
-					$new_script = preg_replace( '/<script([^>]*)>/', '<script type="pc-delayed-js"$1>', $new_script );
+					$new_script = preg_replace( '/<script([^>]*)>/', '<script type="sp-delayed-js"$1>', $new_script );
 				} else {
-					$new_script = preg_replace( '/<script([^>]*)>/', '<script type="pc-delayed-js"$1>', $new_script );
+					$new_script = preg_replace( '/<script([^>]*)>/', '<script type="sp-delayed-js"$1>', $new_script );
 				}
 
 				$html = str_replace( $script, $new_script, $html );
@@ -753,15 +753,15 @@ class FileOptimizer {
 		/**
 		 * Filter delay time for JS execution fallback
 		 *
-		 * @hook   powered_cache_delayed_js_timeout
+		 * @hook   swiftpress_delayed_js_timeout
 		 *
 		 * @param  {int} $delay_in_ms Delay time in milliseconds
 		 *
 		 * @return {int} New value.
 		 * @since  3.0
 		 */
-		$delay_timeout  = apply_filters( 'powered_cache_delayed_js_timeout', $this->settings['js_delay_timeout'] );
-		$script_path    = POWERED_CACHE_PATH . 'dist/js/script-loader.js';
+		$delay_timeout  = apply_filters( 'swiftpress_delayed_js_timeout', $this->settings['js_delay_timeout'] );
+		$script_path    = SWIFTPRESS_PATH . 'dist/js/script-loader.js';
 		$script_content = file_get_contents( $script_path ); // phpcs:ignore
 
 		if ( ! $script_content ) {
@@ -774,12 +774,12 @@ class FileOptimizer {
 			return $html;
 		}
 
-		$delay_js_script_content = '<script id="powered-cache-delayed-js">' . $script_content . '</script>' . PHP_EOL;
+		$delay_js_script_content = '<script id="swiftpress-delayed-js">' . $script_content . '</script>' . PHP_EOL;
 
 		/**
 		 * Delayed JS script content
 		 *
-		 * @hook          powered_cache_delayed_js_script_content
+		 * @hook          swiftpress_delayed_js_script_content
 		 *
 		 * @param         {string} $delay_js_script_content Delayed JS script content
 		 * @param         {string} $script_path Script path
@@ -789,24 +789,24 @@ class FileOptimizer {
 		 * @return        {string} New value.
 		 * @since         3.4
 		 */
-		$delay_js_script_content = apply_filters( 'powered_cache_delayed_js_script_content', $delay_js_script_content, $script_path, $html, $delay_timeout );
+		$delay_js_script_content = apply_filters( 'swiftpress_delayed_js_script_content', $delay_js_script_content, $script_path, $html, $delay_timeout );
 
 		$html = substr_replace( $html, $delay_js_script_content, $head_pos, 0 );
 
-		$script_loader  = PHP_EOL . '<script id="powered-cache-delayed-script-loader">' . PHP_EOL;
-		$script_loader .= 'console.log("[Powered Cache] - Script(s) will be loaded with delay or interaction");' . PHP_EOL;
-		$script_loader .= 'window.PCScriptLoaderTimeout=' . absint( $delay_timeout ) . ';' . PHP_EOL;
+		$script_loader  = PHP_EOL . '<script id="swiftpress-delayed-script-loader">' . PHP_EOL;
+		$script_loader .= 'console.log("[SwiftPress] - Script(s) will be loaded with delay or interaction");' . PHP_EOL;
+		$script_loader .= 'window.SPScriptLoaderTimeout=' . absint( $delay_timeout ) . ';' . PHP_EOL;
 
-		$script_loader .= 'Defer.all(\'script[type="pc-delayed-js"]\', window.PCScriptLoaderTimeout, true);' . PHP_EOL;
+		$script_loader .= 'Defer.all(\'script[type="sp-delayed-js"]\', window.SPScriptLoaderTimeout, true);' . PHP_EOL;
 
 		// Dispatch DOMContentLoaded event after delayed scripts are loaded
 		// This ensures scripts that listen for DOMContentLoaded still execute
 		$script_loader .= '(function(){' . PHP_EOL;
-		$script_loader .= '  var pcDelayedScripts=document.querySelectorAll(\'script[type="pc-delayed-js"]\');' . PHP_EOL;
+		$script_loader .= '  var pcDelayedScripts=document.querySelectorAll(\'script[type="sp-delayed-js"]\');' . PHP_EOL;
 		$script_loader .= '  if(pcDelayedScripts.length===0)return;' . PHP_EOL;
 		$script_loader .= '  var pcScriptCount=pcDelayedScripts.length;' . PHP_EOL;
 		$script_loader .= '  var pcCheckInterval=setInterval(function(){' . PHP_EOL;
-		$script_loader .= '    var remaining=document.querySelectorAll(\'script[type="pc-delayed-js"]\').length;' . PHP_EOL;
+		$script_loader .= '    var remaining=document.querySelectorAll(\'script[type="sp-delayed-js"]\').length;' . PHP_EOL;
 		$script_loader .= '    if(remaining===0){' . PHP_EOL;
 		$script_loader .= '      clearInterval(pcCheckInterval);' . PHP_EOL;
 		$script_loader .= '      setTimeout(function(){' . PHP_EOL;
@@ -814,7 +814,7 @@ class FileOptimizer {
 		$script_loader .= '          var event=document.createEvent?document.createEvent("Event"):new Event("DOMContentLoaded");' . PHP_EOL;
 		$script_loader .= '          if(document.createEvent){event.initEvent("DOMContentLoaded",true,true);}' . PHP_EOL;
 		$script_loader .= '          document.dispatchEvent(event);' . PHP_EOL;
-		$script_loader .= '          console.log("[Powered Cache] - DOMContentLoaded event dispatched for "+pcScriptCount+" delayed script(s)");' . PHP_EOL;
+		$script_loader .= '          console.log("[SwiftPress] - DOMContentLoaded event dispatched for "+pcScriptCount+" delayed script(s)");' . PHP_EOL;
 		$script_loader .= '        }' . PHP_EOL;
 		$script_loader .= '      },10);' . PHP_EOL;
 		$script_loader .= '    }' . PHP_EOL;
@@ -826,7 +826,7 @@ class FileOptimizer {
 		/**
 		 * Delayed JS script loader content
 		 *
-		 * @hook                 powered_cache_delayed_js_script_loader
+		 * @hook                 swiftpress_delayed_js_script_loader
 		 *
 		 * @param                {string} $script_loader Delayed JS script loader content
 		 * @param                {string} $html HTML buffer
@@ -835,7 +835,7 @@ class FileOptimizer {
 		 * @return               {string} New value.
 		 * @since                3.4
 		 */
-		$script_loader = apply_filters( 'powered_cache_delayed_js_script_loader', $script_loader, $html, $delay_timeout );
+		$script_loader = apply_filters( 'swiftpress_delayed_js_script_loader', $script_loader, $html, $delay_timeout );
 
 		$body_pos = strpos( $html, '</body>' );
 
@@ -877,14 +877,14 @@ class FileOptimizer {
 				/**
 				 * Filters whether disable or not disable inline defer
 				 *
-				 * @hook   powered_cache_disable_js_defer_inline
+				 * @hook   swiftpress_disable_js_defer_inline
 				 *
 				 * @param  {boolean} true to disable defer
 				 *
 				 * @return {boolean} New value.
 				 * @since  3.2
 				 */
-				if ( apply_filters( 'powered_cache_disable_js_defer_inline', false, $script_content, $script_open_tag ) ) {
+				if ( apply_filters( 'swiftpress_disable_js_defer_inline', false, $script_content, $script_open_tag ) ) {
 					return $matches[0]; // Return the script unchanged
 				}
 

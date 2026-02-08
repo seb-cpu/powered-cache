@@ -2,20 +2,20 @@
 /**
  * Background process for cache preloading
  *
- * @package PoweredCache
+ * @package SwiftPress
  */
 
-namespace PoweredCache\Async;
+namespace SwiftPress\Async;
 
-use PoweredCache\Preloader;
-use function PoweredCache\Utils\detect_cpu_cores;
-use function PoweredCache\Utils\is_url_cached;
-use \Powered_Cache_WP_Background_Process as Powered_Cache_WP_Background_Process;
+use SwiftPress\Preloader;
+use function SwiftPress\Utils\detect_cpu_cores;
+use function SwiftPress\Utils\is_url_cached;
+use \SwiftPress_WP_Background_Process as SwiftPress_WP_Background_Process;
 
 /**
  * Class CachePreloader
  */
-class CachePreloader extends Powered_Cache_WP_Background_Process {
+class CachePreloader extends SwiftPress_WP_Background_Process {
 
 	/**
 	 * Plugin settings
@@ -29,7 +29,7 @@ class CachePreloader extends Powered_Cache_WP_Background_Process {
 	 *
 	 * @var $action
 	 */
-	protected $action = 'powered_cache_preload';
+	protected $action = 'swiftpress_preload';
 
 	/**
 	 * Supported preloading options
@@ -57,14 +57,14 @@ class CachePreloader extends Powered_Cache_WP_Background_Process {
 	protected function task( $item ) {
 		// Stop early if system load is too high
 		if ( ! $this->should_continue() ) {
-			\PoweredCache\Utils\log( 'Preload task aborted early due to system load' );
+			\SwiftPress\Utils\log( 'Preload task aborted early due to system load' );
 			return $item;
 		}
 
-		$this->settings = \PoweredCache\Utils\get_settings();
+		$this->settings = \SwiftPress\Utils\get_settings();
 		$delay          = absint( $this->settings['preload_request_interval'] ) * 1000000; // convert to microseconds
 
-		\PoweredCache\Utils\log( sprintf( 'Preloading..: %s', $item ) );
+		\SwiftPress\Utils\log( sprintf( 'Preloading..: %s', $item ) );
 
 		if ( filter_var( $item, FILTER_VALIDATE_URL ) ) {
 
@@ -82,7 +82,7 @@ class CachePreloader extends Powered_Cache_WP_Background_Process {
 			}
 		}
 
-		\PoweredCache\Utils\log( sprintf( 'Preloaded...: %s', $item ) );
+		\SwiftPress\Utils\log( sprintf( 'Preloaded...: %s', $item ) );
 
 		return false;
 	}
@@ -153,7 +153,7 @@ class CachePreloader extends Powered_Cache_WP_Background_Process {
 		/**
 		 * Filter the max allowed server load before preloading pauses.
 		 *
-		 * @hook   powered_cache_preloader_max_server_load
+		 * @hook   swiftpress_preloader_max_server_load
 		 *
 		 * @param  {float} $default_max_load Default load threshold.
 		 * @param  {array} $load             [1min, 5min, 15min] load averages.
@@ -162,18 +162,18 @@ class CachePreloader extends Powered_Cache_WP_Background_Process {
 		 * @since  3.6
 		 */
 		$max_allowed_load = apply_filters(
-			'powered_cache_preloader_max_server_load',
+			'swiftpress_preloader_max_server_load',
 			$default_max_load,
 			$load
 		);
 
 		// Allow setting a custom maximum server load threshold.
-		if ( defined( 'POWERED_CACHE_PRELOADER_MAX_SERVER_LOAD' ) && is_numeric( POWERED_CACHE_PRELOADER_MAX_SERVER_LOAD ) ) {
-			$max_allowed_load = (float) POWERED_CACHE_PRELOADER_MAX_SERVER_LOAD;
+		if ( defined( 'SWIFTPRESS_PRELOADER_MAX_SERVER_LOAD' ) && is_numeric( SWIFTPRESS_PRELOADER_MAX_SERVER_LOAD ) ) {
+			$max_allowed_load = (float) SWIFTPRESS_PRELOADER_MAX_SERVER_LOAD;
 		}
 
 		if ( $should_continue && ( $weighted_load > $max_allowed_load || $load_spike_detected ) ) {
-			\PoweredCache\Utils\log(
+			\SwiftPress\Utils\log(
 				sprintf(
 					'Preload paused: server load too high or spike detected (1min: %.2f, 5min: %.2f, 15min: %.2f, weighted: %.2f, threshold: %.2f)',
 					$load_1min,
@@ -190,7 +190,7 @@ class CachePreloader extends Powered_Cache_WP_Background_Process {
 		/**
 		 * Allow complete control over continuation logic.
 		 *
-		 * @hook  powered_cache_preloader_should_continue
+		 * @hook  swiftpress_preloader_should_continue
 		 *
 		 * @param bool  $should_continue  Whether to continue processing.
 		 * @param bool  $halted_by_load   True if we halted due to load.
@@ -201,7 +201,7 @@ class CachePreloader extends Powered_Cache_WP_Background_Process {
 		 * @since 3.6
 		 */
 		return (bool) apply_filters(
-			'powered_cache_preloader_should_continue',
+			'swiftpress_preloader_should_continue',
 			$should_continue,
 			$halted_by_load,
 			$load,

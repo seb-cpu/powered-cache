@@ -2,10 +2,10 @@
 /**
  * Helpers for file optimizer
  *
- * @package PoweredCache\Optimizer
+ * @package SwiftPress\Optimizer
  */
 
-namespace PoweredCache\Optimizer;
+namespace SwiftPress\Optimizer;
 
 // phpcs:disable WordPress.WhiteSpace.PrecisionAlignment.Found
 
@@ -96,15 +96,15 @@ class Helper {
 	 * @return string
 	 */
 	public static function get_optimized_url( $path, $minify ) {
-		$settings      = \PoweredCache\Utils\get_settings();
-		$optimizer_url = POWERED_CACHE_URL . 'includes/file-optimizer.php??';
+		$settings      = \SwiftPress\Utils\get_settings();
+		$optimizer_url = SWIFTPRESS_URL . 'includes/file-optimizer.php??';
 		if ( $settings['rewrite_file_optimizer'] ) {
 			$optimizer_url = site_url() . '/_static/??';
 		}
 
 		$optimized_url = $optimizer_url . $path . '&minify=' . absint( $minify );
 
-		$optimized_url = esc_url_raw( apply_filters( 'powered_cache_fo_optimized_url', $optimized_url, $path, $minify ) );
+		$optimized_url = esc_url_raw( apply_filters( 'swiftpress_fo_optimized_url', $optimized_url, $path, $minify ) );
 
 		return $optimized_url;
 	}
@@ -118,19 +118,19 @@ class Helper {
 	 */
 	public static function get_file_optimizer_relative_path() {
 		// Calculate the relative path from the WordPress root to file-optimizer.php
-		$relative_path = str_replace( ABSPATH, '', POWERED_CACHE_PATH . 'includes/file-optimizer.php' );
+		$relative_path = str_replace( ABSPATH, '', SWIFTPRESS_PATH . 'includes/file-optimizer.php' );
 		$relative_path = ltrim( $relative_path, '/' ); // Remove leading slash
 		/**
 		 * Filters relative path for file optimizer
 		 *
-		 * @hook   powered_cache_fo_relative_path
+		 * @hook   swiftpress_fo_relative_path
 		 *
 		 * @param  {string} relative path of file-optimizer.php
 		 *
 		 * @return {string} New value.
 		 * @since  3.3.2
 		 */
-		$relative_path = apply_filters( 'powered_cache_fo_relative_path', $relative_path );
+		$relative_path = apply_filters( 'swiftpress_fo_relative_path', $relative_path );
 
 		return $relative_path;
 	}
@@ -222,20 +222,20 @@ class Helper {
 	 * @since 3.2
 	 */
 	public static function get_defer_exclusions() {
-		$settings       = \PoweredCache\Utils\get_settings();
+		$settings       = \SwiftPress\Utils\get_settings();
 		$excluded_files = preg_split( '#(\r\n|\n|\r)#', $settings['js_defer_exclusions'], - 1, PREG_SPLIT_NO_EMPTY );
 
 		/**
 		 * Filter the defer exclusions
 		 *
-		 * @hook   powered_cache_defer_exclusions
+		 * @hook   swiftpress_defer_exclusions
 		 *
 		 * @param  {array} $settings Excluded files
 		 *
 		 * @return {array} New value
 		 * @since  3.2
 		 */
-		return (array) apply_filters( 'powered_cache_defer_exclusions', $excluded_files );
+		return (array) apply_filters( 'swiftpress_defer_exclusions', $excluded_files );
 	}
 
 	/**
@@ -245,7 +245,7 @@ class Helper {
 	 * @since 3.2
 	 */
 	public static function get_delay_exclusions() {
-		$settings       = \PoweredCache\Utils\get_settings();
+		$settings       = \SwiftPress\Utils\get_settings();
 		$excluded_files = preg_split( '#(\r\n|\n|\r)#', $settings['js_delay_exclusions'], - 1, PREG_SPLIT_NO_EMPTY );
 
 		$excluded_files[] = 'wp-includes/js/dist/interactivity.min.js';
@@ -254,14 +254,14 @@ class Helper {
 		/**
 		 * Filter the delay exclusions
 		 *
-		 * @hook   powered_cache_delay_exclusions
+		 * @hook   swiftpress_delay_exclusions
 		 *
 		 * @param  {array} $settings Excluded files
 		 *
 		 * @return {array} New value
 		 * @since  3.2
 		 */
-		return (array) apply_filters( 'powered_cache_delay_exclusions', $excluded_files );
+		return (array) apply_filters( 'swiftpress_delay_exclusions', $excluded_files );
 	}
 
 	/**
@@ -271,20 +271,20 @@ class Helper {
 	 * @since 3.2
 	 */
 	public static function get_excluded_js() {
-		$settings       = \PoweredCache\Utils\get_settings();
+		$settings       = \SwiftPress\Utils\get_settings();
 		$excluded_files = preg_split( '#(\r\n|\n|\r)#', $settings['excluded_js_files'], - 1, PREG_SPLIT_NO_EMPTY );
 
 		/**
 		 * Filter the excluded JS files
 		 *
-		 * @hook   powered_cache_fo_excluded_js_files
+		 * @hook   swiftpress_fo_excluded_js_files
 		 *
 		 * @param  {array} $settings Excluded files
 		 *
 		 * @return {array} New value
 		 * @since  3.2
 		 */
-		return (array) apply_filters( 'powered_cache_fo_excluded_js_files', $excluded_files );
+		return (array) apply_filters( 'swiftpress_fo_excluded_js_files', $excluded_files );
 	}
 
 	/**
@@ -294,20 +294,20 @@ class Helper {
 	 * @since 3.2
 	 */
 	public static function get_excluded_css() {
-		$settings       = \PoweredCache\Utils\get_settings();
+		$settings       = \SwiftPress\Utils\get_settings();
 		$excluded_files = preg_split( '#(\r\n|\n|\r)#', $settings['excluded_css_files'], - 1, PREG_SPLIT_NO_EMPTY );
 
 		/**
 		 * Filter the excluded css files
 		 *
-		 * @hook   powered_cache_fo_excluded_css_files
+		 * @hook   swiftpress_fo_excluded_css_files
 		 *
 		 * @param  {array} $settings Excluded files
 		 *
 		 * @return {array} New value
 		 * @since  3.2
 		 */
-		return (array) apply_filters( 'powered_cache_fo_excluded_css_files', $excluded_files );
+		return (array) apply_filters( 'swiftpress_fo_excluded_css_files', $excluded_files );
 	}
 
 

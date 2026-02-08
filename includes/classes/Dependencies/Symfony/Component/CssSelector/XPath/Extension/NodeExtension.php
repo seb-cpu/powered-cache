@@ -9,11 +9,11 @@
  * file that was distributed with this source code.
  */
 
-namespace PoweredCache\Dependencies\Symfony\Component\CssSelector\XPath\Extension;
+namespace SwiftPress\Dependencies\Symfony\Component\CssSelector\XPath\Extension;
 
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\Node;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\XPath\Translator;
-use PoweredCache\Dependencies\Symfony\Component\CssSelector\XPath\XPathExpr;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\Node;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\XPath\Translator;
+use SwiftPress\Dependencies\Symfony\Component\CssSelector\XPath\XPathExpr;
 
 /**
  * XPath expression translator node extension.
@@ -70,7 +70,7 @@ class NodeExtension extends AbstractExtension
             'Negation' => [$this, 'translateNegation'],
             'Function' => [$this, 'translateFunction'],
             'Pseudo' => [$this, 'translatePseudo'],
-            'Powered_Cache_Attribute' => [$this, 'translateAttribute'],
+            'SwiftPress_Attribute' => [$this, 'translateAttribute'],
             'Class' => [$this, 'translateClass'],
             'Hash' => [$this, 'translateHash'],
             'Element' => [$this, 'translateElement'],

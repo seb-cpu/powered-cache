@@ -10,7 +10,7 @@
  */
 
 if (\PHP_VERSION_ID < 80000) {
-    class Powered_Cache_UnhandledMatchError extends Error
+    class SwiftPress_UnhandledMatchError extends Error
     {
     }
 }

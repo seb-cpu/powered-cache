@@ -2,13 +2,13 @@
 /**
  * Compat with clear-cache-for-widgets
  *
- * @package PoweredCache\Compat
+ * @package SwiftPress\Compat
  * @link    https://wordpress.org/plugins/clear-cache-for-widgets/
  */
 
-namespace PoweredCache\Compat\ClearCacheForWidgets;
+namespace SwiftPress\Compat\ClearCacheForWidgets;
 
-use function PoweredCache\Utils\powered_cache_flush;
+use function SwiftPress\Utils\swiftpress_flush;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
@@ -21,10 +21,10 @@ add_action( 'ccfm_clear_cache_for_me', __NAMESPACE__ . '\\purge_cache' );
 
 
 /**
- * Purge cache by using the powered_cache_flush function.
+ * Purge cache by using the swiftpress_flush function.
  *
  * @return void
  */
 function purge_cache() {
-	powered_cache_flush();
+	swiftpress_flush();
 }
