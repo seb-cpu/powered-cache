@@ -69,14 +69,9 @@ if ( isset( $swiftpress_rejected_user_agents ) && ! empty( $swiftpress_rejected_
 	}
 }
 
-// dont cache mobile
+// dont cache mobile (when mobile caching is disabled, skip caching for mobile UA)
 if ( empty( $GLOBALS['swiftpress_options']['cache_mobile'] ) ) {
-	global $swiftpress_mobile_browsers, $swiftpress_mobile_prefixes;
-
-	$mobile_browsers = addcslashes( implode( '|', preg_split( '/[\s*,\s*]*,+[\s*,\s*]*/', $swiftpress_mobile_browsers ) ), ' ' );
-	$mobile_prefixes = addcslashes( implode( '|', preg_split( '/[\s*,\s*]*,+[\s*,\s*]*/', $swiftpress_mobile_prefixes ) ), ' ' );
-	// Don't cache if mobile detection is activated
-	if ( ( preg_match( '#^.*(' . $mobile_browsers . ').*#i', $_SERVER['HTTP_USER_AGENT'] ) || preg_match( '#^(' . $mobile_prefixes . ').*#i', substr( $_SERVER['HTTP_USER_AGENT'], 0, 4 ) ) ) ) {
+	if ( isset( $_SERVER['HTTP_USER_AGENT'] ) && preg_match( '#(Mobile|Android|Silk/|Kindle|BlackBerry|Opera Mini|Opera Mobi)#i', $_SERVER['HTTP_USER_AGENT'] ) ) {
 		swiftpress_add_cache_miss_header( "Mobile request" );
 
 		return;
@@ -565,7 +560,7 @@ function swiftpress_get_user_cookie() {
  * @since 1.0
  */
 function swiftpress_index_file( $content_type = 'text/html' ) {
-	global $swiftpress_mobile_browsers, $swiftpress_mobile_prefixes, $swiftpress_vary_cookies, $swiftpress_cache_query_strings;
+	global $swiftpress_vary_cookies, $swiftpress_cache_query_strings;
 
 	$file_name = 'index';
 
@@ -575,11 +570,7 @@ function swiftpress_index_file( $content_type = 'text/html' ) {
 
 	// separate file for mobile cache
 	if ( ! empty( $GLOBALS['swiftpress_options']['cache_mobile'] ) && ! empty( $GLOBALS['swiftpress_options']['cache_mobile_separate_file'] ) ) {
-		$mobile_browsers = addcslashes( implode( '|', preg_split( '/[\s*,\s*]*,+[\s*,\s*]*/', $swiftpress_mobile_browsers ) ), ' ' );
-		$mobile_prefixes = addcslashes( implode( '|', preg_split( '/[\s*,\s*]*,+[\s*,\s*]*/', $swiftpress_mobile_prefixes ) ), ' ' );
-
-		// Don't cache if mobile detection is activated
-		if ( ( preg_match( '#^.*(' . $mobile_browsers . ').*#i', $_SERVER['HTTP_USER_AGENT'] ) || preg_match( '#^(' . $mobile_prefixes . ').*#i', substr( $_SERVER['HTTP_USER_AGENT'], 0, 4 ) ) ) ) {
+		if ( isset( $_SERVER['HTTP_USER_AGENT'] ) && preg_match( '#(Mobile|Android|Silk/|Kindle|BlackBerry|Opera Mini|Opera Mobi)#i', $_SERVER['HTTP_USER_AGENT'] ) ) {
 			$file_name .= '-mobile';
 		}
 	}

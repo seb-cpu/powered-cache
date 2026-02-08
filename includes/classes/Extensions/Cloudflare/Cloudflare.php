@@ -7,8 +7,7 @@
 
 namespace SwiftPress\Extensions\Cloudflare;
 
-use function SwiftPress\Utils\get_decrypted_setting;
-use function SwiftPress\Utils\is_ip_in_range;
+use function SwiftPress\Utils\get_settings;
 
 /**
  * Class Cloudflare
@@ -158,7 +157,8 @@ class Cloudflare {
 			return SWIFTPRESS_CF_API_KEY;
 		}
 
-		$cf_api_key = get_decrypted_setting( 'cloudflare_api_key' );
+		$settings   = get_settings();
+		$cf_api_key = isset( $settings['cloudflare_api_key'] ) ? $settings['cloudflare_api_key'] : '';
 
 		return $cf_api_key;
 	}
@@ -173,7 +173,8 @@ class Cloudflare {
 			return SWIFTPRESS_CF_API_TOKEN;
 		}
 
-		$cf_api_token = get_decrypted_setting( 'cloudflare_api_token' );
+		$settings     = get_settings();
+		$cf_api_token = isset( $settings['cloudflare_api_token'] ) ? $settings['cloudflare_api_token'] : '';
 
 		return $cf_api_token;
 	}
@@ -213,7 +214,7 @@ class Cloudflare {
 			$remote_ip = filter_var( wp_unslash( $_SERVER['REMOTE_ADDR'] ), FILTER_VALIDATE_IP );
 			if ( false !== $remote_ip ) {
 				foreach ( $cloudflare_ips as $cloudflare_ip ) {
-					if ( is_ip_in_range( $remote_ip, $cloudflare_ip ) ) {
+					if ( self::ip_in_range( $remote_ip, $cloudflare_ip ) ) {
 						return true;
 					}
 				}
@@ -221,6 +222,62 @@ class Cloudflare {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Check if a given IP is within a specific CIDR range.
+	 *
+	 * @param string $ip    The IP address to check.
+	 * @param string $range The IP range in CIDR notation.
+	 *
+	 * @return bool
+	 */
+	private static function ip_in_range( $ip, $range ) {
+		if ( false !== strpos( $range, '/' ) ) {
+			list( $subnet, $bits ) = explode( '/', $range, 2 );
+		} else {
+			$subnet = $range;
+			$bits   = ( false === filter_var( $subnet, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) ? 32 : 128;
+		}
+
+		$bits = intval( $bits );
+
+		// IPv6
+		if ( false !== filter_var( $subnet, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
+			$subnet_bin = inet_pton( $subnet );
+			$ip_bin     = inet_pton( $ip );
+
+			if ( false === $subnet_bin || false === $ip_bin ) {
+				return false;
+			}
+
+			$subnet_bin = str_pad( $subnet_bin, 16, "\0" );
+			$ip_bin     = str_pad( $ip_bin, 16, "\0" );
+
+			for ( $i = 0; $i * 8 < $bits; $i++ ) {
+				if ( $bits >= ( $i + 1 ) * 8 && $subnet_bin[ $i ] !== $ip_bin[ $i ] ) {
+					return false;
+				} elseif ( $bits > $i * 8 ) {
+					$bitmask = 0xff00 >> ( $bits % 8 );
+					if ( ( ord( $subnet_bin[ $i ] ) & $bitmask ) !== ( ord( $ip_bin[ $i ] ) & $bitmask ) ) {
+						return false;
+					}
+				}
+			}
+
+			return true;
+		}
+
+		// IPv4
+		if ( false === filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+			return false;
+		}
+
+		$subnet_decimal = ip2long( $subnet );
+		$ip_decimal     = ip2long( $ip );
+		$mask_decimal   = -1 << ( 32 - $bits );
+
+		return ( $subnet_decimal & $mask_decimal ) === ( $ip_decimal & $mask_decimal );
 	}
 
 }

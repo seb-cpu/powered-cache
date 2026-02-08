@@ -213,50 +213,6 @@ function get_timeout_with_interval( $timeout_in_minutes ) {
 
 
 /**
- * Supported mobile browsers
- *
- * @return mixed|void
- * @since 1.0
- */
-function mobile_browsers() {
-	$mobile_browsers
-		= '2.0 MMP, 240x320, 400X240, AvantGo, BlackBerry, Blazer, Cellphone, Danger, DoCoMo, Elaine/3.0, EudoraWeb, Googlebot-Mobile, hiptop, IEMobile, KYOCERA/WX310K, LG/U990, MIDP-2., MMEF20, MOT-V, NetFront, Newt, Nintendo Wii, Nitro, Nokia, Opera Mini, Palm, PlayStation Portable, portalmmm, Proxinet, ProxiNet, SHARP-TQ-GX10, SHG-i900, Small, SonyEricsson, Symbian OS, SymbianOS, TS21i-10, UP.Browser, UP.Link, webOS, Windows CE, WinWAP, YahooSeeker/M1A1-R2D2, iPhone, iPod, Android, BlackBerry9530, LG-TU915 Obigo, LGE VX, webOS, Nokia5800';
-
-	/**
-	 * Filters supported mobile browsers.
-	 *
-	 * @hook  swiftpress_mobile_browsers
-	 *
-	 * @param {string} $mobile_browsers Comma separated list of the defined mobile browsers.
-	 *
-	 * @since 1.0
-	 */
-	return apply_filters( 'swiftpress_mobile_browsers', $mobile_browsers );
-}
-
-/**
- * Supported mobile prefixes
- *
- * @return mixed|void
- * @since 1.0
- */
-function mobile_prefixes() {
-	$mobile_prefixes
-		= 'w3c , w3c-, acs-, alav, alca, amoi, audi, avan, benq, bird, blac, blaz, brew, cell, cldc, cmd-, dang, doco, eric, hipt, htc_, inno, ipaq, ipod, jigs, kddi, keji, leno, lg-c, lg-d, lg-g, lge-, lg/u, maui, maxo, midp, mits, mmef, mobi, mot-, moto, mwbp, nec-, newt, noki, palm, pana, pant, phil, play, port, prox, qwap, sage, sams, sany, sch-, sec-, send, seri, sgh-, shar, sie-, siem, smal, smar, sony, sph-, symb, t-mo, teli, tim-, tosh, tsm-, upg1, upsi, vk-v, voda, wap-, wapa, wapi, wapp, wapr, webc, winw, winw, xda , xda-';
-
-	/**
-	 * Filters supported mobile prefixes.
-	 *
-	 * @hook  swiftpress_mobile_prefixes
-	 *
-	 * @param {string} $mobile_prefixes Comma separated list of the defined mobile prefixes.
-	 *
-	 * @since 1.0
-	 */
-	return apply_filters( 'swiftpress_mobile_prefixes', $mobile_prefixes );
-}
-
-/**
  * Determine whether display or not display htaccess configuration
  * .htaccess can affect the way of serving cached files.
  * Therefore it's only available for network admin on multisite
@@ -1165,19 +1121,6 @@ function is_local_site() {
 }
 
 /**
- * Get sensitive data (encryption removed in Phase 3; returns raw value)
- *
- * @param string $field field name
- *
- * @return mixed|string
- */
-function get_decrypted_setting( $field ) {
-	$settings = \SwiftPress\Utils\get_settings();
-
-	return isset( $settings[ $field ] ) ? $settings[ $field ] : '';
-}
-
-/**
  * Check whether request for bypass or process normally
  *
  * @return bool
@@ -1191,63 +1134,6 @@ function bypass_request() {
 	return false;
 }
 
-
-
-
-/**
- * Check if a given IP is within a specific range.
- * Supports both IPv4 and IPv6 addresses.
- *
- * @param string $ip    The IP address to check.
- * @param string $range The IP range in CIDR notation.
- *
- * @return bool True if the IP is in the range, false otherwise.
- */
-function is_ip_in_range( $ip, $range ) {
-	if ( false !== strpos( $range, '/' ) ) {
-		list( $subnet, $bits ) = explode( '/', $range, 2 );
-	} else {
-		$subnet = $range;
-		$bits   = ( false === filter_var( $subnet, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) ? 32 : 128;
-	}
-
-	$bits = intval( $bits );
-
-	if ( false !== filter_var( $subnet, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
-		$subnet_bin = inet_pton( $subnet );
-		$ip_bin     = inet_pton( $ip );
-
-		if ( false === $subnet_bin || false === $ip_bin ) {
-			return false;
-		}
-
-		$subnet_bin = str_pad( $subnet_bin, 16, "\0" );
-		$ip_bin     = str_pad( $ip_bin, 16, "\0" );
-
-		for ( $i = 0; $i * 8 < $bits; $i ++ ) {
-			if ( $bits >= ( $i + 1 ) * 8 && $subnet_bin[ $i ] !== $ip_bin[ $i ] ) {
-				return false;
-			} elseif ( $bits > $i * 8 ) {
-				$bitmask = 0xff00 >> ( $bits % 8 );
-				if ( ( ord( $subnet_bin[ $i ] ) & $bitmask ) !== ( ord( $ip_bin[ $i ] ) & $bitmask ) ) {
-					return false;
-				}
-			}
-		}
-
-		return true;
-	}
-
-	if ( false === filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
-		return false;
-	}
-
-	$subnet_decimal = ip2long( $subnet );
-	$ip_decimal     = ip2long( $ip );
-	$mask_decimal   = - 1 << ( 32 - $bits );
-
-	return ( $subnet_decimal & $mask_decimal ) === ( $ip_decimal & $mask_decimal );
-}
 
 /**
  * Check if the dev mode is active

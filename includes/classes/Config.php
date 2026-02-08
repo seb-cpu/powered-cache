@@ -428,9 +428,6 @@ class Config {
 
 		$config_file_string .= "\$GLOBALS['swiftpress_options'] = " . var_export( $configuration, true ) . ';' . PHP_EOL . PHP_EOL;
 
-		// mobile cache variables
-		$config_file_string .= '$swiftpress_mobile_browsers = ' . var_export( mobile_browsers(), true ) . ';' . PHP_EOL;
-		$config_file_string .= '$swiftpress_mobile_prefixes = ' . var_export( mobile_prefixes(), true ) . ';' . PHP_EOL;
 		$config_file_string .= '$swiftpress_rejected_user_agents = ' . var_export( AdvancedCache::get_rejected_user_agents(), true ) . ';' . PHP_EOL;
 		$config_file_string .= '$swiftpress_rejected_cookies = ' . var_export( AdvancedCache::get_rejected_cookies(), true ) . ';' . PHP_EOL;
 		$config_file_string .= '$swiftpress_rejected_referrers = ' . var_export( AdvancedCache::get_rejected_referrers(), true ) . ';' . PHP_EOL;
@@ -558,19 +555,6 @@ class Config {
 		$contents .= 'if ($http_x_wap_profile) {' . PHP_EOL;
 		$contents .= '	set $pc_ua \'-mobile\';' . PHP_EOL;
 		$contents .= '}' . PHP_EOL . PHP_EOL;
-
-		if ( true === $settings['cache_mobile'] && true === $settings['cache_mobile_separate_file'] ) {
-			$mobile_browsers = addcslashes( implode( '|', preg_split( '/[\s*,\s*]*,+[\s*,\s*]*/', mobile_browsers() ) ), ' ' );
-			$mobile_prefixes = addcslashes( implode( '|', preg_split( '/[\s*,\s*]*,+[\s*,\s*]*/', mobile_prefixes() ) ), ' ' );
-
-			$contents .= 'if ($http_user_agent ~* (' . $mobile_browsers . ')) {' . PHP_EOL;
-			$contents .= '	set $pc_ua \'-mobile\';' . PHP_EOL;
-			$contents .= '}' . PHP_EOL . PHP_EOL;
-
-			$contents .= 'if ($http_user_agent ~* (' . $mobile_prefixes . ')) {' . PHP_EOL;
-			$contents .= '	set $pc_ua \'-mobile\';' . PHP_EOL;
-			$contents .= '}' . PHP_EOL . PHP_EOL;
-		}
 
 		$cache_suffix = 'html';
 
