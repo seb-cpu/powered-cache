@@ -8,8 +8,6 @@
 namespace SwiftPress;
 
 use function SwiftPress\Utils\get_cache_dir;
-use function SwiftPress\Utils\mobile_browsers;
-use function SwiftPress\Utils\mobile_prefixes;
 use function SwiftPress\Utils\permalink_structure_has_trailingslash;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -342,12 +340,8 @@ class Htaccess {
 			$rules .= '    AddDefaultCharset UTF-8 ' . PHP_EOL;
 
 			if ( true === $this->settings['cache_mobile'] && true === $this->settings['cache_mobile_separate_file'] ) {
-				$mobile_browsers = addcslashes( implode( '|', preg_split( '/[\s*,\s*]*,+[\s*,\s*]*/', mobile_browsers() ) ), ' ' );
-				$mobile_prefixes = addcslashes( implode( '|', preg_split( '/[\s*,\s*]*,+[\s*,\s*]*/', mobile_prefixes() ) ), ' ' );
-				// mobile env set
-				$rules               .= '    RewriteCond %{HTTP_USER_AGENT} (' . $mobile_browsers . ') [NC]' . PHP_EOL;
-				$rules               .= '    RewriteRule .* - [E=SP_UA:-mobile]' . PHP_EOL;
-				$rules               .= '    RewriteCond %{HTTP_USER_AGENT} ^(' . $mobile_prefixes . ') [NC]' . PHP_EOL;
+				// mobile env set — simplified UA pattern (responsive-era detection)
+				$rules               .= '    RewriteCond %{HTTP_USER_AGENT} (Mobile|Android|Silk/|Kindle|BlackBerry|Opera\ Mini|Opera\ Mobi) [NC]' . PHP_EOL;
 				$rules               .= '    RewriteRule .* - [E=SP_UA:-mobile]' . PHP_EOL;
 				$env_swiftpress_ua = '%{ENV:SP_UA}';
 			}
