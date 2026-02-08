@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build plugin zip
+        run: |
+          mkdir -p build/swiftpress
+          rsync -av --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='.editorconfig' \
+            --exclude='.gitignore' \
+            --exclude='.wordpress-org/' \
+            --exclude='node_modules/' \
+            --exclude='tests/' \
+            --exclude='package.json' \
+            --exclude='package-lock.json' \
+            --exclude='phpcs.xml' \
+            --exclude='phpunit.xml' \
+            --exclude='contributing.md' \
+            --exclude='build/' \
+            ./ build/swiftpress/
+          cd build && zip -r ../swiftpress.zip swiftpress/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: swiftpress.zip
+          generate_release_notes: true
