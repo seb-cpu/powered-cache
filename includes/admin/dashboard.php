@@ -301,9 +301,10 @@ function sanitize_options( $options ) {
 	$sanitized_options['purge_additional_pages']           = sanitize_textarea_field( $options['purge_additional_pages'] );
 	$sanitized_options['minify_html']                      = ! empty( $options['minify_html'] );
 	$sanitized_options['minify_html_dom_optimization']     = ! empty( $options['minify_html_dom_optimization'] );
-	$sanitized_options['combine_google_fonts']             = ! empty( $options['combine_google_fonts'] );
-	$sanitized_options['swap_google_fonts_display']        = ! empty( $options['swap_google_fonts_display'] );
-	$sanitized_options['use_bunny_fonts']                  = ! empty( $options['use_bunny_fonts'] );
+	$sanitized_options['enable_font_optimization']         = ! empty( $options['enable_font_optimization'] );
+	$sanitized_options['self_host_google_fonts']            = ! empty( $options['self_host_google_fonts'] );
+	$sanitized_options['font_preload']                     = ! empty( $options['font_preload'] );
+	$sanitized_options['font_display_swap']                = ! empty( $options['font_display_swap'] );
 	$sanitized_options['minify_css']                       = ! empty( $options['minify_css'] );
 	$sanitized_options['combine_css']                      = ! empty( $options['combine_css'] );
 	$sanitized_options['critical_css']                     = ! empty( $options['critical_css'] );

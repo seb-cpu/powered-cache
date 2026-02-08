@@ -354,31 +354,7 @@ list( $cache_timeout_value, $cache_timeout_interval ) = get_timeout_with_interva
 						</tr>
 					</table>
 				</div>
-
-				<div class="notice notice-info inline" style="margin: 10px 15px;">
-					<p>
-						<strong><?php esc_html_e( 'Legacy Google Font Options', 'swiftpress' ); ?></strong><br />
-						<label>
-							<input type="checkbox" name="combine_google_fonts" value="1"
-								<?php checked( $settings['combine_google_fonts'] ); ?> />
-							<?php esc_html_e( 'Combine Google Fonts requests', 'swiftpress' ); ?>
-						</label>
-						<br />
-						<label>
-							<input type="checkbox" name="swap_google_fonts_display" value="1"
-								<?php checked( $settings['swap_google_fonts_display'] ); ?> />
-							<?php esc_html_e( 'Swap Google Fonts display', 'swiftpress' ); ?>
-						</label>
-						<br />
-						<label>
-							<input type="checkbox" name="use_bunny_fonts" value="1"
-								<?php checked( $settings['use_bunny_fonts'] ); ?> />
-							<?php esc_html_e( 'Replace Google Fonts with Bunny Fonts (GDPR-friendly)', 'swiftpress' ); ?>
-						</label>
-					</p>
-				</div>
-			</div>
-		</div><!-- /font-optimization -->
+			</div><!-- /font-optimization -->
 
 		<!-- ═══════════════════════════════════ SECTION 4: CACHE PRELOADER -->
 		<div class="sp-section" data-section="cache-preloader">
