@@ -102,6 +102,9 @@ function get_settings( $force_network_wide = false ) {
 		'font_preload'                     => true,
 		'font_display_swap'                => true,
 		'self_host_google_fonts'           => true,
+		'combine_google_fonts'             => false,
+		'use_bunny_fonts'                  => false,
+		'swap_google_fonts_display'        => false,
 		// preload
 		'enable_cache_preload'             => false,
 		'preload_homepage'                 => true,

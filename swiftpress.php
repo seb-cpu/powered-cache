@@ -89,6 +89,7 @@ require_once SWIFTPRESS_INC . 'constants.php';
 require_once SWIFTPRESS_INC . 'utils.php';
 require_once SWIFTPRESS_INC . 'core.php';
 require_once SWIFTPRESS_INC . 'admin/dashboard.php';
+require_once SWIFTPRESS_INC . 'admin/app.php';
 require_once SWIFTPRESS_INC . 'admin/notices.php';
 require_once SWIFTPRESS_COMPAT_DIR . 'loader.php';
 
@@ -119,6 +120,8 @@ if ( Utils\bypass_request() ) {
 // Bootstrap.
 Core\setup();
 Admin\Dashboard\setup();
+Admin\App\setup();
+\SwiftPress\AI\AI::factory();
 Admin\Notices\setup();
 Install::factory();
 AdvancedCache::factory();

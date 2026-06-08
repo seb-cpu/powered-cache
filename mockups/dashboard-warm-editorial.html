@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SwiftPress — The Brief (Warm Editorial)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,360..600&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   SwiftPress · "Editorial Console" — Warm Editorial direction
+   Signature move: the AI Brief speaks in an editor's voice;
+   the Performance Score is a large typographic Fraunces numeral.
+   ============================================================ */
+:root{
+  /* — warm graphite base (dominant), one amber accent (~5%) — */
+  --void:#0f0c08; --base:#14110e; --s1:#1c1813; --s2:#241f18; --inset:#100d09;
+  --line:#2e2820; --line-2:#3a332a;
+  --ink:#f4efe6; --ink-2:#c9c0b2; --ink-3:#8d8474; --ink-4:#5e574b;
+  --amber:#f5a524; --amber-deep:#d98a12; --amber-soft:rgba(245,165,36,.16); --amber-line:rgba(245,165,36,.34);
+  --good:#74bd76; --warn:#e9b23a; --crit:#e8674c; --info:#79a8d0;
+  --score-lo:#e8674c; --score-mid:#e9b23a; --score-hi:#74bd76;
+  --shadow:0 1px 0 rgba(255,255,255,.02) inset, 0 18px 40px -24px rgba(0,0,0,.85);
+  --r:7px; --r-sm:4px;
+  --display:'Fraunces',Georgia,serif; --sans:'IBM Plex Sans',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+  --ease:cubic-bezier(.22,.61,.36,1);
+}
+[data-theme="light"]{
+  --void:#f3efe7; --base:#faf7f1; --s1:#ffffff; --s2:#fbf8f2; --inset:#f1ece2;
+  --line:#e7e0d3; --line-2:#d8cfbe;
+  --ink:#211c14; --ink-2:#4f4738; --ink-3:#857c6a; --ink-4:#a99f8b;
+  --amber:#c9780a; --amber-deep:#a8630a; --amber-soft:rgba(201,120,10,.10); --amber-line:rgba(201,120,10,.30);
+  --shadow:0 1px 2px rgba(40,30,10,.04), 0 16px 34px -26px rgba(60,45,15,.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--void); color:var(--ink); font-family:var(--sans);
+  font-size:14px; line-height:1.5; letter-spacing:.005em;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  /* atmosphere: warm radial glow top-left, near-invisible grain */
+  background-image:
+    radial-gradient(1100px 620px at 12% -8%, rgba(245,165,36,.06), transparent 60%),
+    radial-gradient(900px 700px at 110% 10%, rgba(245,165,36,.035), transparent 55%);
+  background-attachment:fixed;
+}
+.app{display:grid; grid-template-columns:236px 1fr; min-height:100vh}
+
+/* ───────────────────────── NAV RAIL ───────────────────────── */
+.rail{
+  background:linear-gradient(180deg,var(--base),var(--void)); border-right:1px solid var(--line);
+  display:flex; flex-direction:column; padding:20px 14px; position:sticky; top:0; height:100vh;
+}
+.brand{display:flex; align-items:center; gap:10px; padding:4px 8px 18px}
+.brand .glyph{width:26px; height:26px; flex:none; display:grid; place-items:center;
+  background:var(--amber); border-radius:6px; color:#1a1206; box-shadow:0 0 0 1px var(--amber-line), 0 6px 16px -6px var(--amber-soft)}
+.brand .glyph svg{width:16px; height:16px}
+.brand .name{font-family:var(--display); font-weight:560; font-size:18px; font-variation-settings:'SOFT' 20,'opsz' 40; letter-spacing:.01em}
+.brand .ver{font-family:var(--mono); font-size:10px; color:var(--ink-3); border:1px solid var(--line-2); padding:1px 5px; border-radius:20px; margin-left:auto}
+.nav{display:flex; flex-direction:column; gap:1px; margin-top:6px}
+.nav .lbl{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-4); padding:14px 10px 6px}
+.nav a{
+  display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:var(--r-sm);
+  color:var(--ink-2); text-decoration:none; font-size:13.5px; position:relative; transition:background .15s, color .15s;
+}
+.nav a .dot{width:6px; height:6px; border-radius:50%; flex:none; background:var(--ink-4)}
+.nav a .dot.on{background:var(--good)} .nav a .dot.part{background:var(--warn)} .nav a .dot.off{background:var(--ink-4)}
+.nav a .ic{width:16px; height:16px; flex:none; opacity:.85}
+.nav a:hover{background:var(--s1); color:var(--ink)}
+.nav a.active{color:var(--ink); background:var(--amber-soft)}
+.nav a.active::before{content:""; position:absolute; left:-14px; top:6px; bottom:6px; width:3px; background:var(--amber); border-radius:0 3px 3px 0}
+.nav a.active .ic{opacity:1; color:var(--amber)}
+.nav a.copilot .spark{margin-left:auto; font-family:var(--mono); font-size:9px; color:var(--amber); border:1px solid var(--amber-line); padding:1px 5px; border-radius:20px; background:var(--amber-soft)}
+.rail .foot{margin-top:auto; display:flex; align-items:center; gap:8px; padding-top:14px; border-top:1px solid var(--line)}
+.rail .foot button{flex:1}
+
+/* generic buttons */
+.btn{font:inherit; font-size:12.5px; font-weight:500; color:var(--ink-2); background:var(--s1); border:1px solid var(--line-2);
+  padding:7px 12px; border-radius:var(--r-sm); cursor:pointer; display:inline-flex; align-items:center; gap:7px; transition:.14s}
+.btn:hover{border-color:var(--ink-4); color:var(--ink)}
+.btn.amber{background:var(--amber); border-color:var(--amber); color:#1a1206; font-weight:600}
+.btn.amber:hover{background:var(--amber-deep); border-color:var(--amber-deep)}
+.btn.ghost{background:transparent}
+.btn .ic{width:15px;height:15px}
+
+/* ───────────────────────── TOP BAR ───────────────────────── */
+.main{display:flex; flex-direction:column; min-width:0}
+.topbar{
+  position:sticky; top:0; z-index:5; display:flex; align-items:center; gap:16px;
+  padding:12px 28px; background:color-mix(in srgb,var(--base) 86%, transparent); backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+}
+.crumbs{font-family:var(--mono); font-size:11.5px; color:var(--ink-3); display:flex; gap:10px; align-items:center}
+.crumbs b{color:var(--ink-2); font-weight:500}
+.crumbs .sep{color:var(--ink-4)}
+.crumbs .ok{color:var(--good)}
+.topbar .spacer{flex:1}
+.ask-trigger{display:flex; align-items:center; gap:9px; min-width:300px; padding:7px 12px; border:1px solid var(--line-2);
+  border-radius:var(--r-sm); background:var(--inset); color:var(--ink-3); cursor:text; font-size:13px; transition:.15s}
+.ask-trigger:hover{border-color:var(--ink-4)}
+.ask-trigger .kbd{margin-left:auto; font-family:var(--mono); font-size:10px; color:var(--ink-3); border:1px solid var(--line-2); border-radius:4px; padding:1px 5px}
+.ask-trigger .ic{width:15px;height:15px;color:var(--ink-3)}
+
+/* ───────────────────────── CONTENT ───────────────────────── */
+.scroll{overflow-y:auto; padding:26px 28px 60px}
+.wrap{max-width:1080px; margin:0 auto}
+
+/* pulse strip — deterministic, renders instantly */
+.pulse{display:grid; grid-template-columns:repeat(6,1fr); gap:1px; background:var(--line); border:1px solid var(--line);
+  border-radius:var(--r); overflow:hidden; margin-bottom:26px}
+.pulse .cell{background:var(--base); padding:13px 15px; display:flex; flex-direction:column; gap:4px}
+.pulse .k{font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-4); display:flex; align-items:center; gap:6px}
+.pulse .k .d{width:6px;height:6px;border-radius:50%}
+.pulse .v{font-family:var(--mono); font-size:19px; font-weight:500; color:var(--ink); letter-spacing:-.01em}
+.pulse .v small{font-size:11px; color:var(--ink-3); font-weight:400}
+.d.good{background:var(--good)} .d.warn{background:var(--warn)} .d.crit{background:var(--crit)}
+.t-good{color:var(--good)} .t-warn{color:var(--warn)} .t-crit{color:var(--crit)}
+
+/* THE BRIEF — hero */
+.brief{display:grid; grid-template-columns:1fr 300px; gap:34px; align-items:start; padding:6px 4px 4px; margin-bottom:30px}
+.brief .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--amber); display:flex; align-items:center; gap:9px; margin-bottom:14px}
+.brief .eyebrow .live{width:7px;height:7px;border-radius:50%;background:var(--amber); box-shadow:0 0 0 0 var(--amber-soft); animation:ping 2.4s var(--ease) infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(245,165,36,.4)}70%,100%{box-shadow:0 0 0 9px rgba(245,165,36,0)}}
+.brief h1{font-family:var(--display); font-weight:480; font-size:clamp(26px,3vw,36px); line-height:1.16;
+  font-variation-settings:'SOFT' 28,'opsz' 144,'wght' 470; letter-spacing:-.01em; color:var(--ink); max-width:20ch; margin-bottom:16px}
+.brief h1 em{font-style:italic; color:var(--amber); font-variation-settings:'SOFT' 40,'opsz' 144,'wght' 460}
+.brief .lede{font-size:15.5px; line-height:1.72; color:var(--ink-2); max-width:62ch}
+.brief .lede .term{color:var(--ink); font-weight:500; border-bottom:1px solid var(--amber-line)}
+.brief .meta{margin-top:16px; font-family:var(--mono); font-size:11px; color:var(--ink-4); display:flex; gap:14px; flex-wrap:wrap}
+.brief .meta b{color:var(--ink-3); font-weight:500}
+
+/* score instrument — the number is the hero */
+.score{position:relative; display:grid; place-items:center; padding:6px}
+.score svg{width:230px; height:230px; transform:rotate(-90deg)}
+.score .ring-bg{fill:none; stroke:var(--line); stroke-width:5}
+.score .ring-fg{fill:none; stroke:var(--score-lo); stroke-width:6; stroke-linecap:round;
+  stroke-dasharray:var(--circ); stroke-dashoffset:var(--circ); transition:stroke-dashoffset 1.4s var(--ease)}
+.score .center{position:absolute; text-align:center}
+.score .num{font-family:var(--display); font-weight:440; font-size:78px; line-height:1; color:var(--ink);
+  font-variation-settings:'SOFT' 30,'opsz' 144,'wght' 440; letter-spacing:-.02em; font-variant-numeric:lining-nums tabular-nums}
+.score .of{font-family:var(--mono); font-size:12px; color:var(--ink-3); margin-top:4px}
+.score .cap{margin-top:14px; text-align:center; font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-4)}
+.score .cap b{color:var(--ink-2); font-weight:500}
+.score .delta{display:inline-flex; align-items:center; gap:5px; margin-top:9px; font-family:var(--mono); font-size:11px; color:var(--good); background:rgba(116,189,118,.1); border:1px solid rgba(116,189,118,.28); padding:3px 9px; border-radius:20px; opacity:0}
+
+/* findings */
+.sec-head{display:flex; align-items:baseline; gap:12px; margin:8px 4px 16px}
+.sec-head h2{font-family:var(--display); font-weight:500; font-size:19px; font-variation-settings:'SOFT' 18,'opsz' 60; color:var(--ink)}
+.sec-head .count{font-family:var(--mono); font-size:11px; color:var(--ink-3); border:1px solid var(--line-2); padding:1px 8px; border-radius:20px}
+.sec-head .all{margin-left:auto}
+.findings{display:flex; flex-direction:column; gap:11px}
+.card{display:grid; grid-template-columns:auto 1fr auto; gap:16px; align-items:start; background:var(--s1); border:1px solid var(--line);
+  border-left:3px solid var(--sev); border-radius:var(--r); padding:16px 18px; box-shadow:var(--shadow); transition:border-color .15s, transform .15s}
+.card:hover{border-color:var(--line-2); transform:translateY(-1px)}
+.card[data-sev="crit"]{--sev:var(--crit)} .card[data-sev="warn"]{--sev:var(--warn)} .card[data-sev="info"]{--sev:var(--info)}
+.card .rank{font-family:var(--mono); font-size:11px; color:var(--ink-4); padding-top:2px}
+.card .body{min-width:0}
+.card h3{font-size:15px; font-weight:600; color:var(--ink); margin-bottom:6px; letter-spacing:-.005em}
+.card .ev{display:inline-flex; align-items:center; gap:7px; font-family:var(--mono); font-size:11px; color:var(--ink-2);
+  background:var(--inset); border:1px solid var(--line); padding:2px 8px; border-radius:5px; margin-bottom:9px}
+.card .ev .mk{color:var(--sev); font-weight:500}
+.card p{font-size:13.5px; line-height:1.62; color:var(--ink-2); max-width:64ch}
+.card p .map{font-family:var(--mono); font-size:12px; color:var(--ink); background:var(--amber-soft); border:1px solid var(--amber-line); padding:0 5px; border-radius:4px}
+.card .acts{display:flex; flex-direction:column; gap:7px; align-items:stretch; min-width:128px}
+.card .conf{font-family:var(--mono); font-size:10px; color:var(--ink-4); text-align:right; letter-spacing:.06em}
+.card .conf b{color:var(--ink-3)}
+.card.done{opacity:.62}
+.card.done .btn.amber{background:transparent; color:var(--good); border-color:rgba(116,189,118,.4); pointer-events:none}
+
+/* preset teaser bar */
+.presets{display:flex; align-items:center; gap:12px; margin:30px 4px 0; padding:16px 18px; background:var(--s1); border:1px solid var(--line); border-radius:var(--r)}
+.presets .lab{font-family:var(--display); font-size:15px; font-weight:500; font-variation-settings:'SOFT' 18,'opsz' 40; margin-right:auto}
+.presets .lab small{display:block; font-family:var(--sans); font-size:11.5px; color:var(--ink-3); font-weight:400; margin-top:2px}
+.chip{font:inherit; font-size:12.5px; color:var(--ink-2); background:var(--inset); border:1px solid var(--line-2); padding:6px 13px; border-radius:20px; cursor:pointer; transition:.14s}
+.chip:hover{border-color:var(--amber-line); color:var(--ink)}
+.chip.sel{background:var(--amber-soft); border-color:var(--amber-line); color:var(--ink)}
+
+/* footer note */
+.fnote{margin:34px 4px 0; font-size:12px; color:var(--ink-4); display:flex; align-items:center; gap:8px}
+.fnote .ic{width:14px;height:14px}
+
+/* command palette */
+.cmdk{position:fixed; inset:0; background:rgba(8,6,3,.55); backdrop-filter:blur(3px); display:none; align-items:flex-start; justify-content:center; padding-top:14vh; z-index:50}
+.cmdk.open{display:flex}
+.cmdk .panel{width:min(640px,92vw); background:var(--s2); border:1px solid var(--line-2); border-radius:12px; box-shadow:0 40px 90px -30px rgba(0,0,0,.8); overflow:hidden; animation:rise .22s var(--ease)}
+@keyframes rise{from{opacity:0; transform:translateY(10px)}to{opacity:1; transform:none}}
+.cmdk .in{display:flex; align-items:center; gap:12px; padding:18px 20px; border-bottom:1px solid var(--line)}
+.cmdk .in .ic{width:18px;height:18px;color:var(--amber)}
+.cmdk input{flex:1; background:none; border:none; outline:none; color:var(--ink); font:inherit; font-size:16px}
+.cmdk input::placeholder{color:var(--ink-4)}
+.cmdk .hints{padding:12px 14px}
+.cmdk .hint{display:flex; align-items:center; gap:11px; padding:9px 12px; border-radius:6px; color:var(--ink-2); font-size:13.5px; cursor:pointer}
+.cmdk .hint:hover{background:var(--s1)}
+.cmdk .hint .q{font-style:italic; color:var(--ink-3); font-family:var(--display); font-variation-settings:'SOFT' 30}
+.cmdk .foot{padding:10px 18px; border-top:1px solid var(--line); font-family:var(--mono); font-size:10.5px; color:var(--ink-4); display:flex; gap:16px}
+
+@media (max-width:980px){ .app{grid-template-columns:1fr} .rail{display:none} .brief{grid-template-columns:1fr} .pulse{grid-template-columns:repeat(3,1fr)} }
+@media (prefers-reduced-motion:reduce){ *{animation:none!important; transition:none!important} }
+
+/* load reveal */
+.reveal{opacity:0; transform:translateY(12px); animation:up .7s var(--ease) forwards}
+@keyframes up{to{opacity:1; transform:none}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ═══════════════ NAV RAIL ═══════════════ -->
+  <aside class="rail">
+    <div class="brand">
+      <span class="glyph"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2 4 14h6l-1 8 10-13h-7l1-7z" fill="currentColor"/></svg></span>
+      <span class="name">SwiftPress</span>
+      <span class="ver">1.0</span>
+    </div>
+    <nav class="nav">
+      <a href="#" class="active"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 4h8a2 2 0 0 1 2 2v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V6a2 2 0 0 1 2-2z"/><path d="M9 9h6M9 13h6M9 17h3"/></svg></span> The Brief <span class="dot warn" style="margin-left:auto" title="3 findings"></span></a>
+      <div class="lbl">Tune</div>
+      <a href="#"><span class="dot on"></span> Cache</a>
+      <a href="#"><span class="dot part"></span> Optimize</a>
+      <a href="#"><span class="dot on"></span> Media &amp; Fonts</a>
+      <a href="#"><span class="dot part"></span> Preload</a>
+      <a href="#"><span class="dot off"></span> Delivery</a>
+      <div class="lbl">Operate</div>
+      <a href="#"><span class="dot on"></span> Inspect <span style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--ink-4)">1,204</span></a>
+      <a href="#"><span class="dot on"></span> Server <span style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--good)">nginx</span></a>
+      <a href="#" class="copilot"><span class="dot on"></span> Copilot <span class="spark">KEY SET</span></a>
+    </nav>
+    <div class="foot">
+      <button class="btn ghost" onclick="toggleTheme()" id="themeBtn" title="Toggle theme">◐ Theme</button>
+      <button class="btn">Flush all</button>
+    </div>
+  </aside>
+
+  <!-- ═══════════════ MAIN ═══════════════ -->
+  <div class="main">
+    <header class="topbar">
+      <div class="crumbs">
+        <b>happytailsdetective.co.uk</b><span class="sep">·</span>
+        <span>nginx</span><span class="sep">·</span><span>PHP 8.3</span><span class="sep">·</span>
+        <span>Redis <span class="ok">✓</span></span><span class="sep">·</span><span>last audit 2h ago</span>
+      </div>
+      <div class="spacer"></div>
+      <div class="ask-trigger" onclick="openCmd()">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v2m0 14v2M5 12H3m18 0h-2m-2.6 6.4 1.4 1.4M5.2 5.2l1.4 1.4m10 0 1.4-1.4M5.2 18.8l1.4-1.4"/><circle cx="12" cy="12" r="4"/></svg></span>
+        Ask SwiftPress, or type a command…
+        <span class="kbd">⌘K</span>
+      </div>
+      <button class="btn amber" onclick="rerun()"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7M21 4v4h-4"/></svg></span> Run Diagnostic</button>
+    </header>
+
+    <div class="scroll">
+      <div class="wrap">
+
+        <!-- Pulse strip (deterministic, instant) -->
+        <div class="pulse reveal">
+          <div class="cell"><span class="k"><span class="d crit"></span>Score</span><span class="v t-crit">62<small>/100</small></span></div>
+          <div class="cell"><span class="k"><span class="d crit"></span>LCP</span><span class="v t-crit">8.0<small>s</small></span></div>
+          <div class="cell"><span class="k"><span class="d warn"></span>CLS</span><span class="v t-warn">0.164</span></div>
+          <div class="cell"><span class="k"><span class="d good"></span>INP</span><span class="v t-good">128<small>ms</small></span></div>
+          <div class="cell"><span class="k"><span class="d good"></span>TTFB</span><span class="v t-good">148<small>ms</small></span></div>
+          <div class="cell"><span class="k"><span class="d warn"></span>Cache hit</span><span class="v t-warn">61<small>%</small></span></div>
+        </div>
+
+        <!-- THE BRIEF -->
+        <section class="brief">
+          <div class="reveal" style="animation-delay:.06s">
+            <div class="eyebrow"><span class="live"></span> AI Brief · generated just now</div>
+            <h1>Your homepage is fast on the server, but it’s <em>blocking itself</em> in the browser.</h1>
+            <p class="lede" id="lede">
+              Good news first: your server answers in <span class="term">148&nbsp;ms</span> and Redis object cache is live — the host isn’t the problem. The <span class="term">8.0&nbsp;s</span> largest-paint comes from the page fighting itself: a <span class="term">dead Universal Analytics tag</span> (UA-106137366-1, retired by Google) still ships <span class="term">62&nbsp;KB</span> of unused JavaScript, a Google Font blocks the first render, your hero image isn’t preloaded, and <span class="term">WPBakery</span> loads 40&nbsp;KB of CSS this page never uses. None of this needs a developer — every fix below maps to a switch SwiftPress already has.
+            </p>
+            <div class="meta">
+              <span><b>Source</b> PageSpeed Insights · mobile · field+lab</span>
+              <span><b>Model</b> gemini-2.5-flash-lite</span>
+              <span><b>Cost</b> $0.0007</span>
+            </div>
+          </div>
+
+          <div class="score reveal" style="animation-delay:.14s" role="meter" aria-valuenow="62" aria-valuemin="0" aria-valuemax="100" aria-label="Performance score 62 of 100">
+            <svg viewBox="0 0 120 120">
+              <circle class="ring-bg" cx="60" cy="60" r="52"/>
+              <circle class="ring-fg" id="ring" cx="60" cy="60" r="52"/>
+            </svg>
+            <div class="center">
+              <div class="num" id="scoreNum">0</div>
+              <div class="of">/ 100 · mobile</div>
+            </div>
+            <div class="cap" style="position:absolute;bottom:-2px">Performance · <b>field</b> 28-day CrUX</div>
+            <div class="delta" id="delta">▲ projected +26 after fixes</div>
+          </div>
+        </section>
+
+        <!-- FINDINGS -->
+        <div class="sec-head">
+          <h2>Explain &amp; Fix</h2>
+          <span class="count">4 findings · 3 one-click</span>
+          <button class="btn all">Apply all safe fixes</button>
+        </div>
+
+        <div class="findings">
+          <article class="card reveal" data-sev="crit" style="animation-delay:.20s">
+            <div class="rank">01</div>
+            <div class="body">
+              <h3>A dead analytics script is shipping 62&nbsp;KB of unused JavaScript</h3>
+              <span class="ev"><span class="mk">−62 KB JS</span> · UA-106137366-1 · 0 executions</span>
+              <p>Universal Analytics was switched off by Google in 2023, but the tag still loads on every page and blocks the main thread. Turning on <span class="map">js_delay</span> defers it (and GTM) until the visitor interacts — instant LCP relief with zero visual change.</p>
+            </div>
+            <div class="acts"><button class="btn amber" onclick="fix(this)">Apply fix</button><button class="btn ghost">Explain more</button><div class="conf"><b>confidence</b> 0.96</div></div>
+          </article>
+
+          <article class="card reveal" data-sev="crit" style="animation-delay:.26s">
+            <div class="rank">02</div>
+            <div class="body">
+              <h3>A Google Font is blocking your first paint</h3>
+              <span class="ev"><span class="mk">render-blocking</span> · fonts.googleapis.com · ~480 ms</span>
+              <p>The font request sits in the critical path with no <code>font-display</code>, so text waits on the network. Enabling <span class="map">enable_font_optimization</span> self-hosts it, adds <span class="map">font_display_swap</span>, and preloads the above-the-fold weight — text paints immediately, and it’s GDPR-friendlier too (no call to Google).</p>
+            </div>
+            <div class="acts"><button class="btn amber" onclick="fix(this)">Apply fix</button><button class="btn ghost">Explain more</button><div class="conf"><b>confidence</b> 0.94</div></div>
+          </article>
+
+          <article class="card reveal" data-sev="warn" style="animation-delay:.32s">
+            <div class="rank">03</div>
+            <div class="body">
+              <h3>Images without dimensions are shifting your layout</h3>
+              <span class="ev"><span class="mk">CLS 0.164</span> · 7 images · missing width/height</span>
+              <p>Browsers can’t reserve space before images load, so content jumps. <span class="map">add_missing_image_dimensions</span> writes the intrinsic width/height back into the markup — this alone should pull CLS under the 0.1 “good” threshold.</p>
+            </div>
+            <div class="acts"><button class="btn amber" onclick="fix(this)">Apply fix</button><button class="btn ghost">Explain more</button><div class="conf"><b>confidence</b> 0.91</div></div>
+          </article>
+
+          <article class="card reveal" data-sev="info" style="animation-delay:.38s">
+            <div class="rank">04</div>
+            <div class="body">
+              <h3>40&nbsp;KB of WPBakery CSS is unused on this page</h3>
+              <span class="ev"><span class="mk">−40 KB CSS</span> · js_composer · +35 KB dashicons</span>
+              <p>Removing unused CSS is real engineering, not a guess — so SwiftPress does it <b>algorithmically</b>, not with AI. The Remove-Unused-CSS engine isn’t shipped yet; I’ve flagged it rather than offering a switch that does nothing. <i>Coming with the CSS engine.</i></p>
+            </div>
+            <div class="acts"><button class="btn" disabled style="opacity:.5;cursor:default">Engine pending</button><div class="conf"><b>status</b> roadmap</div></div>
+          </article>
+        </div>
+
+        <!-- presets -->
+        <div class="presets reveal" style="animation-delay:.44s">
+          <div class="lab">Or pick a starting posture<small>Each preset is an explicit map of switches with per-setting risk labels — never a mystery bundle.</small></div>
+          <button class="chip">Safe</button>
+          <button class="chip sel">Balanced</button>
+          <button class="chip">Aggressive</button>
+          <button class="chip">WooCommerce</button>
+        </div>
+
+        <div class="fnote">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 3 7v6c0 5 9 9 9 9s9-4 9-9V7l-9-5z"/></svg></span>
+          Every fix applies through SwiftPress’s own save path and is snapshotted — one click in <b style="color:var(--ink-2)">Copilot → History</b> reverts it. The key never leaves your server.
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- command palette -->
+<div class="cmdk" id="cmdk" onclick="if(event.target.id==='cmdk')closeCmd()">
+  <div class="panel">
+    <div class="in">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v2m0 14v2M5 12H3m18 0h-2M6.6 6.6 5.2 5.2m12.2 1.4 1.4-1.4M6.6 17.4l-1.4 1.4m12.2-1.4 1.4 1.4"/><circle cx="12" cy="12" r="4"/></svg></span>
+      <input id="cmdInput" placeholder="Ask, or command in plain English…" autocomplete="off">
+    </div>
+    <div class="hints">
+      <div class="hint" onclick="closeCmd()"><span style="color:var(--amber)">↳</span> <span class="q">“speed it up but don’t cache the members area”</span></div>
+      <div class="hint" onclick="closeCmd()"><span style="color:var(--amber)">↳</span> <span class="q">“why is my LCP so slow?”</span></div>
+      <div class="hint" onclick="closeCmd()"><span style="color:var(--amber)">↳</span> <span class="q">“turn on everything safe for a WooCommerce store”</span></div>
+      <div class="hint" onclick="closeCmd()"><span style="color:var(--amber)">↳</span> <span class="q">“generate my nginx config”</span></div>
+    </div>
+    <div class="foot"><span>↵ to run</span><span>esc to close</span><span>every command shows a diff before it applies</span></div>
+  </div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const SCORE=62, CIRC=2*Math.PI*52;
+const ring=$('#ring');
+ring.style.setProperty('--circ',CIRC);
+function band(v){return v>=90?getCss('--score-hi'):v>=50?getCss('--score-mid'):getCss('--score-lo')}
+function getCss(v){return getComputedStyle(document.documentElement).getPropertyValue(v)}
+function drawScore(target){
+  const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  ring.style.stroke=band(target);
+  const off=CIRC*(1-target/100);
+  if(reduce){ring.style.transition='none'; ring.style.strokeDashoffset=off; $('#scoreNum').textContent=target; return;}
+  requestAnimationFrame(()=>{ring.style.strokeDashoffset=off});
+  let n=0; const step=()=>{n+=Math.max(1,Math.round((target-n)/8)); if(n>=target)n=target; $('#scoreNum').textContent=n; if(n<target)requestAnimationFrame(step)}; setTimeout(step,180);
+}
+window.addEventListener('load',()=>drawScore(SCORE));
+
+let applied=0;
+function fix(btn){
+  const card=btn.closest('.card'); if(card.classList.contains('done'))return;
+  btn.textContent='Applying…';
+  setTimeout(()=>{ card.classList.add('done'); btn.textContent='✓ Applied'; applied++;
+    if(applied>=1){ const d=$('#delta'); d.style.transition='opacity .5s'; d.style.opacity='1'; }
+    if(applied>=3){ drawScore(88); $('#delta').textContent='▲ +26 — re-audited'; }
+  },560);
+}
+function rerun(){ $('#scoreNum').textContent='0'; ring.style.strokeDashoffset=CIRC; setTimeout(()=>drawScore(SCORE),300); }
+function openCmd(){ $('#cmdk').classList.add('open'); setTimeout(()=>$('#cmdInput').focus(),50) }
+function closeCmd(){ $('#cmdk').classList.remove('open') }
+function toggleTheme(){ const h=document.documentElement; h.dataset.theme=h.dataset.theme==='dark'?'light':'dark'; drawScore(applied>=3?88:SCORE); }
+addEventListener('keydown',e=>{ if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();openCmd()} if(e.key==='Escape')closeCmd() });
+document.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{document.querySelectorAll('.chip').forEach(x=>x.classList.remove('sel'));c.classList.add('sel')});
+</script>
+</body>
+</html>

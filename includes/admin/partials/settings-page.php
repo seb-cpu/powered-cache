@@ -354,7 +354,8 @@ list( $cache_timeout_value, $cache_timeout_interval ) = get_timeout_with_interva
 						</tr>
 					</table>
 				</div>
-			</div><!-- /font-optimization -->
+			</div>
+		</div><!-- /font-optimization -->
 
 		<!-- ═══════════════════════════════════ SECTION 4: CACHE PRELOADER -->
 		<div class="sp-section" data-section="cache-preloader">

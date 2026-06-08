@@ -627,7 +627,42 @@ class Config {
 	public function save_configuration( $settings, $network_wide = false ) {
 
 		$this->setup_page_cache( $settings['enable_page_cache'] );
-		$private_settings = [ 'cloudflare_email', 'cloudflare_api_key', 'cloudflare_api_token', 'cloudflare_zone' ];
+
+		// Hardcoded baseline of secret keys that must ALWAYS be stripped before the
+		// settings are flattened into the readable sp-config drop-in file. This includes
+		// the Cloudflare credentials and the AI module secrets (OpenRouter + PSI). The
+		// baseline is non-negotiable; the filter below can only EXTEND it, never remove
+		// from it, so a third-party callback cannot expose a secret by mutating the list.
+		$baseline_secret_keys = [
+			'cloudflare_email',
+			'cloudflare_api_key',
+			'cloudflare_api_token',
+			'cloudflare_zone',
+			'openrouter_key',
+			'openrouter_key_cipher',
+			'ai_openrouter_key',
+			'psi_key_cipher',
+		];
+
+		/**
+		 * Filters additional setting keys to strip from the generated config file.
+		 *
+		 * This filter is APPEND-ONLY: the returned keys are merged with the hardcoded
+		 * baseline, they never replace it. Use it to register secret keys owned by
+		 * other modules (e.g. the AI module) without core needing to know about them.
+		 * Callbacks cannot remove a baseline key.
+		 *
+		 * @hook  swiftpress_secret_strip_keys
+		 *
+		 * @param {array} $keys Additional secret setting keys to strip. Default empty.
+		 *
+		 * @return {array} Additional secret setting keys.
+		 *
+		 * @since 1.0
+		 */
+		$extra_secret_keys = (array) apply_filters( 'swiftpress_secret_strip_keys', [] );
+
+		$private_settings = array_unique( array_merge( $baseline_secret_keys, $extra_secret_keys ) );
 
 		foreach ( $private_settings as $setting_key ) {
 			unset( $settings[ $setting_key ] );

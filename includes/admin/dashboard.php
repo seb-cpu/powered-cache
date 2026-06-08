@@ -112,6 +112,10 @@ function admin_menu() {
  * Main settings page of the plugin
  */
 function settings_page() {
+	if ( function_exists( '\\SwiftPress\\Admin\\App\\render' ) ) {
+		\SwiftPress\Admin\App\render();
+		return;
+	}
 	include __DIR__ . '/partials/settings-page.php';
 }
 
@@ -159,6 +163,11 @@ function process_form_submit() {
 					'cloudflare_email', // PII data
 					'cloudflare_api_key',
 					'cloudflare_api_token',
+					// AI module secrets — never export, even if a future refactor merges them into settings.
+					'openrouter_key',
+					'openrouter_key_cipher',
+					'ai_openrouter_key',
+					'psi_key_cipher',
 				];
 
 				foreach ( $sensitive_options as $option_key ) {
@@ -180,10 +189,49 @@ function process_form_submit() {
 				echo $options; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				exit;
 			case 'import_settings':
-				if ( $_FILES['import_file'] && ! empty( $_FILES['import_file']['tmp_name'] ) ) { // phpcs:ignore
-					$import_data     = file_get_contents( $_FILES['import_file']['tmp_name'] ); // phpcs:ignore
-					$import_settings = json_decode( $import_data, true );
-					$options         = sanitize_options( $import_settings );
+				// Hardened import: require a successfully-uploaded file, cap its size,
+				// and require the decoded JSON to be an array before trusting it. On any
+				// failure we bail and keep the already-sanitized $options from $_POST.
+				if (
+					! isset( $_FILES['import_file'] )
+					|| ! is_array( $_FILES['import_file'] )
+					|| ! isset( $_FILES['import_file']['error'] )
+					|| UPLOAD_ERR_OK !== (int) $_FILES['import_file']['error']
+					|| empty( $_FILES['import_file']['tmp_name'] )
+				) {
+					break;
+				}
+
+				// Sane size cap (1 MB) — a settings JSON export is a few KB at most.
+				$max_import_bytes = 1024 * 1024;
+				if ( isset( $_FILES['import_file']['size'] ) && (int) $_FILES['import_file']['size'] > $max_import_bytes ) {
+					break;
+				}
+
+				$import_file = sanitize_text_field( wp_unslash( $_FILES['import_file']['tmp_name'] ) );
+				if ( ! is_uploaded_file( $import_file ) ) {
+					break;
+				}
+
+				$import_data     = file_get_contents( $import_file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+				$import_settings = json_decode( $import_data, true );
+
+				// Bail unless the payload decoded to an array.
+				if ( ! is_array( $import_settings ) ) {
+					break;
+				}
+
+				$options = sanitize_options( $import_settings );
+
+				// Strip any AI / secret keys so an imported JSON can never seed a key.
+				$import_secret_keys = [
+					'openrouter_key',
+					'openrouter_key_cipher',
+					'ai_openrouter_key',
+					'psi_key_cipher',
+				];
+				foreach ( $import_secret_keys as $import_secret_key ) {
+					unset( $options[ $import_secret_key ] );
 				}
 				break;
 			case 'enable_dev_mode':
@@ -288,40 +336,43 @@ function sanitize_options( $options ) {
 	$sanitized_options['cache_mobile_separate_file']       = ! empty( $options['cache_mobile_separate_file'] );
 	$sanitized_options['loggedin_user_cache']              = ! empty( $options['loggedin_user_cache'] );
 	$sanitized_options['gzip_compression']                 = ! empty( $options['gzip_compression'] );
-	$sanitized_options['cache_timeout']                    = absint( $options['cache_timeout'] );
+	$sanitized_options['cache_timeout']                    = absint( $options['cache_timeout'] ?? 0 );
 	$sanitized_options['auto_configure_htaccess']          = ! empty( $options['auto_configure_htaccess'] );
 	$sanitized_options['rewrite_file_optimizer']           = ! empty( $options['rewrite_file_optimizer'] );
-	$sanitized_options['rejected_user_agents']             = sanitize_textarea_field( $options['rejected_user_agents'] );
-	$sanitized_options['rejected_cookies']                 = sanitize_textarea_field( $options['rejected_cookies'] );
-	$sanitized_options['rejected_referrers']               = sanitize_textarea_field( $options['rejected_referrers'] );
-	$sanitized_options['vary_cookies']                     = sanitize_textarea_field( $options['vary_cookies'] );
-	$sanitized_options['rejected_uri']                     = sanitize_textarea_field( $options['rejected_uri'] );
-	$sanitized_options['cache_query_strings']              = sanitize_textarea_field( $options['cache_query_strings'] );
-	$sanitized_options['ignored_query_strings']            = sanitize_textarea_field( $options['ignored_query_strings'] );
-	$sanitized_options['purge_additional_pages']           = sanitize_textarea_field( $options['purge_additional_pages'] );
+	$sanitized_options['rejected_user_agents']             = sanitize_textarea_field( $options['rejected_user_agents'] ?? '' );
+	$sanitized_options['rejected_cookies']                 = sanitize_textarea_field( $options['rejected_cookies'] ?? '' );
+	$sanitized_options['rejected_referrers']               = sanitize_textarea_field( $options['rejected_referrers'] ?? '' );
+	$sanitized_options['vary_cookies']                     = sanitize_textarea_field( $options['vary_cookies'] ?? '' );
+	$sanitized_options['rejected_uri']                     = sanitize_textarea_field( $options['rejected_uri'] ?? '' );
+	$sanitized_options['cache_query_strings']              = sanitize_textarea_field( $options['cache_query_strings'] ?? '' );
+	$sanitized_options['ignored_query_strings']            = sanitize_textarea_field( $options['ignored_query_strings'] ?? '' );
+	$sanitized_options['purge_additional_pages']           = sanitize_textarea_field( $options['purge_additional_pages'] ?? '' );
 	$sanitized_options['minify_html']                      = ! empty( $options['minify_html'] );
 	$sanitized_options['minify_html_dom_optimization']     = ! empty( $options['minify_html_dom_optimization'] );
 	$sanitized_options['enable_font_optimization']         = ! empty( $options['enable_font_optimization'] );
 	$sanitized_options['self_host_google_fonts']            = ! empty( $options['self_host_google_fonts'] );
 	$sanitized_options['font_preload']                     = ! empty( $options['font_preload'] );
 	$sanitized_options['font_display_swap']                = ! empty( $options['font_display_swap'] );
+	$sanitized_options['combine_google_fonts']             = ! empty( $options['combine_google_fonts'] );
+	$sanitized_options['use_bunny_fonts']                  = ! empty( $options['use_bunny_fonts'] );
+	$sanitized_options['swap_google_fonts_display']        = ! empty( $options['swap_google_fonts_display'] );
 	$sanitized_options['minify_css']                       = ! empty( $options['minify_css'] );
 	$sanitized_options['combine_css']                      = ! empty( $options['combine_css'] );
 	$sanitized_options['critical_css']                     = ! empty( $options['critical_css'] );
-	$sanitized_options['critical_css_additional_files']    = sanitize_textarea_field( $options['critical_css_additional_files'] );
-	$sanitized_options['critical_css_excluded_files']      = sanitize_textarea_field( $options['critical_css_excluded_files'] );
-	$sanitized_options['excluded_css_files']               = sanitize_textarea_field( $options['excluded_css_files'] );
+	$sanitized_options['critical_css_additional_files']    = sanitize_textarea_field( $options['critical_css_additional_files'] ?? '' );
+	$sanitized_options['critical_css_excluded_files']      = sanitize_textarea_field( $options['critical_css_excluded_files'] ?? '' );
+	$sanitized_options['excluded_css_files']               = sanitize_textarea_field( $options['excluded_css_files'] ?? '' );
 	$sanitized_options['remove_unused_css']                = ! empty( $options['remove_unused_css'] );
-	$sanitized_options['ucss_safelist']                    = sanitize_textarea_field( $options['ucss_safelist'] );
-	$sanitized_options['ucss_excluded_files']              = sanitize_textarea_field( $options['ucss_excluded_files'] );
+	$sanitized_options['ucss_safelist']                    = sanitize_textarea_field( $options['ucss_safelist'] ?? '' );
+	$sanitized_options['ucss_excluded_files']              = sanitize_textarea_field( $options['ucss_excluded_files'] ?? '' );
 	$sanitized_options['minify_js']                        = ! empty( $options['minify_js'] );
 	$sanitized_options['combine_js']                       = ! empty( $options['combine_js'] );
-	$sanitized_options['excluded_js_files']                = sanitize_textarea_field( $options['excluded_js_files'] );
+	$sanitized_options['excluded_js_files']                = sanitize_textarea_field( $options['excluded_js_files'] ?? '' );
 	$sanitized_options['js_defer']                         = ! empty( $options['js_defer'] );
-	$sanitized_options['js_defer_exclusions']              = sanitize_textarea_field( $options['js_defer_exclusions'] );
+	$sanitized_options['js_defer_exclusions']              = sanitize_textarea_field( $options['js_defer_exclusions'] ?? '' );
 	$sanitized_options['js_delay']                         = ! empty( $options['js_delay'] );
-	$sanitized_options['js_delay_exclusions']              = sanitize_textarea_field( $options['js_delay_exclusions'] );
-	$sanitized_options['js_delay_timeout']                 = absint( $options['js_delay_timeout'] );
+	$sanitized_options['js_delay_exclusions']              = sanitize_textarea_field( $options['js_delay_exclusions'] ?? '' );
+	$sanitized_options['js_delay_timeout']                 = absint( $options['js_delay_timeout'] ?? 0 );
 	$sanitized_options['enable_image_optimization']        = ! empty( $options['enable_image_optimization'] );
 	$sanitized_options['image_optimizer_preferred_format'] = isset( $options['image_optimizer_preferred_format'] ) ? sanitize_text_field( wp_unslash( $options['image_optimizer_preferred_format'] ) ) : '';
 	$sanitized_options['add_missing_image_dimensions']     = ! empty( $options['add_missing_image_dimensions'] );
@@ -329,7 +380,7 @@ function sanitize_options( $options ) {
 	$sanitized_options['disable_emoji_scripts']            = ! empty( $options['disable_emoji_scripts'] );
 
 	// convert TTL in minute
-	if ( $options['cache_timeout'] > 0 && isset( $options['cache_timeout_interval'] ) ) {
+	if ( ( $options['cache_timeout'] ?? 0 ) > 0 && isset( $options['cache_timeout_interval'] ) ) {
 		switch ( $options['cache_timeout_interval'] ) {
 			case 'DAY':
 				$sanitized_options['cache_timeout'] = $options['cache_timeout'] * 1440;
@@ -348,27 +399,27 @@ function sanitize_options( $options ) {
 	$sanitized_options['preload_public_posts']           = ! empty( $options['preload_public_posts'] );
 	$sanitized_options['preload_public_tax']             = ! empty( $options['preload_public_tax'] );
 	$sanitized_options['enable_sitemap_preload']         = ! empty( $options['enable_sitemap_preload'] );
-	$sanitized_options['preload_request_interval']       = absint( $options['preload_request_interval'] );
+	$sanitized_options['preload_request_interval']       = absint( $options['preload_request_interval'] ?? 0 );
 	$sanitized_options['preload_crawl_interval']         = max( 10, absint( isset( $options['preload_crawl_interval'] ) ? $options['preload_crawl_interval'] : 60 ) );
 	$sanitized_options['preload_sitemap']                = isset( $options['preload_sitemap'] ) ? esc_url_raw( trim( $options['preload_sitemap'] ) ) : '';
-	$sanitized_options['prefetch_dns']                   = sanitize_textarea_field( $options['prefetch_dns'] );
-	$sanitized_options['preconnect_resource']            = sanitize_textarea_field( $options['preconnect_resource'] );
+	$sanitized_options['prefetch_dns']                   = sanitize_textarea_field( $options['prefetch_dns'] ?? '' );
+	$sanitized_options['preconnect_resource']            = sanitize_textarea_field( $options['preconnect_resource'] ?? '' );
 	$sanitized_options['enable_lcp_optimization']        = ! empty( $options['enable_lcp_optimization'] );
 	$sanitized_options['prefetch_links']                 = ! empty( $options['prefetch_links'] );
 	$sanitized_options['enable_cloudflare']              = ! empty( $options['enable_cloudflare'] );
-	$sanitized_options['cloudflare_email']               = sanitize_email( $options['cloudflare_email'] );
-	$sanitized_options['cloudflare_api_key']             = sanitize_text_field( $options['cloudflare_api_key'] );
-	$sanitized_options['cloudflare_api_token']           = sanitize_text_field( $options['cloudflare_api_token'] );
-	$sanitized_options['cloudflare_zone']                = sanitize_text_field( $options['cloudflare_zone'] );
+	$sanitized_options['cloudflare_email']               = sanitize_email( $options['cloudflare_email'] ?? '' );
+	$sanitized_options['cloudflare_api_key']             = sanitize_text_field( $options['cloudflare_api_key'] ?? '' );
+	$sanitized_options['cloudflare_api_token']           = sanitize_text_field( $options['cloudflare_api_token'] ?? '' );
+	$sanitized_options['cloudflare_zone']                = sanitize_text_field( $options['cloudflare_zone'] ?? '' );
 	$sanitized_options['enable_heartbeat']               = ! empty( $options['enable_heartbeat'] );
-	$sanitized_options['heartbeat_dashboard_status']     = sanitize_text_field( $options['heartbeat_dashboard_status'] );
-	$sanitized_options['heartbeat_editor_status']        = sanitize_text_field( $options['heartbeat_editor_status'] );
-	$sanitized_options['heartbeat_frontend_status']      = sanitize_text_field( $options['heartbeat_frontend_status'] );
-	$sanitized_options['heartbeat_dashboard_interval']   = absint( $options['heartbeat_dashboard_interval'] );
-	$sanitized_options['heartbeat_editor_interval']      = absint( $options['heartbeat_editor_interval'] );
-	$sanitized_options['heartbeat_frontend_interval']    = absint( $options['heartbeat_frontend_interval'] );
+	$sanitized_options['heartbeat_dashboard_status']     = sanitize_text_field( $options['heartbeat_dashboard_status'] ?? '' );
+	$sanitized_options['heartbeat_editor_status']        = sanitize_text_field( $options['heartbeat_editor_status'] ?? '' );
+	$sanitized_options['heartbeat_frontend_status']      = sanitize_text_field( $options['heartbeat_frontend_status'] ?? '' );
+	$sanitized_options['heartbeat_dashboard_interval']   = absint( $options['heartbeat_dashboard_interval'] ?? 0 );
+	$sanitized_options['heartbeat_editor_interval']      = absint( $options['heartbeat_editor_interval'] ?? 0 );
+	$sanitized_options['heartbeat_frontend_interval']    = absint( $options['heartbeat_frontend_interval'] ?? 0 );
 	$sanitized_options['enable_varnish']                 = ! empty( $options['enable_varnish'] );
-	$sanitized_options['varnish_ip']                     = sanitize_text_field( $options['varnish_ip'] );
+	$sanitized_options['varnish_ip']                     = sanitize_text_field( $options['varnish_ip'] ?? '' );
 	$sanitized_options['cache_footprint']                = ! empty( $options['cache_footprint'] );
 	$sanitized_options['async_cache_cleaning']           = ! empty( $options['async_cache_cleaning'] );
 	$sanitized_options['dev_mode']                       = ! empty( $options['dev_mode'] );
@@ -691,7 +742,7 @@ function ajax_clear_font_cache() {
 		wp_send_json_error( [ 'message' => esc_html__( 'Permission denied.', 'swiftpress' ) ] );
 	}
 
-	$font_cache_dir = WP_CONTENT_DIR . '/cache/fonts/';
+	$font_cache_dir = get_cache_dir() . 'swiftpress/fonts/';
 
 	if ( is_dir( $font_cache_dir ) ) {
 		remove_dir( $font_cache_dir );

@@ -117,7 +117,7 @@ class CLI extends \WP_CLI_Command {
 	 * @since 1.0.0
 	 */
 	private function flush_fonts() {
-		$font_cache_dir = WP_CONTENT_DIR . '/cache/fonts/';
+		$font_cache_dir = get_cache_dir() . 'swiftpress/fonts/';
 
 		if ( is_dir( $font_cache_dir ) ) {
 			remove_dir( $font_cache_dir );
@@ -264,7 +264,7 @@ class CLI extends \WP_CLI_Command {
 			|| ! empty( $settings['critical_css'] );
 
 		$cache_dir      = get_cache_dir();
-		$font_cache_dir = WP_CONTENT_DIR . '/cache/fonts/';
+		$font_cache_dir = get_cache_dir() . 'swiftpress/fonts/';
 
 		$cache_size      = $this->get_directory_size( $cache_dir );
 		$font_cache_size = $this->get_directory_size( $font_cache_dir );

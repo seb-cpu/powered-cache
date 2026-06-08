@@ -102,6 +102,22 @@ Yes. SwiftPress provides these WP-CLI commands:
 
 Yes. SwiftPress supports both single-site and WordPress multisite (network-wide activation). Each site in the network gets its own cache directory and settings.
 
+== External Services ==
+
+This plugin optionally connects to the following external services when the AI Performance Diagnostic feature is used:
+
+* Google PageSpeed Insights API (https://developers.google.com/speed/docs/insights/v5/get-started)
+  - Used to collect performance metrics for the audited URL.
+  - Data sent: the URL of your site's homepage (a public URL). No personal data is sent.
+  - Terms: https://developers.google.com/terms
+  - Privacy: https://policies.google.com/privacy
+
+* OpenRouter API (https://openrouter.ai)
+  - Used to generate plain-language explanations of performance findings.
+  - Data sent: derived performance metrics (scores, byte counts) and a list of which SwiftPress features are enabled. No page content, no visitor data, no personal information is sent.
+  - Terms: https://openrouter.ai/terms
+  - Privacy: https://openrouter.ai/privacy
+
 == Screenshots ==
 
 1. Settings page — Page Cache section with master toggle and expiration controls
