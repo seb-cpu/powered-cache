@@ -331,6 +331,11 @@ class AI {
 			if ( self::CLEAR_SENTINEL === $raw ) {
 				$key_store->clear_key();
 			} elseif ( '' !== $raw ) {
+				// Live-validate against OpenRouter before storing it.
+				$valid = Client::factory()->validate_key( $raw );
+				if ( is_wp_error( $valid ) ) {
+					wp_send_json_error( [ 'message' => $valid->get_error_message() ], 400 );
+				}
 				$result = $key_store->set_key( $raw );
 				if ( is_wp_error( $result ) ) {
 					wp_send_json_error( [ 'message' => $result->get_error_message() ], 400 );

@@ -152,17 +152,14 @@ function ajax_detect_domains() {
 	}
 
 	$home = home_url( '/' );
-	$resp = wp_remote_get(
-		$home,
-		[
-			'timeout'     => 15,
-			'sslverify'   => true,
-			'redirection' => 3,
-			'headers'     => [ 'User-Agent' => 'Mozilla/5.0 (compatible; AICache/1.0; +https://webs.ie/aicache)' ],
-		]
-	);
 
-	if ( is_wp_error( $resp ) || 200 !== (int) wp_remote_retrieve_response_code( $resp ) ) {
+	// Use the AI scanner's loopback-pinned fetch so a CDN/WAF (Cloudflare) can't
+	// 403 the server-side request.
+	$html = class_exists( '\\SwiftPress\\AI\\PageSpeed' )
+		? \SwiftPress\AI\PageSpeed::factory()->fetch_self( $home )
+		: new \WP_Error( 'no_scanner', 'unavailable' );
+
+	if ( is_wp_error( $html ) ) {
 		wp_send_json_success(
 			[
 				'domains' => [],
@@ -171,7 +168,7 @@ function ajax_detect_domains() {
 		);
 	}
 
-	$html = (string) wp_remote_retrieve_body( $resp );
+	$html = (string) $html;
 	$own  = strtolower( (string) wp_parse_url( $home, PHP_URL_HOST ) );
 
 	$found = [];
@@ -233,18 +230,22 @@ function enqueue( $hook ) {
 	// the admin we load from Google Fonts with display=swap (admin-only, no
 	// front-end / Lighthouse impact). A future pass self-hosts via FontOptimizer.
 	// Native WordPress look — system fonts, no external font request.
+	// Version by file mtime so content changes always bust the browser/CDN cache.
+	$css_ver = @filemtime( SWIFTPRESS_PATH . 'assets/css/admin/swiftpress-app.css' ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+	$js_ver  = @filemtime( SWIFTPRESS_PATH . 'assets/js/admin/swiftpress-app.js' );    // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+
 	wp_enqueue_style(
 		'swiftpress-app',
 		SWIFTPRESS_URL . 'assets/css/admin/swiftpress-app.css',
 		[],
-		SWIFTPRESS_VERSION
+		$css_ver ? (string) $css_ver : SWIFTPRESS_VERSION
 	);
 
 	wp_enqueue_script(
 		'swiftpress-app',
 		SWIFTPRESS_URL . 'assets/js/admin/swiftpress-app.js',
 		[],
-		SWIFTPRESS_VERSION,
+		$js_ver ? (string) $js_ver : SWIFTPRESS_VERSION,
 		true
 	);
 
@@ -673,6 +674,8 @@ function view_copilot() {
 				<select class="sp-select" id="sp-ai-model" style="min-width:240px"><option value="google/gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite</option><option value="google/gemini-2.5-flash">Gemini 2.5 Flash</option></select></div>
 			<div class="sp-row"><div><div class="label"><?php esc_html_e( 'Monthly spend cap', 'swiftpress' ); ?></div><div class="desc"><?php esc_html_e( 'Calls refuse past this. On-demand only — never per page view.', 'swiftpress' ); ?></div></div>
 				<div style="display:flex;align-items:center;gap:6px"><span style="color:var(--ink-3)">$</span><input class="sp-input" type="number" id="sp-ai-cap" value="2" min="0" step="1" /></div></div>
+			<div class="sp-row"><div><div class="label"><?php esc_html_e( 'PageSpeed Insights key', 'swiftpress' ); ?> <span style="font-weight:400;color:var(--ink-3)">(<?php esc_html_e( 'optional', 'swiftpress' ); ?>)</span> <span id="sp-psi-saved" class="sp-saved">&#10003; <?php esc_html_e( 'saved', 'swiftpress' ); ?></span></div><div class="desc"><?php esc_html_e( 'A free Google key unlocks full Lighthouse metrics and avoids the shared rate limit. Without it, AICache runs a quick on-site scan.', 'swiftpress' ); ?> <a href="https://developers.google.com/speed/docs/insights/v5/get-started" target="_blank" rel="noopener">Get a key</a></div></div>
+				<input class="sp-input" type="text" id="sp-psi-input" placeholder="AIza…" autocomplete="off" spellcheck="false" style="min-width:230px;font-family:var(--mono)" /></div>
 		</div>
 	</div>
 

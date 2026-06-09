@@ -122,6 +122,149 @@ class PageSpeed {
 	}
 
 	/**
+	 * Fetch the site's own homepage, pinning the connection to loopback first so a
+	 * CDN/WAF (e.g. Cloudflare) bot-rule can't 403 the server-side request. Falls
+	 * back to a normal public fetch.
+	 *
+	 * @param string $url URL to fetch (should be this site's own URL).
+	 *
+	 * @return string|\WP_Error HTML body, or WP_Error.
+	 */
+	public function fetch_self( $url ) {
+		$host   = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+		$scheme = wp_parse_url( $url, PHP_URL_SCHEME );
+		$port   = ( 'http' === $scheme ) ? 80 : 443;
+
+		$pin = static function ( $handle ) use ( $host, $port ) {
+			if ( $host && function_exists( 'curl_setopt' ) && defined( 'CURLOPT_RESOLVE' ) ) {
+				curl_setopt( $handle, CURLOPT_RESOLVE, [ $host . ':' . $port . ':127.0.0.1' ] ); // phpcs:ignore
+			}
+		};
+
+		$ua_args = [
+			'timeout'     => 15,
+			'redirection' => 2,
+			'headers'     => [ 'User-Agent' => 'Mozilla/5.0 (compatible; AICache/1.0; +https://webs.ie/aicache)' ],
+		];
+
+		// Attempt 1: loopback-pinned (bypasses an edge WAF).
+		add_action( 'http_api_curl', $pin );
+		$response = wp_remote_get( $url, $ua_args + [ 'sslverify' => false ] );
+		remove_action( 'http_api_curl', $pin );
+
+		if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+			// Attempt 2: normal public fetch with verified TLS.
+			$response = wp_remote_get( $url, $ua_args + [ 'sslverify' => true ] );
+		}
+
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+		if ( 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+			return new \WP_Error( 'fetch_failed', __( 'Could not fetch the page.', 'swiftpress' ) );
+		}
+
+		return (string) wp_remote_retrieve_body( $response );
+	}
+
+	/**
+	 * A self-contained homepage scan used when PageSpeed Insights is unavailable
+	 * (no PSI key + exhausted anonymous quota). Derives a metrics-shaped object
+	 * from the page HTML so the diagnostic still produces real findings. The
+	 * perf_score is a heuristic ESTIMATE (clearly labelled by source = 'local').
+	 *
+	 * @param string $url URL to scan.
+	 *
+	 * @return array|\WP_Error
+	 */
+	public function local_scan( $url ) {
+		$url   = esc_url_raw( trim( (string) $url ) );
+		$start = microtime( true );
+		$html  = $this->fetch_self( $url );
+		$ttfb  = (int) round( ( microtime( true ) - $start ) * 1000 );
+
+		if ( is_wp_error( $html ) ) {
+			return $html;
+		}
+
+		$bytes = strlen( $html );
+		$host  = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+
+		$head = '';
+		if ( preg_match( '#<head\b[^>]*>(.*?)</head>#is', $html, $hm ) ) {
+			$head = $hm[1];
+		}
+
+		// Render-blocking: head <script src> without async/defer + head stylesheets.
+		$blocking_scripts = 0;
+		if ( preg_match_all( '#<script\b[^>]*\bsrc=[^>]*>#i', $head, $sm ) ) {
+			foreach ( $sm[0] as $tag ) {
+				if ( ! preg_match( '#\b(?:async|defer)\b#i', $tag ) ) {
+					$blocking_scripts++;
+				}
+			}
+		}
+		$head_styles     = preg_match_all( '#<link\b[^>]*\brel=["\']?stylesheet#i', $head );
+		$render_blocking = $blocking_scripts + (int) $head_styles;
+
+		// Images without both width and height.
+		$img_no_dims = 0;
+		if ( preg_match_all( '#<img\b[^>]*>#i', $html, $im ) ) {
+			foreach ( $im[0] as $tag ) {
+				if ( ! preg_match( '#\bwidth=#i', $tag ) || ! preg_match( '#\bheight=#i', $tag ) ) {
+					$img_no_dims++;
+				}
+			}
+		}
+
+		$font_display = ( preg_match( '#fonts\.googleapis\.com#i', $html ) && ! preg_match( '#display=swap#i', $html ) ) ? 1 : 0;
+
+		$third = [];
+		if ( preg_match_all( '#(?:src|href)\s*=\s*["\']https?://([a-z0-9.\-]+)#i', $html, $dm ) ) {
+			foreach ( $dm[1] as $h ) {
+				$h = strtolower( $h );
+				if ( $h && $h !== $host && ( ! $host || substr( $h, - ( strlen( $host ) + 1 ) ) !== '.' . $host ) ) {
+					$third[ $h ] = true;
+				}
+			}
+		}
+		$has_gtm = preg_match( '#googletagmanager\.com#i', $html ) ? 1 : 0;
+		$has_ga  = preg_match( '#google-analytics\.com|gtag/js#i', $html ) ? 1 : 0;
+
+		// Heuristic score so the UI has a (clearly-estimated) number.
+		$score  = 100;
+		$score -= min( 30, $render_blocking * 4 );
+		$score -= min( 16, $img_no_dims * 2 );
+		$score -= ( $bytes > 1500000 ? 16 : ( $bytes > 800000 ? 8 : 0 ) );
+		$score -= ( $has_gtm ? 6 : 0 ) + ( $has_ga ? 4 : 0 );
+		$score -= ( $font_display ? 6 : 0 );
+		$score  = max( 20, min( 99, $score ) );
+
+		return [
+			'url'           => $url,
+			'strategy'      => 'local',
+			'source'        => 'local',
+			'perf_score'    => $score,
+			'field'         => [],
+			'lab'           => [ 'TTFB_ms' => $ttfb ],
+			'opportunities' => [
+				'render_blocking_count' => $render_blocking,
+				'unused_css_bytes'      => 0,
+				'unused_js_bytes'       => ( $has_gtm || $has_ga ) ? 60000 : 0,
+				'unminified_css'        => 0,
+				'unminified_js'         => 0,
+				'next_gen_images_bytes' => 0,
+				'image_dimensions'      => $img_no_dims > 0 ? 1 : 0,
+				'font_display'          => $font_display,
+				'third_party_count'     => count( $third ),
+				'total_bytes'           => $bytes,
+				'has_gtm'               => $has_gtm,
+				'has_ga'                => $has_ga,
+			],
+		];
+	}
+
+	/**
 	 * Normalize a raw PSI response into the compact Metrics object.
 	 *
 	 * @param string $url      Audited URL.

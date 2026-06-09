@@ -140,16 +140,20 @@
 	function renderResult(d) {
 		var metrics = d.metrics || (d.meta && d.meta.metrics) || {};
 		setPulse(metrics);
+		var src = (d.meta && d.meta.metrics_source) || 'pagespeed';
 		var score = metrics.perf_score != null ? metrics.perf_score : (d.meta && d.meta.perf_score);
-		if (score != null) drawScore(score, (d.meta && d.meta.degraded) ? 'standard rules' : 'PageSpeed · mobile');
+		var srcLabel = (src === 'local') ? 'local scan · estimate' : ((d.meta && d.meta.degraded) ? 'standard rules' : 'PageSpeed · mobile');
+		if (score != null) drawScore(score, srcLabel);
 
 		// Brief narrative.
 		var content = $('#sp-brief-content');
 		if (content && d.summary) {
 			var degraded = d.meta && d.meta.degraded;
 			$('#sp-brief-eyebrow').textContent = degraded ? 'Standard recommendations' : 'AI Brief · just now';
-			content.innerHTML = '<h1>' + esc(d.summary.split('. ')[0]) + '.</h1><p class="sp-lede">' + esc(d.summary) + '</p>' +
-				(degraded ? '<p class="sp-lede" style="margin-top:10px;color:var(--ink-3)">' + esc(APP.i18n.noKey) + '</p>' : '');
+			var hint = '';
+			if (src === 'local') hint = '<p class="sp-lede" style="margin-top:10px;color:var(--ink-3)">Estimated from a quick on-site scan. Add a free Google PageSpeed key in <b>Copilot</b> for full Lighthouse metrics.</p>';
+			else if (degraded) hint = '<p class="sp-lede" style="margin-top:10px;color:var(--ink-3)">' + esc(APP.i18n.noKey) + '</p>';
+			content.innerHTML = '<h1>' + esc(d.summary.split('. ')[0]) + '.</h1><p class="sp-lede">' + esc(d.summary) + '</p>' + hint;
 		}
 
 		// Cards: actionable changes first, then suggested, then context findings without a change.
@@ -327,15 +331,41 @@
 		});
 	}
 	function bindKey() {
+		var input = $('#sp-key-input');
+		var busy = false;
+		function doSave(k) {
+			if (busy) return Promise.resolve(); busy = true;
+			var state = $('#sp-key-state-text'); if (state) state.textContent = 'Validating key…';
+			return post('swiftpress_ai_save_key', { openrouter_key: k }).then(function (json) {
+				busy = false;
+				if (json && json.success) { if (input) input.value = ''; toast('Key validated, encrypted & saved.'); refreshKeyState(); }
+				else { toast((json && json.data && json.data.message) || 'Invalid key.', true); refreshKeyState(); }
+			}).catch(function () { busy = false; toast(APP.i18n.failed, true); refreshKeyState(); });
+		}
 		var save = $('#sp-key-save'); if (save) save.addEventListener('click', function () {
-			var input = $('#sp-key-input'); var k = (input.value || '').trim(); if (!k) { toast('Enter a key first.', true); return; }
-			save.textContent = '…';
-			post('swiftpress_ai_save_key', { openrouter_key: k }).then(function (json) {
-				save.textContent = 'Save key';
-				if (json && json.success) { input.value = ''; toast('Key saved and encrypted.'); refreshKeyState(); }
-				else toast((json && json.data && json.data.message) || 'Invalid key.', true);
-			}).catch(function () { save.textContent = 'Save key'; toast(APP.i18n.failed, true); });
+			var k = ((input && input.value) || '').trim(); if (!k) { toast('Enter a key first.', true); return; }
+			save.textContent = 'Validating…'; doSave(k).then(function () { save.textContent = 'Save key'; });
 		});
+		// Auto-validate + save shortly after a plausible key is pasted or typed.
+		if (input) {
+			var t;
+			var go = function () { var k = (input.value || '').trim(); if (k.length < 20 || k.indexOf('sk-') !== 0) return; doSave(k); };
+			input.addEventListener('input', function () { clearTimeout(t); t = setTimeout(go, 800); });
+			input.addEventListener('paste', function () { clearTimeout(t); t = setTimeout(go, 350); });
+		}
+		var psi = $('#sp-psi-input');
+		if (psi) {
+			var pt;
+			var savePsi = function () {
+				var v = (psi.value || '').trim(); if (v.length < 20) return;
+				post('swiftpress_ai_save_key', { psi_key: v }).then(function (json) {
+					if (json && json.success) { var s = $('#sp-psi-saved'); if (s) { s.classList.add('show'); setTimeout(function () { s.classList.remove('show'); }, 1600); } toast('PageSpeed key saved.'); }
+					else toast((json && json.data && json.data.message) || 'Invalid key.', true);
+				});
+			};
+			psi.addEventListener('input', function () { clearTimeout(pt); pt = setTimeout(savePsi, 900); });
+			psi.addEventListener('paste', function () { clearTimeout(pt); pt = setTimeout(savePsi, 400); });
+		}
 		var clr = $('#sp-key-clear'); if (clr) clr.addEventListener('click', function () {
 			post('swiftpress_ai_save_key', { openrouter_key: '__CLEAR__' }).then(function () { toast('Key removed.'); refreshKeyState(); });
 		});

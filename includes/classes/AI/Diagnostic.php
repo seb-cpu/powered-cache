@@ -65,15 +65,25 @@ class Diagnostic {
 		$metrics    = PageSpeed::factory()->audit( $url, 'mobile' );
 		$psi_failed = is_wp_error( $metrics );
 		if ( $psi_failed ) {
-			\SwiftPress\Utils\log( 'AI diagnostic PSI failed: ' . $metrics->get_error_message() );
-			$metrics = [
-				'url'           => $url,
-				'strategy'      => 'mobile',
-				'perf_score'    => null,
-				'field'         => [],
-				'lab'           => [],
-				'opportunities' => [],
-			];
+			\SwiftPress\Utils\log( 'AI diagnostic PSI failed: ' . $metrics->get_error_message() . ' — falling back to local scan.' );
+
+			// Fallback: scan the homepage ourselves (loopback-pinned, bypasses an
+			// edge WAF) so the diagnostic still has real data without PageSpeed.
+			$local = PageSpeed::factory()->local_scan( $url );
+			if ( ! is_wp_error( $local ) ) {
+				$metrics    = $local;
+				$psi_failed = false;
+			} else {
+				$metrics = [
+					'url'           => $url,
+					'strategy'      => 'mobile',
+					'source'        => 'none',
+					'perf_score'    => null,
+					'field'         => [],
+					'lab'           => [],
+					'opportunities' => [],
+				];
+			}
 		}
 
 		$model = $this->current_model();
@@ -106,7 +116,7 @@ class Diagnostic {
 			if ( is_wp_error( $result ) ) {
 				$degraded = 'llm_unavailable';
 			} else {
-				$raw = $result;
+				$raw = $this->normalize_llm( $result );
 			}
 		}
 
@@ -135,6 +145,7 @@ class Diagnostic {
 				'url'              => $metrics['url'],
 				'perf_score'       => $metrics['perf_score'],
 				'psi_failed'       => $psi_failed,
+				'metrics_source'   => isset( $metrics['source'] ) ? $metrics['source'] : 'pagespeed',
 				'month_to_date'    => round( $budget->month_to_date(), 4 ),
 				'monthly_cap'      => $budget->monthly_cap(),
 				'dropped'          => $gated['dropped'], // debug-only.
@@ -147,6 +158,91 @@ class Diagnostic {
 		}
 
 		return $payload;
+	}
+
+	/**
+	 * Normalize an LLM response to the expected shape.
+	 *
+	 * Models that don't honour the strict schema (e.g. Gemini Flash-Lite, which
+	 * rejects strict json_schema on OpenRouter) frequently use their own field
+	 * names — `recommendations`/`setting_value`/`reason` instead of
+	 * `recommended_changes`/`to`/`why`, and often omit `summary`. Map the common
+	 * variants so the gate and UI still work regardless of the model.
+	 *
+	 * @param mixed $raw Parsed model output.
+	 *
+	 * @return array
+	 */
+	private function normalize_llm( $raw ) {
+		if ( ! is_array( $raw ) ) {
+			return [ 'summary' => '', 'overall_assessment' => 'needs_work', 'findings' => [], 'recommended_changes' => [] ];
+		}
+
+		$changes_in = [];
+		foreach ( [ 'recommended_changes', 'recommendations', 'changes', 'actions' ] as $k ) {
+			if ( isset( $raw[ $k ] ) && is_array( $raw[ $k ] ) ) {
+				$changes_in = $raw[ $k ];
+				break;
+			}
+		}
+
+		$changes = [];
+		foreach ( $changes_in as $c ) {
+			if ( ! is_array( $c ) || empty( $c['setting_key'] ) ) {
+				continue;
+			}
+
+			$to = null;
+			foreach ( [ 'to', 'setting_value', 'value', 'enabled', 'new_value' ] as $vk ) {
+				if ( array_key_exists( $vk, $c ) ) {
+					$to = $c[ $vk ];
+					break;
+				}
+			}
+			if ( null === $to ) {
+				$to = true;
+			}
+
+			$why = '';
+			foreach ( [ 'why', 'reason', 'description', 'explanation' ] as $wk ) {
+				if ( ! empty( $c[ $wk ] ) && is_string( $c[ $wk ] ) ) {
+					$why = $c[ $wk ];
+					break;
+				}
+			}
+
+			$changes[] = [
+				'setting_key' => (string) $c['setting_key'],
+				'to'          => $to,
+				'why'         => $why,
+				'risk'        => isset( $c['risk'] ) ? (string) $c['risk'] : 'medium',
+				'confidence'  => isset( $c['confidence'] ) ? (float) $c['confidence'] : 0.7,
+			];
+		}
+
+		$findings = ( isset( $raw['findings'] ) && is_array( $raw['findings'] ) ) ? $raw['findings'] : [];
+
+		$summary = '';
+		foreach ( [ 'summary', 'overview', 'assessment', 'analysis', 'message' ] as $sk ) {
+			if ( ! empty( $raw[ $sk ] ) && is_string( $raw[ $sk ] ) ) {
+				$summary = $raw[ $sk ];
+				break;
+			}
+		}
+		if ( '' === $summary && $changes ) {
+			$summary = sprintf(
+				/* translators: %d: number of recommendations. */
+				_n( 'I found %d optimization you can apply.', 'I found %d optimizations you can apply.', count( $changes ), 'swiftpress' ),
+				count( $changes )
+			);
+		}
+
+		return [
+			'summary'             => $summary,
+			'overall_assessment'  => isset( $raw['overall_assessment'] ) ? (string) $raw['overall_assessment'] : 'needs_work',
+			'findings'            => $findings,
+			'recommended_changes' => $changes,
+		];
 	}
 
 	/**
