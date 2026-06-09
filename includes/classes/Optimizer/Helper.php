@@ -102,11 +102,53 @@ class Helper {
 			$optimizer_url = site_url() . '/_static/??';
 		}
 
-		$optimized_url = $optimizer_url . $path . '&minify=' . absint( $minify );
+		// Content-version token (?m=mtime) so a CDN/edge refetches the minified
+		// response when a source file changes. The endpoint strips everything from
+		// the first '?' before resolving file paths, so this never breaks
+		// resolution — it only changes sha1(REQUEST_URI) (disk cache) and the edge
+		// cache key. Without it, edited CSS/JS stays stale at the edge for the full
+		// cache TTL (this is what re-served a stale `font-display: swap`).
+		$version       = self::sources_mtime( $path );
+		$version_query = $version ? '?m=' . $version : '';
+
+		$optimized_url = $optimizer_url . $path . $version_query . '&minify=' . absint( $minify );
 
 		$optimized_url = esc_url_raw( apply_filters( 'swiftpress_fo_optimized_url', $optimized_url, $path, $minify ) );
 
 		return $optimized_url;
+	}
+
+	/**
+	 * Latest modification time across the optimized source file(s). Used as the
+	 * cache-busting version token on the optimizer URL.
+	 *
+	 * @param string $path Comma-separated list of web-root-relative file paths.
+	 *
+	 * @return int Unix mtime, or 0 when nothing resolves on disk.
+	 */
+	private static function sources_mtime( $path ) {
+		$mtime = 0;
+
+		foreach ( explode( ',', (string) $path ) as $p ) {
+			$p = trim( $p );
+			if ( '' === $p ) {
+				continue;
+			}
+
+			// CDN-masked sources arrive as //host/path — keep only the path.
+			if ( 0 === strpos( $p, '//' ) ) {
+				$p = (string) wp_parse_url( 'http:' . $p, PHP_URL_PATH );
+			}
+
+			$abs = ABSPATH . ltrim( $p, '/' );
+			$m   = @filemtime( $abs ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+
+			if ( $m && $m > $mtime ) {
+				$mtime = $m;
+			}
+		}
+
+		return $mtime;
 	}
 
 	/**

@@ -567,7 +567,7 @@ function view_tune( $settings ) {
 				toggle_row( 'enable_font_optimization', __( 'Font optimization', 'swiftpress' ), __( 'Self-host Google Fonts (no call to Google — GDPR-friendlier) and control loading.', 'swiftpress' ), $settings );
 				toggle_row( 'self_host_google_fonts', __( 'Self-host Google Fonts', 'swiftpress' ), __( 'Download and serve fonts locally.', 'swiftpress' ), $settings );
 				toggle_row( 'font_preload', __( 'Preload fonts', 'swiftpress' ), __( 'Preload above-the-fold font files.', 'swiftpress' ), $settings );
-				toggle_row( 'font_display_swap', __( 'Force font-display: swap', 'swiftpress' ), __( 'Show text immediately instead of waiting on the font.', 'swiftpress' ), $settings );
+				toggle_row( 'font_display_swap', __( 'Stabilize font loading (prevent layout shift)', 'swiftpress' ), __( 'Sets font-display: optional so late-loading web fonts can\'t reflow the page (fixes CLS). Cold visits show the system fallback for that view; cached visits show the web font.', 'swiftpress' ), $settings );
 				?>
 			</div>
 		</div>

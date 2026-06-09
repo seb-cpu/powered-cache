@@ -232,7 +232,7 @@ class FontOptimizer {
 		if ( file_exists( $css_file ) ) {
 			$this->collect_preload_fonts( $css_file, $cache_url );
 
-			return $css_url;
+			return $this->versioned_css_url( $css_url, $css_file );
 		}
 
 		// Fetch remote CSS with woff2 user-agent
@@ -265,7 +265,54 @@ class FontOptimizer {
 
 		$this->collect_preload_fonts( $css_file, $cache_url );
 
-		return $css_url;
+		return $this->versioned_css_url( $css_url, $css_file );
+	}
+
+	/**
+	 * Append a content-version query to the local font CSS URL so a CDN/edge
+	 * refetches it whenever the CSS changes (e.g. font-display switches). The
+	 * hashed directory keys off the *remote* URL, not the CSS body, so without
+	 * this a stale `font-display: swap` could be served from an edge for the
+	 * full cache TTL after we rewrite it — re-introducing CLS we just fixed.
+	 *
+	 * @param string $css_url  Local CSS URL.
+	 * @param string $css_file Local CSS absolute path.
+	 *
+	 * @return string Versioned URL (or the original if mtime is unavailable).
+	 * @since 1.0
+	 */
+	private function versioned_css_url( $css_url, $css_file ) {
+		$ver = @filemtime( $css_file ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+
+		return $ver ? add_query_arg( 'ver', $ver, $css_url ) : $css_url;
+	}
+
+	/**
+	 * The font-display value injected into @font-face rules.
+	 *
+	 * Defaults to `optional`, which eliminates the layout shift (CLS) caused by
+	 * a late web-font swap: on a cold load the browser keeps the metric-similar
+	 * fallback for that view instead of reflowing the page when the font lands.
+	 * Filterable for sites that would rather always show the web font (`swap`).
+	 *
+	 * @return string
+	 * @since 1.0
+	 */
+	private function font_display_value() {
+		/**
+		 * Filters the font-display value SwiftPress injects into @font-face rules.
+		 *
+		 * @hook  swiftpress_font_display
+		 *
+		 * @param {string} $value Default 'optional' (CLS-safe). Use 'swap' to always show the web font.
+		 *
+		 * @return {string} New value.
+		 * @since 1.0
+		 */
+		$value = (string) apply_filters( 'swiftpress_font_display', 'optional' );
+		$allowed = [ 'optional', 'swap', 'fallback', 'block', 'auto' ];
+
+		return in_array( $value, $allowed, true ) ? $value : 'optional';
 	}
 
 	/**
@@ -350,14 +397,20 @@ class FontOptimizer {
 					$block
 				);
 
-				// Inject font-display: swap (Req 5) if not already present
-				if ( ! empty( $this->settings['font_display_swap'] ) && false === stripos( $block, 'font-display' ) ) {
-					$block = rtrim( $block );
-					// Ensure trailing semicolon before adding property
-					if ( substr( $block, -1 ) !== ';' ) {
-						$block .= ';';
+				// Normalize font-display to the CLS-safe value (Req 5). Google's CSS
+				// often ships `swap`, whose unbounded swap period reflows the page
+				// when the font lands late on a cold load — the dominant CLS source.
+				if ( ! empty( $this->settings['font_display_swap'] ) ) {
+					$target = $this->font_display_value();
+					if ( false !== stripos( $block, 'font-display' ) ) {
+						$block = preg_replace( '/font-display\s*:\s*[a-z-]+/i', 'font-display: ' . $target, $block );
+					} else {
+						$block = rtrim( $block );
+						if ( substr( $block, -1 ) !== ';' ) {
+							$block .= ';';
+						}
+						$block .= "\n  font-display: " . $target . ';';
 					}
-					$block .= "\n  font-display: swap;";
 				}
 
 				return '@font-face {' . $block . '}';
@@ -608,21 +661,26 @@ class FontOptimizer {
 			return $html;
 		}
 
+		$target = $this->font_display_value();
+
 		$html = preg_replace_callback(
 			'/@font-face\s*\{([^}]+)\}/si',
-			function ( $match ) {
+			function ( $match ) use ( $target ) {
 				$block = $match[1];
 
-				// Already has font-display
+				// Normalize an existing font-display (e.g. theme-shipped `swap`)
+				// to the CLS-safe value rather than leaving the reflow in place.
 				if ( false !== stripos( $block, 'font-display' ) ) {
-					return $match[0];
+					$block = preg_replace( '/font-display\s*:\s*[a-z-]+/i', 'font-display: ' . $target, $block );
+
+					return '@font-face {' . $block . '}';
 				}
 
 				$block = rtrim( $block );
 				if ( substr( $block, -1 ) !== ';' ) {
 					$block .= ';';
 				}
-				$block .= "\n  font-display: swap;";
+				$block .= "\n  font-display: " . $target . ';';
 
 				return '@font-face {' . $block . '}';
 			},
