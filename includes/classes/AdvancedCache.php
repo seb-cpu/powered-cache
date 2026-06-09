@@ -139,7 +139,7 @@ class AdvancedCache {
 	 * @since 2.0
 	 */
 	public function purge_page_cache_network_wide() {
-		if ( ! wp_verify_nonce( $_GET['_wpnonce'], 'swiftpress_purge_page_cache_network' ) ) { // phpcs:ignore
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ?? '' ) ), 'swiftpress_purge_page_cache_network' ) ) { // phpcs:ignore
 			wp_nonce_ays( '' );
 		}
 
@@ -586,9 +586,11 @@ class AdvancedCache {
 			'lang',
 		];
 
-		if ( ! empty( $cache_query_strings ) ) {
-			$cache_query_strings = array_merge( $query_strings, $cache_query_strings );
-		}
+		// Always keep the built-in defaults (e.g. `lang`), merging any user
+		// entries on top. The previous merge only ran when the user setting was
+		// non-empty, so on a default install `lang` was dropped and multilingual
+		// ?lang= pages were never cached.
+		$cache_query_strings = array_merge( $query_strings, $cache_query_strings );
 
 		/**
 		 * Filter accepted query strings.

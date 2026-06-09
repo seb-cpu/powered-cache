@@ -224,24 +224,27 @@
 		head.appendChild(b);
 	}
 
-	/* ── presets (real apply via the existing settings save path) ── */
+	/* ── presets (additive apply via the safe per-key save path) ── */
 	function applyPreset(name, chip) {
 		var map = PRESETS[name]; if (!map) return;
 		$$('.sp-chip').forEach(function (c) { c.classList.remove('sel'); }); if (chip) chip.classList.add('sel');
 		var keys = Object.keys(map);
-		if (!window.confirm('Apply the "' + name + '" preset? It will turn ON: ' + keys.map(label).join(', ') + '. (Reversible — your current settings are saved first.)')) return;
-		var form = document.createElement('form'); form.method = 'post'; form.action = '';
-		function hidden(n, v) { var i = document.createElement('input'); i.type = 'hidden'; i.name = n; i.value = v; form.appendChild(i); }
-		hidden('swiftpress_settings_nonce', APP.settingsNonce);
-		hidden('swiftpress_form_action', 'save_settings');
-		// Merge over current values: read existing toggles from a hidden mirror is complex; the
-		// existing handler treats unchecked as false, so we re-send the whole known set. We send
-		// only the preset's ON keys; other booleans default off — so presets are a clean reset to
-		// that posture (documented in the confirm). Numeric/string settings keep their saved value
-		// because the handler reads them from $_POST; to preserve them we copy from the Tune form is
-		// out of scope here, so presets are applied from the Brief as an explicit posture.
-		Object.keys(map).forEach(function (k) { hidden(k, '1'); });
-		document.body.appendChild(form); form.submit();
+		if (!window.confirm('Apply the "' + name + '" preset? It turns ON: ' + keys.map(label).join(', ') +
+			'. Each switch saves on its own through the normal save path and stays visible, so you can adjust any of them afterwards. Page caching, credentials and exclusion lists are left untouched.')) return;
+		if (chip) chip.classList.add('busy');
+		// Save each key through the allowlisted read-merge-write endpoint (the same
+		// path the individual toggles use) — never the whole-form POST, which would
+		// reset every setting the Brief doesn't render.
+		Promise.all(keys.map(function (k) {
+			var cb = document.querySelector('input[type="checkbox"][name="' + k + '"]');
+			if (cb && !cb.disabled) cb.checked = true;
+			return post('swiftpress_app_save_setting', { key: k, value: '1' }, 'ajaxNonce');
+		})).then(function (results) {
+			if (chip) chip.classList.remove('busy');
+			var failed = results.filter(function (r) { return !(r && r.success); }).length;
+			if (failed) toast(failed + ' of ' + keys.length + ' switches could not be saved.', true);
+			else toast('"' + name + '" preset applied — ' + keys.length + ' switches on. Adjust any of them in Tune.');
+		}).catch(function () { if (chip) chip.classList.remove('busy'); toast(APP.i18n.failed, true); });
 	}
 
 	/* ── key management ── */
@@ -260,6 +263,10 @@
 			var keyrow = $('#sp-keyrow'), kconst = $('#sp-key-constant'), input = $('#sp-key-input');
 			if (src === 'constant') { if (keyrow) keyrow.style.display = 'none'; if (kconst) kconst.style.display = 'flex'; }
 			else { if (keyrow) keyrow.style.display = 'flex'; if (kconst) kconst.style.display = 'none'; if (input) input.disabled = false; }
+			// Initialize the model + budget controls from their saved values.
+			var d = (json && json.data) || {};
+			var cap = $('#sp-ai-cap'); if (cap && typeof d.monthly_cap !== 'undefined' && cap !== document.activeElement) cap.value = d.monthly_cap;
+			var model = $('#sp-ai-model'); if (model && d.model) model.value = d.model;
 		}).catch(function () {});
 	}
 
@@ -358,6 +365,18 @@
 			});
 		});
 	}
+	function bindCloudflare() {
+		$$('[data-cf]').forEach(function (el) {
+			var save = function () {
+				var v = (el.value || '').trim();
+				// Empty = keep the stored value (never wipe a configured secret).
+				if (v === '') return;
+				autoSave(el.getAttribute('data-cf'), v, el.closest('.sp-row'));
+				if (el.type === 'password') { el.value = ''; el.placeholder = '•••••• configured — leave blank to keep'; }
+			};
+			el.addEventListener('change', save);
+		});
+	}
 	function bindKey() {
 		var input = $('#sp-key-input');
 		var busy = false;
@@ -397,6 +416,20 @@
 		var clr = $('#sp-key-clear'); if (clr) clr.addEventListener('click', function () {
 			post('swiftpress_ai_save_key', { openrouter_key: '__CLEAR__' }).then(function () { toast('Key removed.'); refreshKeyState(); });
 		});
+		// Model + monthly spend cap (saved through the same secure endpoint).
+		var model = $('#sp-ai-model'); if (model) model.addEventListener('change', function () {
+			post('swiftpress_ai_save_key', { ai_model: model.value }).then(function (j) { if (j && j.success) toast('Model saved.'); });
+		});
+		var cap = $('#sp-ai-cap');
+		if (cap) {
+			var ct;
+			var saveCap = function () {
+				var v = parseFloat(cap.value); if (isNaN(v) || v < 0) return;
+				post('swiftpress_ai_save_key', { monthly_cap_usd: v }).then(function (j) { if (j && j.success) toast('Spend cap saved: $' + v + '/mo.'); });
+			};
+			cap.addEventListener('change', saveCap);
+			cap.addEventListener('input', function () { clearTimeout(ct); ct = setTimeout(saveCap, 800); });
+		}
 	}
 
 	/* ── misc ── */
@@ -427,7 +460,7 @@
 	function init() {
 		if (!$('.swiftpress-app')) return;
 		var ring = $('#sp-ring'); if (ring) { ring.style.strokeDasharray = CIRC; ring.style.strokeDashoffset = CIRC; }
-		bindMisc(); bindKey(); bindAutoSave(); bindDomains(); bindImageOptimize(); refreshKeyState();
+		bindMisc(); bindKey(); bindAutoSave(); bindDomains(); bindImageOptimize(); bindCloudflare(); refreshKeyState();
 	}
 	if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

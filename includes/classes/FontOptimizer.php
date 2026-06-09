@@ -325,11 +325,19 @@ class FontOptimizer {
 	 * @since 3.8
 	 */
 	private function fetch_remote_css( $url ) {
+		// Single SSRF chokepoint for every fetch path (enqueue + inline-link
+		// rewrite): the host must be an allow-listed font domain, and WordPress
+		// must reject internal/loopback targets even if validation is bypassed.
+		if ( ! $this->is_google_font_url( $url ) ) {
+			return '';
+		}
+
 		$response = wp_remote_get(
 			$url,
 			[
-				'timeout'    => 15,
-				'user-agent' => self::GOOGLE_FONTS_UA,
+				'timeout'           => 15,
+				'user-agent'        => self::GOOGLE_FONTS_UA,
+				'reject_unsafe_urls' => true,
 			]
 		);
 
@@ -766,13 +774,16 @@ class FontOptimizer {
 	 * @since 3.8
 	 */
 	private function is_google_font_url( $url ) {
-		foreach ( self::FONT_DOMAINS as $domain ) {
-			if ( false !== strpos( $url, $domain ) ) {
-				return true;
-			}
+		// Exact host match only. A substring test (the old behaviour) would treat
+		// e.g. http://169.254.169.254/?x=fonts.googleapis.com or
+		// http://internal.host/fonts.googleapis.com.css as a font URL and let the
+		// server-side fetch reach it (SSRF) — the host must BE a font domain.
+		$host = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+		if ( '' === $host ) {
+			return false;
 		}
 
-		return false;
+		return in_array( $host, array_map( 'strtolower', self::FONT_DOMAINS ), true );
 	}
 
 	/**

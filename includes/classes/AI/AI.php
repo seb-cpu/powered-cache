@@ -80,6 +80,17 @@ class AI {
 			}
 		);
 
+		// Persisted model choice from the Copilot UI overrides the default.
+		add_filter(
+			'swiftpress_ai_model',
+			static function ( $model ) {
+				$stored = (string) get_option( 'swiftpress_ai_model', '' );
+
+				return '' !== $stored ? $stored : $model;
+			},
+			5
+		);
+
 		// Hard gate: only register the rest in admin or admin-ajax context.
 		if ( ! is_admin() && ! ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() ) ) {
 			return;
@@ -362,6 +373,15 @@ class AI {
 			$this->save_monthly_cap( (float) $_POST['monthly_cap_usd'] );
 		}
 
+		// Optional model selection (allow-listed).
+		if ( isset( $_POST['ai_model'] ) ) {
+			$model_in       = sanitize_text_field( wp_unslash( $_POST['ai_model'] ) );
+			$allowed_models = [ 'google/gemini-2.5-flash-lite', 'google/gemini-2.5-flash' ];
+			if ( in_array( $model_in, $allowed_models, true ) ) {
+				update_option( 'swiftpress_ai_model', $model_in, false );
+			}
+		}
+
 		// Return only non-sensitive status.
 		wp_send_json_success(
 			[
@@ -387,6 +407,7 @@ class AI {
 			[
 				'has_key'            => $key_store->has_key(),
 				'source'             => $key_store->source(),
+				'model'              => (string) get_option( 'swiftpress_ai_model', Client::DEFAULT_MODEL ),
 				'spend'              => round( $budget->month_to_date(), 4 ),
 				'monthly_cap'        => $budget->monthly_cap(),
 				'reset_date'         => $budget->reset_date(),

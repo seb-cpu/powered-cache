@@ -91,6 +91,21 @@ function swiftpress_uninstall_site() {
 	delete_site_transient( \SwiftPress\Constants\PURGE_CACHE_PLUGIN_NOTICE_TRANSIENT );
 	delete_transient( \SwiftPress\Constants\PURGE_CACHE_PLUGIN_NOTICE_TRANSIENT );
 
+	// AI module data — including the encrypted OpenRouter/PSI key ciphers. The
+	// file docblock and readme both promise "all plugin data" is removed and that
+	// the key can be deleted, so these must go too (they are autoloaded options
+	// that WP core never cleans up on its own).
+	foreach ( [ 'swiftpress_ai_secrets', 'swiftpress_ai_snapshots', 'swiftpress_ai_usage' ] as $ai_option ) {
+		delete_option( $ai_option );
+		delete_site_option( $ai_option );
+	}
+	delete_transient( 'swiftpress_ai_debounce' );
+	delete_transient( 'swiftpress_github_release' );
+
+	// Diagnostic response cache is a family of hashed transients — clear both the
+	// values and their timeouts directly.
+	$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\_transient\_swiftpress\_ai\_diag\_%' OR option_name LIKE '\_transient\_timeout\_swiftpress\_ai\_diag\_%'" ); // phpcs:ignore WordPress.DB
+
 	// Phase 5: drop preload URLs table
 	$table_name = $wpdb->prefix . 'swiftpress_preload_urls';
 	$wpdb->query( "DROP TABLE IF EXISTS {$table_name}" ); // phpcs:ignore

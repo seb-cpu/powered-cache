@@ -140,6 +140,21 @@ function process_form_submit() {
 		$old_options = \SwiftPress\Utils\get_settings();
 		$options     = sanitize_options( $_POST );
 
+		// A partial settings form (the Editorial Console's Tune view) declares the
+		// exact keys it controls via `swiftpress_managed_keys`. sanitize_options()
+		// otherwise rebuilds the WHOLE option array from $_POST, so any field the
+		// partial form didn't render would be silently reset to its empty default
+		// (Cloudflare credentials, exclusion lists, the preloader, minify_html,
+		// combine_js, logged-in cache …). Restrict a managed save to the declared
+		// keys, merged over the current settings, so unexposed config is preserved.
+		// A classic full form sends no managed list and keeps the full rebuild.
+		if ( isset( $_POST['swiftpress_managed_keys'] ) && in_array( $action, [ 'save_settings', 'save_settings_and_clear_cache' ], true ) ) {
+			$managed_keys = array_filter( array_map( 'trim', explode( ',', sanitize_text_field( wp_unslash( $_POST['swiftpress_managed_keys'] ) ) ) ) );
+			if ( ! empty( $managed_keys ) ) {
+				$options = array_merge( $old_options, array_intersect_key( $options, array_flip( $managed_keys ) ) );
+			}
+		}
+
 		switch ( $action ) {
 			case 'reset_settings':
 				if ( SWIFTPRESS_IS_NETWORK ) {
@@ -586,7 +601,7 @@ function purge_all_admin_bar_menu( $wp_admin_bar ) {
  */
 function purge_all_cache_action() {
 
-	if ( ! wp_verify_nonce( $_GET['_wpnonce'], 'swiftpress_purge_all_cache' ) ) { // phpcs:ignore
+	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ?? '' ) ), 'swiftpress_purge_all_cache' ) ) { // phpcs:ignore
 		wp_nonce_ays( '' );
 	}
 
@@ -656,7 +671,7 @@ function purge_all_cache( $settings = array() ) {
  * @since 1.1
  */
 function download_rewrite_config() {
-	if ( ! wp_verify_nonce( $_GET['_wpnonce'], 'swiftpress_download_rewrite' ) ) { // phpcs:ignore
+	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ?? '' ) ), 'swiftpress_download_rewrite' ) ) { // phpcs:ignore
 		wp_nonce_ays( '' );
 	}
 
@@ -887,7 +902,7 @@ function run_diagnostic() {
  * @since 1.0
  */
 function deactivate_plugin() {
-	if ( ! wp_verify_nonce( $_GET['_wpnonce'], 'deactivate_plugin' ) ) { // phpcs:ignore
+	if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ?? '' ) ), 'deactivate_plugin' ) ) { // phpcs:ignore
 		wp_nonce_ays( '' );
 	}
 

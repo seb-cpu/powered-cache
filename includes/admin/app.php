@@ -62,6 +62,7 @@ function auto_save_allowlist() {
 		'gzip_compression'                 => 'bool',
 		'cache_mobile'                     => 'bool',
 		'minify_css'                       => 'bool',
+		'combine_css'                      => 'bool',
 		'minify_js'                        => 'bool',
 		'js_defer'                         => 'bool',
 		'js_delay'                         => 'bool',
@@ -74,6 +75,10 @@ function auto_save_allowlist() {
 		'enable_lcp_optimization'          => 'bool',
 		'prefetch_links'                   => 'bool',
 		'enable_cloudflare'                => 'bool',
+		'cloudflare_email'                 => 'text',
+		'cloudflare_api_key'               => 'text',
+		'cloudflare_api_token'             => 'text',
+		'cloudflare_zone'                  => 'text',
 		'enable_google_tracking'           => 'bool',
 		'enable_fb_tracking'               => 'bool',
 		'enable_heartbeat'                 => 'bool',
@@ -538,8 +543,33 @@ function view_brief( $settings, $server, $cache ) {
 	<?php
 }
 
+/**
+ * Track / return the setting keys a partial form controls so process_form_submit
+ * can merge a partial save over current settings instead of wiping everything
+ * the form didn't render. Pass a key to register it; call with no argument to
+ * read (and reset) the collected list.
+ *
+ * @param string|null $key Key to register, or null to read+reset.
+ *
+ * @return array Collected keys (only when reading).
+ */
+function tune_managed_keys( $key = null ) {
+	static $keys = [];
+
+	if ( null !== $key ) {
+		$keys[ $key ] = true;
+		return [];
+	}
+
+	$out  = array_keys( $keys );
+	$keys = [];
+
+	return $out;
+}
+
 /** A styled toggle row reusing the existing setting key names (posts to process_form_submit). */
 function toggle_row( $key, $label, $desc, $settings, $stub = false ) {
+	tune_managed_keys( $key );
 	$checked = ! empty( $settings[ $key ] );
 	?>
 	<div class="sp-row<?php echo $stub ? ' stub' : ''; ?>">
@@ -639,8 +669,19 @@ function view_tune( $settings ) {
 				<?php
 				toggle_row( 'enable_lcp_optimization', __( 'LCP optimization', 'swiftpress' ), __( 'Prioritise the largest above-the-fold image (fetchpriority, no lazy-load).', 'swiftpress' ), $settings );
 				toggle_row( 'prefetch_links', __( 'Prefetch links on hover', 'swiftpress' ), __( 'Pre-load the next page when a visitor hovers a link.', 'swiftpress' ), $settings );
-				toggle_row( 'enable_cloudflare', __( 'Cloudflare integration', 'swiftpress' ), __( 'Purge Cloudflare when AICache clears cache (configure credentials in the classic settings for now).', 'swiftpress' ), $settings );
+				toggle_row( 'enable_cloudflare', __( 'Cloudflare integration', 'swiftpress' ), __( 'Purge Cloudflare’s edge cache automatically whenever AICache clears its own cache. Enter an API token (recommended) or email + global key, plus the Zone ID.', 'swiftpress' ), $settings );
 				?>
+				<div class="sp-row" style="display:block">
+					<div class="label"><?php esc_html_e( 'Cloudflare credentials', 'swiftpress' ); ?></div>
+					<div class="desc"><?php esc_html_e( 'Saved securely on change. Secret fields stay blank here once set — leave them empty to keep the stored value.', 'swiftpress' ); ?></div>
+					<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+						<input class="sp-input" type="text" id="sp-cf-zone" data-cf="cloudflare_zone" placeholder="<?php esc_attr_e( 'Zone ID', 'swiftpress' ); ?>" autocomplete="off" spellcheck="false" value="<?php echo esc_attr( $settings['cloudflare_zone'] ?? '' ); ?>" />
+						<input class="sp-input" type="password" id="sp-cf-token" data-cf="cloudflare_api_token" placeholder="<?php echo empty( $settings['cloudflare_api_token'] ) ? esc_attr__( 'API token (recommended)', 'swiftpress' ) : esc_attr__( '•••••• configured — leave blank to keep', 'swiftpress' ); ?>" autocomplete="off" spellcheck="false" />
+						<input class="sp-input" type="text" id="sp-cf-email" data-cf="cloudflare_email" placeholder="<?php esc_attr_e( 'Account email (for global key)', 'swiftpress' ); ?>" autocomplete="off" spellcheck="false" value="<?php echo esc_attr( $settings['cloudflare_email'] ?? '' ); ?>" />
+						<input class="sp-input" type="password" id="sp-cf-key" data-cf="cloudflare_api_key" placeholder="<?php echo empty( $settings['cloudflare_api_key'] ) ? esc_attr__( 'Global API key', 'swiftpress' ) : esc_attr__( '•••••• configured — leave blank to keep', 'swiftpress' ); ?>" autocomplete="off" spellcheck="false" />
+					</div>
+				</div>
+
 				<div class="sp-row" style="display:block">
 					<div class="label"><?php esc_html_e( 'DNS-prefetch domains', 'swiftpress' ); ?>
 						<button type="button" class="sp-btn ghost" id="sp-detect-domains" style="margin-left:10px;min-height:26px;line-height:1.8"><?php esc_html_e( 'Detect domains', 'swiftpress' ); ?></button>
@@ -658,14 +699,24 @@ function view_tune( $settings ) {
 			<h2><?php esc_html_e( 'Integrations & bloat control', 'swiftpress' ); ?></h2>
 			<div class="sp-panel-body">
 				<?php
-				toggle_row( 'enable_google_tracking', __( 'Self-host Google Analytics', 'swiftpress' ), __( 'Serve the GA script locally to remove a render-blocking third-party request.', 'swiftpress' ), $settings );
-				toggle_row( 'enable_fb_tracking', __( 'Self-host Facebook Pixel', 'swiftpress' ), __( 'Serve the Pixel locally.', 'swiftpress' ), $settings );
+				toggle_row( 'enable_google_tracking', __( 'Self-host Google Analytics', 'swiftpress' ), __( 'Serve the GA script locally to remove a render-blocking third-party request.', 'swiftpress' ), $settings, true );
+				toggle_row( 'enable_fb_tracking', __( 'Self-host Facebook Pixel', 'swiftpress' ), __( 'Serve the Pixel locally.', 'swiftpress' ), $settings, true );
 				toggle_row( 'enable_heartbeat', __( 'Heartbeat control', 'swiftpress' ), __( 'Throttle the WordPress Heartbeat API to cut admin/server load.', 'swiftpress' ), $settings );
 				toggle_row( 'disable_emoji_scripts', __( 'Disable emoji scripts', 'swiftpress' ), __( 'Remove the emoji polyfill most modern sites don’t need.', 'swiftpress' ), $settings );
 				toggle_row( 'disable_wp_embeds', __( 'Disable WordPress embeds', 'swiftpress' ), __( 'Remove the wp-embed script if you don’t embed other WP posts.', 'swiftpress' ), $settings );
 				?>
 			</div>
 		</div>
+
+		<?php
+		// Declare exactly which settings this partial form owns so the save
+		// handler updates only these and preserves everything else (the form
+		// renders ~26 of ~75 keys). Registered after every field has rendered.
+		tune_managed_keys( 'cache_timeout' );
+		tune_managed_keys( 'image_optimizer_preferred_format' );
+		tune_managed_keys( 'prefetch_dns' );
+		printf( '<input type="hidden" name="swiftpress_managed_keys" value="%s" />', esc_attr( implode( ',', tune_managed_keys() ) ) );
+		?>
 
 		<div class="sp-note" style="margin:14px 2px 0;align-items:center">
 			<?php echo icon( 'shield' ); // phpcs:ignore ?>

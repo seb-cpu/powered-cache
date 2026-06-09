@@ -394,7 +394,7 @@ function swiftpress_page_buffer( $buffer, $flags ) {
 	 */
 	$meta_file_contents = apply_filters( 'swiftpress_page_cache_meta_info', $meta_file_contents );
 
-	file_put_contents( $path . '/' . $meta_file_name, $meta_file_contents );
+	file_put_contents( $path . '/' . $meta_file_name, $meta_file_contents, LOCK_EX );
 	touch( $path . '/' . $meta_file_name, $modified_time );
 
 	if ( ! empty( $meta_params['headers']['Content-Type'] ) ) {
@@ -404,10 +404,10 @@ function swiftpress_page_buffer( $buffer, $flags ) {
 	}
 
 	if ( $GLOBALS['swiftpress_options']['gzip_compression'] && function_exists( 'gzencode' ) ) {
-		file_put_contents( $path . '/' . $index_name, gzencode( $buffer, 3 ) );
+		file_put_contents( $path . '/' . $index_name, gzencode( $buffer, 3 ), LOCK_EX );
 		touch( $path . '/' . $index_name, $modified_time );
 	} else {
-		file_put_contents( $path . '/' . $index_name, $buffer );
+		file_put_contents( $path . '/' . $index_name, $buffer, LOCK_EX );
 		touch( $path . '/' . $index_name, $modified_time );
 	}
 
@@ -455,7 +455,10 @@ function swiftpress_serve_cache() {
 		$meta_contents = trim( file_get_contents( $meta_file ) );
 		$meta_contents = str_replace( '<?php exit; ?>', '', $meta_contents );
 		$meta_params   = json_decode( trim( $meta_contents ), true );
-		$header_params = $meta_params['headers'];
+		// A torn/concurrent write or invalid-UTF-8 header can make json_decode
+		// return null; guard the offset so the cache hot path never emits a PHP
+		// warning before WordPress loads.
+		$header_params = ( is_array( $meta_params ) && isset( $meta_params['headers'] ) ) ? $meta_params['headers'] : [];
 	}
 
 	if ( ! empty( $header_params['Content-Type'] ) ) {

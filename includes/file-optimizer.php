@@ -171,6 +171,12 @@ if ( ! $args || false === strpos( $args, '?' ) ) {
 $args = substr( $args, strpos( $args, '?' ) + 1 );
 $args = str_replace( [ '&minify=1', '&minify=0' ], '', $args ); // remove minify parameter
 
+// An empty file list (e.g. a bare `…/file-optimizer.php??` probe) would index
+// offset 0 of an empty string below — bail with 400 instead of a PHP warning.
+if ( '' === $args ) {
+	concat_http_status_exit( 400 );
+}
+
 // /foo/bar.css,/foo1/bar/baz.css?m=293847g
 // or
 // -eJzTT8vP109KLNJLLi7W0QdyDEE8IK4CiVjn2hpZGluYmKcDABRMDPM=

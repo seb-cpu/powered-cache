@@ -1,0 +1,1708 @@
+# Copyright (C) 2026 Webs.ie
+# This file is distributed under the GPL-2.0-or-later.
+msgid ""
+msgstr ""
+"Project-Id-Version: AICache 1.1.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/swiftpress\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-06-09T21:15:59+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: swiftpress\n"
+
+#. Plugin Name of the plugin
+#: swiftpress.php
+#: includes/admin/dashboard.php:92
+#: includes/admin/dashboard.php:489
+msgid "AICache"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: swiftpress.php
+msgid "https://webs.ie/aicache"
+msgstr ""
+
+#. Description of the plugin
+#: swiftpress.php
+msgid "AI-assisted WordPress performance &amp; caching — page cache, CSS/JS &amp; font optimization, intelligent preloading, and an AI diagnostic that explains and one-click-fixes what's slowing your site."
+msgstr ""
+
+#. Author of the plugin
+#: swiftpress.php
+msgid "Webs.ie"
+msgstr ""
+
+#. Author URI of the plugin
+#: swiftpress.php
+msgid "https://webs.ie"
+msgstr ""
+
+#: includes/admin/app.php:110
+#: includes/admin/app.php:157
+#: includes/admin/app.php:211
+#: includes/admin/dashboard.php:740
+#: includes/admin/dashboard.php:757
+#: includes/admin/dashboard.php:779
+#: includes/admin/dashboard.php:796
+msgid "Permission denied."
+msgstr ""
+
+#: includes/admin/app.php:116
+msgid "Unknown setting."
+msgstr ""
+
+#: includes/admin/app.php:172
+msgid "Could not fetch the homepage automatically — add domains manually below."
+msgstr ""
+
+#: includes/admin/app.php:216
+msgid "Turn on Image optimization first (the server also needs a WebP or AVIF encoder in GD)."
+msgstr ""
+
+#: includes/admin/app.php:323
+msgid "Reading your site…"
+msgstr ""
+
+#: includes/admin/app.php:324
+msgid "Applied"
+msgstr ""
+
+#: includes/admin/app.php:325
+#: includes/classes/AI/AI.php:189
+msgid "Applying…"
+msgstr ""
+
+#: includes/admin/app.php:326
+msgid "Add your OpenRouter key in Copilot to get plain-language explanations. Standard recommendations are shown without a key."
+msgstr ""
+
+#: includes/admin/app.php:327
+msgid "Something went wrong. Please try again."
+msgstr ""
+
+#: includes/admin/app.php:454
+#: includes/admin/app.php:592
+msgid "Tune"
+msgstr ""
+
+#: includes/admin/app.php:455
+#: includes/admin/dashboard.php:105
+#: includes/admin/dashboard.php:937
+msgid "Settings"
+msgstr ""
+
+#: includes/admin/app.php:456
+msgid "Operate"
+msgstr ""
+
+#: includes/admin/app.php:457
+#: includes/admin/app.php:737
+msgid "Server"
+msgstr ""
+
+#: includes/admin/app.php:461
+msgid "Theme"
+msgstr ""
+
+#: includes/admin/app.php:462
+msgid "Flush all"
+msgstr ""
+
+#: includes/admin/app.php:478
+msgid "Object cache"
+msgstr ""
+
+#: includes/admin/app.php:483
+msgid "Ask AICache, or type a command…"
+msgstr ""
+
+#: includes/admin/app.php:486
+msgid "Run Diagnostic"
+msgstr ""
+
+#: includes/admin/app.php:496
+msgid "Score"
+msgstr ""
+
+#: includes/admin/app.php:501
+msgid "Cache"
+msgstr ""
+
+#: includes/admin/app.php:506
+msgid "AI Brief"
+msgstr ""
+
+#: includes/admin/app.php:508
+msgid "Let’s find out what’s slowing"
+msgstr ""
+
+#: includes/admin/app.php:510
+msgid "Run a diagnostic and I’ll read your site’s real performance data, explain in plain language what’s holding it back, and map each issue to a switch AICache already has — applied with one click and reversible."
+msgstr ""
+
+#: includes/admin/app.php:512
+msgid "Server is"
+msgstr ""
+
+#: includes/admin/app.php:512
+msgid "PHP"
+msgstr ""
+
+#: includes/admin/app.php:516
+msgid "Performance score"
+msgstr ""
+
+#: includes/admin/app.php:522
+msgid "Performance"
+msgstr ""
+
+#: includes/admin/app.php:522
+msgid "not yet measured"
+msgstr ""
+
+#: includes/admin/app.php:528
+msgid "Explain & Fix"
+msgstr ""
+
+#: includes/admin/app.php:530
+msgid "Apply all safe fixes"
+msgstr ""
+
+#: includes/admin/app.php:535
+msgid "Or pick a starting posture"
+msgstr ""
+
+#: includes/admin/app.php:535
+msgid "Each preset is an explicit map of switches with per-setting risk labels — never a mystery bundle."
+msgstr ""
+
+#: includes/admin/app.php:536
+msgid "Safe"
+msgstr ""
+
+#: includes/admin/app.php:537
+msgid "Balanced"
+msgstr ""
+
+#: includes/admin/app.php:538
+msgid "Aggressive"
+msgstr ""
+
+#: includes/admin/app.php:542
+msgid "Every fix applies through AICache’s own save path and is snapshotted — one click reverts it. Your API key never leaves your server."
+msgstr ""
+
+#: includes/admin/app.php:577
+msgid "engine pending"
+msgstr ""
+
+#: includes/admin/app.php:577
+#: includes/admin/app.php:789
+msgid "saved"
+msgstr ""
+
+#: includes/admin/app.php:592
+msgid "Every optimization, grouped and explained. Saved through AICache’s existing, battle-tested settings pipeline."
+msgstr ""
+
+#: includes/admin/app.php:599
+#: includes/admin/partials/settings-page.php:61
+msgid "Page Cache"
+msgstr ""
+
+#: includes/admin/app.php:599
+msgid "Serve static HTML to anonymous visitors"
+msgstr ""
+
+#: includes/admin/app.php:602
+msgid "Enable page cache"
+msgstr ""
+
+#: includes/admin/app.php:602
+msgid "Cache full pages so repeat visitors skip PHP and the database entirely."
+msgstr ""
+
+#: includes/admin/app.php:603
+#: includes/classes/AI/Schema.php:65
+msgid "Gzip compression"
+msgstr ""
+
+#: includes/admin/app.php:603
+msgid "Store pre-compressed cache files for faster transfer."
+msgstr ""
+
+#: includes/admin/app.php:604
+msgid "Mobile cache"
+msgstr ""
+
+#: includes/admin/app.php:604
+msgid "Serve cached pages to mobile visitors."
+msgstr ""
+
+#: includes/admin/app.php:607
+msgid "Cache expiration"
+msgstr ""
+
+#: includes/admin/app.php:607
+msgid "How long before a cached page is rebuilt."
+msgstr ""
+
+#: includes/admin/app.php:611
+#: includes/admin/partials/settings-page.php:84
+msgid "Minutes"
+msgstr ""
+
+#: includes/admin/app.php:612
+#: includes/admin/partials/settings-page.php:87
+msgid "Hours"
+msgstr ""
+
+#: includes/admin/app.php:613
+#: includes/admin/partials/settings-page.php:90
+msgid "Days"
+msgstr ""
+
+#: includes/admin/app.php:621
+msgid "Optimize CSS & JavaScript"
+msgstr ""
+
+#: includes/admin/app.php:624
+#: includes/classes/AI/Schema.php:82
+msgid "Minify CSS"
+msgstr ""
+
+#: includes/admin/app.php:624
+msgid "Strip whitespace and comments from stylesheets."
+msgstr ""
+
+#: includes/admin/app.php:625
+msgid "Combine CSS"
+msgstr ""
+
+#: includes/admin/app.php:625
+msgid "Merge stylesheets to cut requests (HTTP/2 makes this optional)."
+msgstr ""
+
+#: includes/admin/app.php:626
+#: includes/admin/partials/settings-page.php:205
+msgid "Optimize CSS delivery (Critical CSS)"
+msgstr ""
+
+#: includes/admin/app.php:626
+msgid "Inline above-the-fold CSS, defer the rest. <code>Algorithmic engine — shipping soon.</code>"
+msgstr ""
+
+#: includes/admin/app.php:627
+#: includes/admin/partials/settings-page.php:211
+#: includes/classes/AI/Schema.php:101
+msgid "Remove unused CSS"
+msgstr ""
+
+#: includes/admin/app.php:627
+msgid "Strip selectors a page never uses. <code>Algorithmic engine — shipping soon.</code>"
+msgstr ""
+
+#: includes/admin/app.php:628
+#: includes/classes/AI/Schema.php:106
+msgid "Minify JavaScript"
+msgstr ""
+
+#: includes/admin/app.php:628
+msgid "Shrink scripts."
+msgstr ""
+
+#: includes/admin/app.php:629
+#: includes/admin/partials/settings-page.php:233
+#: includes/classes/AI/Schema.php:116
+msgid "Defer JavaScript"
+msgstr ""
+
+#: includes/admin/app.php:629
+msgid "Add <code>defer</code> so scripts stop blocking render."
+msgstr ""
+
+#: includes/admin/app.php:630
+msgid "Delay JavaScript"
+msgstr ""
+
+#: includes/admin/app.php:630
+msgid "Hold non-critical scripts (analytics, chat) until the visitor interacts — the single biggest LCP win for script-heavy themes."
+msgstr ""
+
+#: includes/admin/app.php:636
+msgid "Media & Fonts"
+msgstr ""
+
+#: includes/admin/app.php:639
+#: includes/admin/partials/settings-page.php:281
+#: includes/classes/AI/Schema.php:190
+msgid "Add missing image dimensions"
+msgstr ""
+
+#: includes/admin/app.php:639
+msgid "Write width/height back into markup to stop layout shift (CLS)."
+msgstr ""
+
+#: includes/admin/app.php:640
+#: includes/classes/AI/Schema.php:178
+msgid "Image optimization"
+msgstr ""
+
+#: includes/admin/app.php:640
+msgid "Convert JPEG/PNG to next-gen formats and serve them automatically wherever the converted file is smaller. New uploads convert on the fly; bulk-convert existing media with <code>wp swiftpress optimize-images</code>."
+msgstr ""
+
+#: includes/admin/app.php:643
+#: includes/classes/AI/Schema.php:185
+msgid "Preferred image format"
+msgstr ""
+
+#: includes/admin/app.php:645
+msgid "Auto"
+msgstr ""
+
+#: includes/admin/app.php:652
+msgid "Bulk convert existing media"
+msgstr ""
+
+#: includes/admin/app.php:653
+msgid "Generate next-gen versions of images already in the library. Safe to re-run."
+msgstr ""
+
+#: includes/admin/app.php:655
+msgid "Optimize now"
+msgstr ""
+
+#: includes/admin/app.php:658
+#: includes/classes/AI/Schema.php:134
+msgid "Font optimization"
+msgstr ""
+
+#: includes/admin/app.php:658
+msgid "Self-host Google Fonts (no call to Google — GDPR-friendlier) and control loading."
+msgstr ""
+
+#: includes/admin/app.php:659
+#: includes/admin/partials/settings-page.php:326
+#: includes/classes/AI/Schema.php:140
+msgid "Self-host Google Fonts"
+msgstr ""
+
+#: includes/admin/app.php:659
+msgid "Download and serve fonts locally."
+msgstr ""
+
+#: includes/admin/app.php:660
+#: includes/classes/AI/Schema.php:146
+msgid "Preload fonts"
+msgstr ""
+
+#: includes/admin/app.php:660
+msgid "Preload above-the-fold font files."
+msgstr ""
+
+#: includes/admin/app.php:661
+msgid "Stabilize font loading (prevent layout shift)"
+msgstr ""
+
+#: includes/admin/app.php:661
+msgid "Sets font-display: optional so late-loading web fonts can't reflow the page (fixes CLS). Cold visits show the system fallback for that view; cached visits show the web font."
+msgstr ""
+
+#: includes/admin/app.php:667
+msgid "Delivery & resource hints"
+msgstr ""
+
+#: includes/admin/app.php:667
+msgid "Previously hidden — now surfaced"
+msgstr ""
+
+#: includes/admin/app.php:670
+msgid "LCP optimization"
+msgstr ""
+
+#: includes/admin/app.php:670
+msgid "Prioritise the largest above-the-fold image (fetchpriority, no lazy-load)."
+msgstr ""
+
+#: includes/admin/app.php:671
+#: includes/admin/partials/settings-page.php:594
+#: includes/classes/AI/Schema.php:168
+msgid "Prefetch links on hover"
+msgstr ""
+
+#: includes/admin/app.php:671
+msgid "Pre-load the next page when a visitor hovers a link."
+msgstr ""
+
+#: includes/admin/app.php:672
+msgid "Cloudflare integration"
+msgstr ""
+
+#: includes/admin/app.php:672
+msgid "Purge Cloudflare’s edge cache automatically whenever AICache clears its own cache. Enter an API token (recommended) or email + global key, plus the Zone ID."
+msgstr ""
+
+#: includes/admin/app.php:675
+msgid "Cloudflare credentials"
+msgstr ""
+
+#: includes/admin/app.php:676
+msgid "Saved securely on change. Secret fields stay blank here once set — leave them empty to keep the stored value."
+msgstr ""
+
+#: includes/admin/app.php:678
+msgid "Zone ID"
+msgstr ""
+
+#: includes/admin/app.php:679
+msgid "API token (recommended)"
+msgstr ""
+
+#: includes/admin/app.php:679
+#: includes/admin/app.php:681
+msgid "•••••• configured — leave blank to keep"
+msgstr ""
+
+#: includes/admin/app.php:680
+msgid "Account email (for global key)"
+msgstr ""
+
+#: includes/admin/app.php:681
+msgid "Global API key"
+msgstr ""
+
+#: includes/admin/app.php:686
+msgid "DNS-prefetch domains"
+msgstr ""
+
+#: includes/admin/app.php:687
+msgid "Detect domains"
+msgstr ""
+
+#: includes/admin/app.php:689
+msgid "Let AICache scan your homepage for third-party hosts, then tick the ones to resolve early — no need to type them."
+msgstr ""
+
+#: includes/admin/app.php:691
+msgid "Add manually"
+msgstr ""
+
+#: includes/admin/app.php:699
+msgid "Integrations & bloat control"
+msgstr ""
+
+#: includes/admin/app.php:702
+msgid "Self-host Google Analytics"
+msgstr ""
+
+#: includes/admin/app.php:702
+msgid "Serve the GA script locally to remove a render-blocking third-party request."
+msgstr ""
+
+#: includes/admin/app.php:703
+msgid "Self-host Facebook Pixel"
+msgstr ""
+
+#: includes/admin/app.php:703
+msgid "Serve the Pixel locally."
+msgstr ""
+
+#: includes/admin/app.php:704
+msgid "Heartbeat control"
+msgstr ""
+
+#: includes/admin/app.php:704
+msgid "Throttle the WordPress Heartbeat API to cut admin/server load."
+msgstr ""
+
+#: includes/admin/app.php:705
+#: includes/admin/partials/settings-page.php:293
+#: includes/classes/AI/Schema.php:195
+msgid "Disable emoji scripts"
+msgstr ""
+
+#: includes/admin/app.php:705
+msgid "Remove the emoji polyfill most modern sites don’t need."
+msgstr ""
+
+#: includes/admin/app.php:706
+#: includes/admin/partials/settings-page.php:287
+#: includes/classes/AI/Schema.php:200
+msgid "Disable WordPress embeds"
+msgstr ""
+
+#: includes/admin/app.php:706
+msgid "Remove the wp-embed script if you don’t embed other WP posts."
+msgstr ""
+
+#: includes/admin/app.php:723
+msgid "Settings save automatically as you change them."
+msgstr ""
+
+#: includes/admin/app.php:724
+msgid "Save & clear cache"
+msgstr ""
+
+#: includes/admin/app.php:737
+msgid "Serve cache files straight from the web server, before PHP even starts."
+msgstr ""
+
+#. translators: %s server type
+#: includes/admin/app.php:743
+#, php-format
+msgid "Detected server: %s. The page cache already works on any server via the PHP drop-in — these rules make anonymous hits bypass PHP entirely for maximum speed."
+msgstr ""
+
+#: includes/admin/app.php:748
+msgid "Paste into your server block, then reload nginx"
+msgstr ""
+
+#: includes/admin/app.php:751
+msgid "Copy"
+msgstr ""
+
+#: includes/admin/app.php:751
+msgid "Download"
+msgstr ""
+
+#: includes/admin/app.php:754
+msgid "After pasting, run"
+msgstr ""
+
+#: includes/admin/app.php:763
+msgid "Bring your own OpenRouter key. Calls are server-side, on-demand, and your key never reaches the browser or the cache files."
+msgstr ""
+
+#: includes/admin/app.php:766
+msgid "OpenRouter API key"
+msgstr ""
+
+#: includes/admin/app.php:768
+msgid "No key set — standard recommendations only"
+msgstr ""
+
+#: includes/admin/app.php:771
+msgid "Save key"
+msgstr ""
+
+#: includes/admin/app.php:772
+msgid "Remove"
+msgstr ""
+
+#: includes/admin/app.php:776
+msgid "Your key is set securely in wp-config.php (SWIFTPRESS_OPENROUTER_KEY) — nothing to enter here."
+msgstr ""
+
+#: includes/admin/app.php:778
+msgid "Encrypted at rest with your WordPress salts. For the strongest option, define"
+msgstr ""
+
+#: includes/admin/app.php:778
+msgid "in wp-config.php (then it never touches the database)."
+msgstr ""
+
+#: includes/admin/app.php:783
+msgid "Model & budget"
+msgstr ""
+
+#: includes/admin/app.php:785
+msgid "Model"
+msgstr ""
+
+#: includes/admin/app.php:785
+msgid "Cheapest capable default. A full diagnostic costs well under one cent."
+msgstr ""
+
+#: includes/admin/app.php:787
+msgid "Monthly spend cap"
+msgstr ""
+
+#: includes/admin/app.php:787
+msgid "Calls refuse past this. On-demand only — never per page view."
+msgstr ""
+
+#: includes/admin/app.php:789
+msgid "PageSpeed Insights key"
+msgstr ""
+
+#: includes/admin/app.php:789
+msgid "optional"
+msgstr ""
+
+#: includes/admin/app.php:789
+msgid "A free Google key unlocks full Lighthouse metrics and avoids the shared rate limit. Without it, AICache runs a quick on-site scan."
+msgstr ""
+
+#: includes/admin/app.php:796
+msgid "Data sent on a diagnostic: derived performance metrics + which AICache features are on. No page content, no visitor data, no personal information. Services: Google PageSpeed Insights + OpenRouter (see readme)."
+msgstr ""
+
+#: includes/admin/app.php:806
+msgid "Ask, or command in plain English…"
+msgstr ""
+
+#: includes/admin/app.php:812
+msgid "to run"
+msgstr ""
+
+#: includes/admin/app.php:812
+msgid "to close"
+msgstr ""
+
+#: includes/admin/app.php:812
+msgid "every command shows a diff before it applies"
+msgstr ""
+
+#: includes/admin/dashboard.php:91
+#: includes/admin/dashboard.php:104
+msgid "AICache Settings"
+msgstr ""
+
+#: includes/admin/dashboard.php:517
+msgid "Image optimizer cache purged successfully!"
+msgstr ""
+
+#: includes/admin/dashboard.php:518
+msgid "Page cache deleted for all websites!"
+msgstr ""
+
+#: includes/admin/dashboard.php:519
+msgid "Page cache deleted successfully!"
+msgstr ""
+
+#: includes/admin/dashboard.php:520
+msgid "All cached items flushed successfully!"
+msgstr ""
+
+#: includes/admin/dashboard.php:521
+msgid "The cache preloading has been initialized!"
+msgstr ""
+
+#: includes/admin/dashboard.php:522
+msgid "The Critical CSS generation process has been initialized!"
+msgstr ""
+
+#: includes/admin/dashboard.php:523
+msgid "The Critical CSS generation process has been initialized for all sites! This might take a while, depending on the network size."
+msgstr ""
+
+#: includes/admin/dashboard.php:524
+msgid "The UCSS generation process has been initialized!"
+msgstr ""
+
+#: includes/admin/dashboard.php:525
+msgid "The UCSS generation process has been initialized for all sites! This might take a while, depending on the network size."
+msgstr ""
+
+#: includes/admin/dashboard.php:526
+msgid "Cloudflare cache flushed, it can take up to 30 seconds to delete all cache from Cloudflare!"
+msgstr ""
+
+#: includes/admin/dashboard.php:527
+msgid "Settings have been reset!"
+msgstr ""
+
+#: includes/admin/dashboard.php:528
+msgid "Settings have been imported!"
+msgstr ""
+
+#: includes/admin/dashboard.php:529
+msgid "Settings have been successfully saved, and all cache has been cleared."
+msgstr ""
+
+#: includes/admin/dashboard.php:530
+msgid "Settings saved."
+msgstr ""
+
+#: includes/admin/dashboard.php:534
+#, php-format
+msgid "Page cache for %s language has been deleted!"
+msgstr ""
+
+#: includes/admin/dashboard.php:538
+msgid "Could not purge image optimizer cache. Please try again later and ensure your license key is activated!"
+msgstr ""
+
+#: includes/admin/dashboard.php:539
+#: includes/admin/dashboard.php:540
+#: includes/admin/dashboard.php:541
+#: includes/admin/dashboard.php:542
+#: includes/admin/dashboard.php:543
+#: includes/admin/dashboard.php:544
+#: includes/admin/dashboard.php:545
+msgid "You don't have permission to perform this action!"
+msgstr ""
+
+#: includes/admin/dashboard.php:546
+msgid "Your license key does not seem valid. A valid license is required for the Critical CSS!"
+msgstr ""
+
+#: includes/admin/dashboard.php:547
+msgid "Your license key does not seem valid. A valid license is required for removing unused CSS!"
+msgstr ""
+
+#: includes/admin/dashboard.php:548
+msgid "Could not flush Cloudflare cache. Please make sure you entered the correct credentials and zone id!"
+msgstr ""
+
+#: includes/admin/dashboard.php:590
+msgid "Purge All Cache"
+msgstr ""
+
+#: includes/admin/dashboard.php:745
+#: includes/core.php:189
+msgid "All cache cleared successfully."
+msgstr ""
+
+#: includes/admin/dashboard.php:767
+#: includes/core.php:190
+msgid "Font cache cleared successfully."
+msgstr ""
+
+#: includes/admin/dashboard.php:822
+msgid "wp-config.php is writable."
+msgstr ""
+
+#: includes/admin/dashboard.php:824
+#, php-format
+msgid "wp-config.php is not writable. Please make sure the file writable or you can manually define %s constant."
+msgstr ""
+
+#: includes/admin/dashboard.php:837
+#, php-format
+msgid "Cache directory %s is not exist!"
+msgstr ""
+
+#: includes/admin/dashboard.php:839
+#, php-format
+msgid "Cache directory %s is not writeable!"
+msgstr ""
+
+#: includes/admin/dashboard.php:842
+#, php-format
+msgid "Cache directory %s exist and writable!"
+msgstr ""
+
+#: includes/admin/dashboard.php:856
+#, php-format
+msgid ".htaccess file %s is not exist!"
+msgstr ""
+
+#: includes/admin/dashboard.php:858
+#, php-format
+msgid ".htaccess file %s is not writeable!"
+msgstr ""
+
+#: includes/admin/dashboard.php:861
+#, php-format
+msgid ".htaccess file %s exist and writable!"
+msgstr ""
+
+#: includes/admin/dashboard.php:876
+#, php-format
+msgid "Required file for the page caching %s is not exist!"
+msgstr ""
+
+#: includes/admin/dashboard.php:878
+#, php-format
+msgid "Required file for the page caching %s is not writeable!"
+msgstr ""
+
+#: includes/admin/dashboard.php:881
+#, php-format
+msgid "Required file for the page caching %s exist and writable!"
+msgstr ""
+
+#: includes/admin/dashboard.php:894
+msgid "Invalid request"
+msgstr ""
+
+#: includes/admin/notices.php:87
+msgid "The following plugins are not compatible with SwiftPress and may cause unintended results:"
+msgstr ""
+
+#: includes/admin/notices.php:92
+msgid "Deactivate"
+msgstr ""
+
+#. translators: %s: SwiftPress settings page URL
+#: includes/admin/notices.php:131
+#, php-format
+msgid "<strong>SwiftPress:</strong> Page caching needs to be activated in order to speed up your website. Please activate it on <a href=\"%s\">settings page</a>"
+msgstr ""
+
+#. translators: %s: WP_CACHE definition
+#: includes/admin/notices.php:160
+#, php-format
+msgid "<code>%s</code> is not found in wp-config.php."
+msgstr ""
+
+#. translators: %s: advanced-cache.php drop-in path
+#: includes/admin/notices.php:165
+#, php-format
+msgid "<code>%s</code> file was edited or deleted. You can recreate the correct configuration files by saving SwiftPress settings."
+msgstr ""
+
+#. translators: %s: page-cache.php drop-in path
+#: includes/admin/notices.php:170
+#, php-format
+msgid "SwiftPress could not access dropin. Please check <code>%s</code> exist and accessible on your server."
+msgstr ""
+
+#: includes/admin/notices.php:191
+msgid "Page Cache is not working, because:"
+msgstr ""
+
+#: includes/admin/notices.php:242
+msgid "The <code>.htaccess</code> couldn't be found on your server. Please create a new <code>.htaccess</code> file. (<a href=\"https://wordpress.org/support/article/htaccess/\" target=\"_blank\" rel=\"noopener\">?</a>)"
+msgstr ""
+
+#: includes/admin/notices.php:244
+msgid "Oh no! It looks <code>.htaccess</code> file is not writable. Please make sure it is writable by the application server. Your website will be much faster when .htaccess is configured for SwiftPress."
+msgstr ""
+
+#: includes/admin/notices.php:254
+msgid "SwiftPress:"
+msgstr ""
+
+#: includes/admin/notices.php:303
+msgid "<strong>SwiftPress:</strong> One or more plugins have been activated or deactivated; consider clearing the cache if these changes impact your site's front end."
+msgstr ""
+
+#: includes/admin/notices.php:312
+msgid "Purge Cache"
+msgstr ""
+
+#: includes/admin/notices.php:315
+msgid "Dismiss this notice"
+msgstr ""
+
+#: includes/admin/notices.php:406
+msgid "Permission denied"
+msgstr ""
+
+#: includes/admin/notices.php:410
+msgid "Notice ID missing"
+msgstr ""
+
+#: includes/admin/notices.php:421
+msgid "Notice dismissed"
+msgstr ""
+
+#: includes/admin/notices.php:451
+msgid "Development Mode is active."
+msgstr ""
+
+#: includes/admin/notices.php:452
+msgid "Caching and optimizations are currently disabled. Don’t forget to disable it when done."
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:35
+#: assets/js/admin/metabox.js:48
+msgid "SwiftPress"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:40
+#: includes/core.php:194
+msgid "Clear All Cache"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:43
+msgid "Clear Font Cache"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:49
+msgid "Lightweight WordPress performance optimization"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:67
+msgid "Enable Page Cache"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:72
+msgid "Cache pages for faster load times"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:77
+msgid "Cache Expiration"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:94
+msgid "Set to 0 for no automatic expiration."
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:99
+msgid "Gzip Compression"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:104
+msgid "Create gzip compressed cache files"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:109
+msgid "Mobile Cache"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:114
+msgid "Serve cached pages to mobile visitors"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:120
+msgid "Create separate cache files for mobile"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:125
+msgid "Logged-in Users"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:130
+msgid "Serve cached pages to logged-in users"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:136
+msgid "Auto-configure .htaccess"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:141
+msgid "Automatically update .htaccess rules"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:147
+msgid "Cache Footprint"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:152
+msgid "Add an HTML comment showing the page was served from cache"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:163
+msgid "File Optimization"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:169
+#: includes/classes/AI/Schema.php:205
+msgid "Minify HTML"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:176
+msgid "Remove whitespace and comments from HTML output"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:182
+msgid "DOM optimization"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:188
+msgid "CSS"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:193
+msgid "Minify CSS files"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:199
+#: includes/classes/AI/Schema.php:88
+msgid "Combine CSS files"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:216
+msgid "JavaScript"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:221
+msgid "Minify JS files"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:227
+msgid "Combine JS files"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:239
+#: includes/classes/AI/Schema.php:121
+msgid "Delay JavaScript execution"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:244
+msgid "Excluded CSS Files"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:247
+#: includes/admin/partials/settings-page.php:255
+#: includes/admin/partials/settings-page.php:263
+#: includes/admin/partials/settings-page.php:271
+msgid "One file per line"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:252
+msgid "Excluded JS Files"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:260
+msgid "JS Defer Exclusions"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:268
+msgid "JS Delay Exclusions"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:276
+msgid "Media"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:304
+msgid "Font Optimization"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:310
+msgid "Enable Font Optimization"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:317
+msgid "Optimize Google Fonts loading"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:331
+msgid "Download and serve Google Fonts locally"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:336
+msgid "Preload Fonts"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:341
+msgid "Preload above-the-fold font files"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:346
+msgid "Font Display Swap"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:351
+msgid "Force font-display: swap on all @font-face declarations"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:363
+msgid "Cache Preloader"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:369
+msgid "Enable Cache Preloader"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:376
+msgid "Automatically preload pages into the cache"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:385
+msgid "Preload Options"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:390
+msgid "Preload homepage"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:396
+msgid "Preload posts/pages"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:402
+msgid "Preload taxonomies"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:409
+msgid "Preload from sitemap"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:415
+msgid "Sitemap URL"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:421
+msgid "Auto-detected (leave blank)"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:423
+#: includes/core.php:193
+msgid "Refresh Sitemap"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:426
+msgid "Leave empty for automatic detection (robots.txt, wp-sitemap.xml, sitemap_index.xml, sitemap.xml)."
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:432
+msgid "Crawl Interval"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:438
+msgid "seconds between batch processing"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:443
+msgid "Request Interval"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:449
+msgid "seconds between individual preload requests"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:457
+msgid "Preload Progress"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:467
+msgid "Total:"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:471
+msgid "Completed:"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:475
+msgid "Pending:"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:479
+msgid "Failed:"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:483
+msgid "Last run:"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:488
+msgid "Detected sitemap:"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:499
+msgid "Advanced"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:506
+msgid "DNS Prefetch"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:510
+msgid "One domain per line, e.g. //fonts.googleapis.com"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:516
+msgid "Preconnect"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:520
+msgid "One domain per line, e.g. https://cdn.example.com"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:526
+msgid "Cache Exclusions"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:530
+msgid "URL patterns to never cache, one per line"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:536
+msgid "Rejected User Agents"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:545
+msgid "Rejected Cookies"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:554
+msgid "Vary Cookies"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:563
+msgid "Ignored Query Strings"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:572
+msgid "Cache Query Strings"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:581
+msgid "Purge Additional Pages"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:589
+msgid "Prefetch Links"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:599
+msgid "Async Cache Cleaning"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:604
+msgid "Clean cache asynchronously in the background"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:611
+msgid "Import / Export Settings"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:614
+msgid "Export your current settings as a JSON file."
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:616
+msgid "Export Settings"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:620
+msgid "Import settings from a previously exported JSON file."
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:623
+msgid "Import Settings"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:633
+msgid "Are you sure you want to reset all settings to defaults?"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:634
+msgid "Reset All Settings"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:642
+msgid "Save Settings"
+msgstr ""
+
+#: includes/admin/partials/settings-page.php:645
+msgid "Save & Clear Cache"
+msgstr ""
+
+#: includes/classes/AdvancedCache.php:105
+msgid "Purge Page Cache [Network Wide - All Sites]"
+msgstr ""
+
+#: includes/classes/AdvancedCache.php:116
+msgid "Purge Page Cache"
+msgstr ""
+
+#: includes/classes/AdvancedCache.php:126
+msgid "Purge Current Page"
+msgstr ""
+
+#: includes/classes/AI/AI.php:131
+msgid "Insufficient permissions."
+msgstr ""
+
+#: includes/classes/AI/AI.php:142
+msgid "Invalid request."
+msgstr ""
+
+#: includes/classes/AI/AI.php:188
+msgid "Analyzing your site…"
+msgstr ""
+
+#: includes/classes/AI/AI.php:190
+msgid "Reverting…"
+msgstr ""
+
+#: includes/classes/AI/AI.php:191
+msgid "This reverts ALL settings to the state before the AI changes, including any manual changes made since then."
+msgstr ""
+
+#: includes/classes/AI/AI.php:192
+#: includes/core.php:195
+msgid "An error occurred. Please try again."
+msgstr ""
+
+#: includes/classes/AI/AI.php:244
+msgid "No changes to apply."
+msgstr ""
+
+#: includes/classes/AI/AI.php:254
+msgid "None of the requested changes are valid to apply."
+msgstr ""
+
+#: includes/classes/AI/AI.php:309
+msgid "There is nothing to undo."
+msgstr ""
+
+#: includes/classes/AI/Client.php:84
+#: includes/classes/AI/KeyStore.php:190
+#: includes/classes/AI/KeyStore.php:266
+msgid "No key provided."
+msgstr ""
+
+#: includes/classes/AI/Client.php:105
+msgid "That OpenRouter key was rejected (invalid or revoked)."
+msgstr ""
+
+#. translators: %d: HTTP status code.
+#: includes/classes/AI/Client.php:112
+#, php-format
+msgid "Could not validate the key (HTTP %d). Please try again."
+msgstr ""
+
+#: includes/classes/AI/Client.php:131
+msgid "No OpenRouter key available."
+msgstr ""
+
+#. translators: %d: HTTP status code.
+#: includes/classes/AI/Client.php:180
+#, php-format
+msgid "The AI service returned an error (HTTP %d)."
+msgstr ""
+
+#: includes/classes/AI/Client.php:194
+msgid "The AI service returned an unexpected response."
+msgstr ""
+
+#: includes/classes/AI/Client.php:203
+msgid "The AI service did not return valid structured data."
+msgstr ""
+
+#: includes/classes/AI/Client.php:210
+msgid "The AI service could not complete the request."
+msgstr ""
+
+#. translators: %d: number of recommendations.
+#: includes/classes/AI/Diagnostic.php:235
+#, php-format
+msgid "I found %d optimization you can apply."
+msgid_plural "I found %d optimizations you can apply."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/classes/AI/KeyStore.php:196
+msgid "That does not look like an OpenRouter API key. It should start with \"sk-\"."
+msgstr ""
+
+#: includes/classes/AI/KeyStore.php:203
+msgid "This site cannot securely store the key. Please define SWIFTPRESS_OPENROUTER_KEY in wp-config.php instead."
+msgstr ""
+
+#: includes/classes/AI/KeyStore.php:211
+msgid "Could not encrypt the key. Please define SWIFTPRESS_OPENROUTER_KEY in wp-config.php instead."
+msgstr ""
+
+#: includes/classes/AI/KeyStore.php:271
+msgid "That does not look like a valid PageSpeed Insights API key."
+msgstr ""
+
+#: includes/classes/AI/KeyStore.php:277
+msgid "This site cannot securely store the key."
+msgstr ""
+
+#: includes/classes/AI/KeyStore.php:283
+msgid "Could not encrypt the key."
+msgstr ""
+
+#: includes/classes/AI/KeyStore.php:443
+msgid "Your OpenRouter key could not be decrypted — this usually means WordPress security salts were rotated. Please re-enter your key."
+msgstr ""
+
+#: includes/classes/AI/PageSpeed.php:70
+msgid "No URL to audit."
+msgstr ""
+
+#. translators: %d: HTTP status code.
+#: includes/classes/AI/PageSpeed.php:109
+#, php-format
+msgid "PageSpeed Insights returned an error (HTTP %d)."
+msgstr ""
+
+#: includes/classes/AI/PageSpeed.php:118
+msgid "Could not read the PageSpeed Insights response."
+msgstr ""
+
+#: includes/classes/AI/PageSpeed.php:164
+msgid "Could not fetch the page."
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:61
+msgid "Slow server response time"
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:64
+msgid "The server takes a while to respond. Page caching serves a stored copy and skips that work."
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:66
+msgid "High TTFB; page caching avoids re-rendering on every request."
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:72
+msgid "Unminified CSS"
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:73
+msgid "render-blocking CSS not minified"
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:75
+msgid "CSS files are larger than they need to be. Minifying shrinks them."
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:77
+msgid "CSS is not minified."
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:83
+msgid "Unminified JavaScript"
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:84
+msgid "JavaScript not minified"
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:86
+msgid "JavaScript files are larger than necessary. Minifying shrinks them."
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:88
+msgid "JavaScript is not minified."
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:94
+msgid "Render-blocking scripts"
+msgstr ""
+
+#. translators: %d: number of render-blocking resources.
+#: includes/classes/AI/RulesFallback.php:97
+#, php-format
+msgid "%d render-blocking resources"
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:101
+msgid "Several scripts block the page from showing. Deferring them lets content appear sooner."
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:103
+msgid "Multiple render-blocking scripts detected."
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:109
+msgid "Large amount of unused CSS"
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:112
+msgid "A lot of CSS is downloaded but not used on this page."
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:114
+msgid "Significant unused CSS detected."
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:120
+msgid "Fonts block text rendering"
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:121
+msgid "font-display not set to swap"
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:123
+msgid "Text stays invisible while web fonts load. \"Swap\" shows text immediately."
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:125
+msgid "Fonts block text rendering."
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:126
+msgid "Use font-display: swap to show text sooner."
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:132
+msgid "Images can use next-gen formats"
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:135
+msgid "Images could be served in smaller modern formats like WebP."
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:137
+msgid "Images can be served in next-gen formats."
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:138
+msgid "WebP offers broad support and good savings."
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:144
+msgid "Images missing dimensions"
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:145
+msgid "unsized images cause layout shift"
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:147
+msgid "Images without width/height can shift the layout as they load."
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:149
+msgid "Unsized images detected."
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:154
+msgid "Compression reduces transfer size for text assets."
+msgstr ""
+
+#: includes/classes/AI/RulesFallback.php:160
+msgid "AI explanation unavailable — showing standard recommendations based on your performance metrics."
+msgstr ""
+
+#: includes/classes/AI/Schema.php:60
+msgid "Page caching"
+msgstr ""
+
+#: includes/classes/AI/Schema.php:70
+msgid "Cache for mobile devices"
+msgstr ""
+
+#: includes/classes/AI/Schema.php:77
+msgid "Cache lifespan (minutes)"
+msgstr ""
+
+#: includes/classes/AI/Schema.php:94
+msgid "Critical CSS"
+msgstr ""
+
+#: includes/classes/AI/Schema.php:111
+msgid "Combine JavaScript files"
+msgstr ""
+
+#: includes/classes/AI/Schema.php:129
+msgid "JavaScript delay timeout (ms)"
+msgstr ""
+
+#: includes/classes/AI/Schema.php:152
+msgid "Font display: swap"
+msgstr ""
+
+#: includes/classes/AI/Schema.php:157
+msgid "Cache preloading"
+msgstr ""
+
+#: includes/classes/AI/Schema.php:163
+msgid "Sitemap-based preloading"
+msgstr ""
+
+#: includes/classes/AI/Schema.php:173
+msgid "LCP image optimization"
+msgstr ""
+
+#: includes/classes/AI/Snapshot.php:200
+msgid "That snapshot is no longer available."
+msgstr ""
+
+#. translators: %s: engine name.
+#: includes/classes/AI/ValidationGate.php:137
+#, php-format
+msgid "Requires the %s engine — not yet available; shown as advice only."
+msgstr ""
+
+#. translators: %s: dependent setting label.
+#: includes/classes/AI/ValidationGate.php:342
+#, php-format
+msgid "Required prerequisite for %s."
+msgstr ""
+
+#: includes/classes/AI/ValidationGate.php:348
+msgid "Auto-added as a prerequisite."
+msgstr ""
+
+#. translators: %s: prerequisite labels.
+#: includes/classes/AI/ValidationGate.php:370
+#, php-format
+msgid "Also enabling required prerequisite(s): %s."
+msgstr ""
+
+#: includes/classes/Cron.php:70
+msgid "SwiftPress Purge Interval"
+msgstr ""
+
+#: includes/classes/Extensions/Cloudflare/Cloudflare.php:105
+msgid "Purge Cloudflare Cache"
+msgstr ""
+
+#: includes/classes/Preloader.php:110
+msgid "Preload Cache"
+msgstr ""
+
+#: includes/classes/Updater.php:329
+msgid "AI-assisted WordPress performance & caching — page cache, CSS/JS & font optimization, image optimization, intelligent preloading, and an AI diagnostic that explains and one-click-fixes what is slowing your site."
+msgstr ""
+
+#. translators: %1$s plugin name,  %2$s conflicted feature name (Eg lazyload)
+#: includes/compat/loader.php:60
+#, php-format
+msgid "It seems %1$s is activated on your site. SwiftPress works perfectly fine with %1$s but you cannot use %2$s functionalities that conflict with %1$s plugin unless you deactivate it."
+msgstr ""
+
+#: includes/compat/plugins/autoptimize.php:47
+msgid "It seems autoptimize is activated on your site. No worries, SwiftPress works perfectly fine with autoptimize but you cannot use file optimization options that conflict with autoptimize unless you deactivate it."
+msgstr ""
+
+#: includes/compat/plugins/autoptimize.php:48
+msgid "Configure Autoptimize"
+msgstr ""
+
+#: includes/compat/plugins/wpml.php:118
+#: includes/compat/plugins/wpml.php:175
+msgid "All languages"
+msgstr ""
+
+#: includes/core.php:188
+msgid "Clearing..."
+msgstr ""
+
+#: includes/core.php:191
+msgid "Refreshing..."
+msgstr ""
+
+#: includes/core.php:192
+msgid "Sitemap refreshed successfully."
+msgstr ""
+
+#: assets/js/admin/metabox.js:54
+msgid "Don't cache this post"
+msgstr ""
+
+#: assets/js/admin/metabox.js:66
+msgid "Disable lazy loading for this post"
+msgstr ""
+
+#: assets/js/admin/metabox.js:78
+msgid "Disable CSS optimization"
+msgstr ""
+
+#: assets/js/admin/metabox.js:92
+msgid "Disable JS optimization"
+msgstr ""
+
+#: assets/js/admin/metabox.js:104
+msgid "Disable JS defer for this post"
+msgstr ""
+
+#: assets/js/admin/metabox.js:116
+msgid "Disable JS delay for this post"
+msgstr ""
+
+#: assets/js/admin/metabox.js:128
+msgid "Disable Critical CSS for this post"
+msgstr ""
+
+#: assets/js/admin/metabox.js:142
+msgid "Generate specific Critical CSS"
+msgstr ""
+
+#: assets/js/admin/metabox.js:156
+msgid "Disable UCSS for this post"
+msgstr ""
+
+#: assets/js/admin/metabox.js:170
+msgid "Generate specific UCSS"
+msgstr ""

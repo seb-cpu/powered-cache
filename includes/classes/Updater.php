@@ -192,11 +192,30 @@ class Updater {
 		}
 
 		$data = [
-			'version'   => ltrim( (string) $body['tag_name'], 'vV' ),
-			'package'   => $package,
-			'changelog' => isset( $body['body'] ) ? (string) $body['body'] : '',
-			'html_url'  => isset( $body['html_url'] ) ? (string) $body['html_url'] : '',
+			'version'      => ltrim( (string) $body['tag_name'], 'vV' ),
+			'package'      => $package,
+			'changelog'    => isset( $body['body'] ) ? (string) $body['body'] : '',
+			'html_url'     => isset( $body['html_url'] ) ? (string) $body['html_url'] : '',
+			'requires'     => '',
+			'tested'       => '',
+			'requires_php' => '',
 		];
+
+		// Read the RELEASE's own compatibility headers from the tagged plugin file
+		// so an available update is advertised with the new version's requirements,
+		// not the installed copy's. Falls back to local headers if unavailable.
+		$raw = wp_remote_get(
+			'https://raw.githubusercontent.com/' . $this->repo() . '/' . rawurlencode( (string) $body['tag_name'] ) . '/swiftpress.php',
+			$args
+		);
+		if ( ! is_wp_error( $raw ) && 200 === (int) wp_remote_retrieve_response_code( $raw ) ) {
+			$head = substr( (string) wp_remote_retrieve_body( $raw ), 0, 8192 );
+			foreach ( [ 'requires' => 'Requires at least', 'tested' => 'Tested up to', 'requires_php' => 'Requires PHP' ] as $field => $label ) {
+				if ( preg_match( '/^[ \t\/*#@]*' . preg_quote( $label, '/' ) . ':(.*)$/mi', $head, $m ) ) {
+					$data[ $field ] = trim( $m[1] );
+				}
+			}
+		}
 
 		set_transient( self::TRANSIENT, $data, self::CACHE_TTL );
 		return $data;
@@ -233,6 +252,10 @@ class Updater {
 			$item['new_version'] = $release['version'];
 			$item['package']     = $release['package'];
 			$item['url']         = ! empty( $release['html_url'] ) ? $release['html_url'] : $item['url'];
+			// Prefer the release's own headers; fall back to local when absent.
+			$item['requires']     = ! empty( $release['requires'] ) ? $release['requires'] : $item['requires'];
+			$item['tested']       = ! empty( $release['tested'] ) ? $release['tested'] : $item['tested'];
+			$item['requires_php'] = ! empty( $release['requires_php'] ) ? $release['requires_php'] : $item['requires_php'];
 
 			if ( ! isset( $transient->response ) || ! is_array( $transient->response ) ) {
 				$transient->response = [];
