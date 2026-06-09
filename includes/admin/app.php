@@ -245,7 +245,7 @@ function render_rail( $view, $settings, $base ) {
 	<aside class="sp-rail">
 		<div class="sp-brand">
 			<span class="glyph"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2 4 14h6l-1 8 10-13h-7l1-7z" fill="currentColor"/></svg></span>
-			<span class="name">SwiftPress</span>
+			<span class="name">AICache</span>
 			<span class="ver"><?php echo esc_html( SWIFTPRESS_VERSION ); ?></span>
 		</div>
 		<nav class="sp-nav">
@@ -279,7 +279,7 @@ function render_topbar( $server, $cache ) {
 		<div class="spacer"></div>
 		<div class="sp-ask" id="sp-ask-trigger">
 			<?php echo icon( 'spark' ); // phpcs:ignore ?>
-			<?php esc_html_e( 'Ask SwiftPress, or type a command…', 'swiftpress' ); ?>
+			<?php esc_html_e( 'Ask AICache, or type a command…', 'swiftpress' ); ?>
 			<span class="kbd">⌘K</span>
 		</div>
 		<button type="button" class="sp-btn amber" id="sp-run-diagnostic"><?php echo icon( 'refresh' ); // phpcs:ignore ?> <?php esc_html_e( 'Run Diagnostic', 'swiftpress' ); ?></button>
@@ -306,7 +306,7 @@ function view_brief( $settings, $server, $cache ) {
 			<div id="sp-brief-content">
 				<h1><?php esc_html_e( 'Let’s find out what’s slowing', 'swiftpress' ); ?> <em><?php echo esc_html( wp_parse_url( home_url(), PHP_URL_HOST ) ); ?></em>.</h1>
 				<p class="sp-lede">
-					<?php esc_html_e( 'Run a diagnostic and I’ll read your site’s real performance data, explain in plain language what’s holding it back, and map each issue to a switch SwiftPress already has — applied with one click and reversible.', 'swiftpress' ); ?>
+					<?php esc_html_e( 'Run a diagnostic and I’ll read your site’s real performance data, explain in plain language what’s holding it back, and map each issue to a switch AICache already has — applied with one click and reversible.', 'swiftpress' ); ?>
 				</p>
 				<p class="sp-lede" style="margin-top:12px;color:var(--ink-3)"><?php esc_html_e( 'Server is', 'swiftpress' ); ?> <span class="term"><?php echo esc_html( $server ); ?></span>, <?php esc_html_e( 'PHP', 'swiftpress' ); ?> <span class="term"><?php echo esc_html( PHP_VERSION ); ?></span>. <span id="sp-key-hint"></span></p>
 			</div>
@@ -338,7 +338,7 @@ function view_brief( $settings, $server, $cache ) {
 		<button type="button" class="sp-chip" data-preset="woocommerce">WooCommerce</button>
 	</div>
 
-	<div class="sp-note"><?php echo icon( 'shield' ); // phpcs:ignore ?> <?php esc_html_e( 'Every fix applies through SwiftPress’s own save path and is snapshotted — one click reverts it. Your API key never leaves your server.', 'swiftpress' ); ?></div>
+	<div class="sp-note"><?php echo icon( 'shield' ); // phpcs:ignore ?> <?php esc_html_e( 'Every fix applies through AICache’s own save path and is snapshotted — one click reverts it. Your API key never leaves your server.', 'swiftpress' ); ?></div>
 	<?php
 }
 
@@ -363,7 +363,7 @@ function toggle_row( $key, $label, $desc, $settings, $stub = false ) {
 function view_tune( $settings ) {
 	list( $timeout_v, $timeout_i ) = get_timeout_with_interval( $settings['cache_timeout'] );
 	?>
-	<div class="sp-page-head"><h1><?php esc_html_e( 'Tune', 'swiftpress' ); ?></h1><p><?php esc_html_e( 'Every optimization, grouped and explained. Saved through SwiftPress’s existing, battle-tested settings pipeline.', 'swiftpress' ); ?></p></div>
+	<div class="sp-page-head"><h1><?php esc_html_e( 'Tune', 'swiftpress' ); ?></h1><p><?php esc_html_e( 'Every optimization, grouped and explained. Saved through AICache’s existing, battle-tested settings pipeline.', 'swiftpress' ); ?></p></div>
 
 	<form method="post" action="">
 		<?php wp_nonce_field( 'swiftpress_update_settings', 'swiftpress_settings_nonce' ); ?>
@@ -436,7 +436,7 @@ function view_tune( $settings ) {
 				<?php
 				toggle_row( 'enable_lcp_optimization', __( 'LCP optimization', 'swiftpress' ), __( 'Prioritise the largest above-the-fold image (fetchpriority, no lazy-load).', 'swiftpress' ), $settings );
 				toggle_row( 'prefetch_links', __( 'Prefetch links on hover', 'swiftpress' ), __( 'Pre-load the next page when a visitor hovers a link.', 'swiftpress' ), $settings );
-				toggle_row( 'enable_cloudflare', __( 'Cloudflare integration', 'swiftpress' ), __( 'Purge Cloudflare when SwiftPress clears cache (configure credentials in the classic settings for now).', 'swiftpress' ), $settings );
+				toggle_row( 'enable_cloudflare', __( 'Cloudflare integration', 'swiftpress' ), __( 'Purge Cloudflare when AICache clears cache (configure credentials in the classic settings for now).', 'swiftpress' ), $settings );
 				?>
 				<div class="sp-row">
 					<div><div class="label"><?php esc_html_e( 'DNS-prefetch domains', 'swiftpress' ); ?></div><div class="desc"><?php esc_html_e( 'One domain per line — resolves DNS early for third-party hosts.', 'swiftpress' ); ?></div></div>
@@ -526,7 +526,7 @@ function view_copilot() {
 
 	<div class="sp-banner warn">
 		<?php echo icon( 'shield' ); // phpcs:ignore ?>
-		<?php esc_html_e( 'Data sent on a diagnostic: derived performance metrics + which SwiftPress features are on. No page content, no visitor data, no personal information. Services: Google PageSpeed Insights + OpenRouter (see readme).', 'swiftpress' ); ?>
+		<?php esc_html_e( 'Data sent on a diagnostic: derived performance metrics + which AICache features are on. No page content, no visitor data, no personal information. Services: Google PageSpeed Insights + OpenRouter (see readme).', 'swiftpress' ); ?>
 	</div>
 	<?php
 }

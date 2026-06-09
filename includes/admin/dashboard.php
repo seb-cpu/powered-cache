@@ -88,8 +88,8 @@ function admin_menu() {
 	}
 
 	$swiftpress_settings_page = add_menu_page(
-		esc_html__( 'SwiftPress Settings', 'swiftpress' ),
-		esc_html__( 'SwiftPress', 'swiftpress' ),
+		esc_html__( 'AICache Settings', 'swiftpress' ),
+		esc_html__( 'AICache', 'swiftpress' ),
 		$capability,
 		MENU_SLUG,
 		__NAMESPACE__ . '\settings_page',
@@ -101,7 +101,7 @@ function admin_menu() {
 	 */
 	add_submenu_page(
 		MENU_SLUG,
-		esc_html__( 'SwiftPress Settings', 'swiftpress' ),
+		esc_html__( 'AICache Settings', 'swiftpress' ),
 		esc_html__( 'Settings', 'swiftpress' ),
 		$capability,
 		MENU_SLUG
@@ -471,7 +471,7 @@ function admin_bar_menu( $wp_admin_bar ) {
 		$wp_admin_bar->add_menu(
 			array(
 				'id'    => MENU_SLUG,
-				'title' => __( 'SwiftPress', 'swiftpress' ),
+				'title' => __( 'AICache', 'swiftpress' ),
 				'href'  => $href,
 			)
 		);
@@ -917,7 +917,7 @@ function deactivate_plugin() {
 function action_links( $actions ) {
 
 	$settings_url      = SWIFTPRESS_IS_NETWORK ? network_admin_url( 'admin.php?page=swiftpress' ) : admin_url( 'admin.php?page=swiftpress' );
-	$swiftpress_url = 'https://swiftpress.dev/?utm_source=wp_admin&utm_medium=plugin&utm_campaign=plugin_action_links';
+	$swiftpress_url = 'https://webs.ie/aicache?utm_source=wp_admin&utm_medium=plugin&utm_campaign=plugin_action_links';
 
 	$actions['powered_settings'] = sprintf( '<a href="%s">%s</a>', esc_url( $settings_url ), esc_html__( 'Settings', 'swiftpress' ) );
 

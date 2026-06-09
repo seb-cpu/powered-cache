@@ -1,14 +1,14 @@
 <?php
 /**
- * Plugin Name:       SwiftPress
- * Plugin URI:        https://swiftpress.dev
- * Description:       Lightweight WordPress performance optimization — page caching, file optimization, font optimization, and intelligent cache preloading.
+ * Plugin Name:       AICache
+ * Plugin URI:        https://webs.ie/aicache
+ * Description:       AI-assisted WordPress performance &amp; caching — page cache, CSS/JS &amp; font optimization, intelligent preloading, and an AI diagnostic that explains and one-click-fixes what's slowing your site.
  * Version:           1.0.0
  * Requires at least: 5.7
  * Tested up to:      6.7
  * Requires PHP:      7.4
- * Author:            SwiftPress
- * Author URI:        https://swiftpress.dev
+ * Author:            Webs.ie
+ * Author URI:        https://webs.ie
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       swiftpress
@@ -122,6 +122,7 @@ Core\setup();
 Admin\Dashboard\setup();
 Admin\App\setup();
 \SwiftPress\AI\AI::factory();
+Updater::factory();
 Admin\Notices\setup();
 Install::factory();
 AdvancedCache::factory();
