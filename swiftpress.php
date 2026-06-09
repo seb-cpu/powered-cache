@@ -133,6 +133,7 @@ Async\SitemapPreloader::factory();
 FileOptimizer::factory();
 FontOptimizer::factory();
 ImageOptimizer::factory();
+UnusedCSS::factory();
 Extensions::factory();
 
 // WP-CLI commands.

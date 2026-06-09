@@ -63,6 +63,9 @@ function auto_save_allowlist() {
 		'cache_mobile'                     => 'bool',
 		'minify_css'                       => 'bool',
 		'combine_css'                      => 'bool',
+		'critical_css'                     => 'bool',
+		'remove_unused_css'                => 'bool',
+		'ucss_safelist'                    => 'text',
 		'minify_js'                        => 'bool',
 		'js_defer'                         => 'bool',
 		'js_delay'                         => 'bool',
@@ -627,8 +630,8 @@ function view_tune( $settings ) {
 				<?php
 				toggle_row( 'minify_css', __( 'Minify CSS', 'swiftpress' ), __( 'Strip whitespace and comments from stylesheets.', 'swiftpress' ), $settings );
 				toggle_row( 'combine_css', __( 'Combine CSS', 'swiftpress' ), __( 'Merge stylesheets to cut requests (HTTP/2 makes this optional).', 'swiftpress' ), $settings );
-				toggle_row( 'critical_css', __( 'Optimize CSS delivery (Critical CSS)', 'swiftpress' ), __( 'Inline above-the-fold CSS, defer the rest. <code>Algorithmic engine — shipping soon.</code>', 'swiftpress' ), $settings, true );
-				toggle_row( 'remove_unused_css', __( 'Remove unused CSS', 'swiftpress' ), __( 'Strip selectors a page never uses. <code>Algorithmic engine — shipping soon.</code>', 'swiftpress' ), $settings, true );
+				toggle_row( 'critical_css', __( 'Optimize CSS delivery (Critical CSS)', 'swiftpress' ), __( 'Inline the CSS each page uses and load the full stylesheets without blocking render — biggest win on sites with large, render-blocking CSS and a slow First Contentful Paint. Static analysis, so always check your pages (especially layout/CLS) after enabling. Fonts are left untouched.', 'swiftpress' ), $settings );
+				toggle_row( 'remove_unused_css', __( 'Remove unused CSS', 'swiftpress' ), __( 'Aggressive: serve only the used CSS and drop the rest for maximum byte savings. Trusts static analysis fully, so JS-added classes may need adding to the safelist below — test thoroughly. Overrides Critical CSS.', 'swiftpress' ), $settings );
 				toggle_row( 'minify_js', __( 'Minify JavaScript', 'swiftpress' ), __( 'Shrink scripts.', 'swiftpress' ), $settings );
 				toggle_row( 'js_defer', __( 'Defer JavaScript', 'swiftpress' ), __( 'Add <code>defer</code> so scripts stop blocking render.', 'swiftpress' ), $settings );
 				toggle_row( 'js_delay', __( 'Delay JavaScript', 'swiftpress' ), __( 'Hold non-critical scripts (analytics, chat) until the visitor interacts — the single biggest LCP win for script-heavy themes.', 'swiftpress' ), $settings );
