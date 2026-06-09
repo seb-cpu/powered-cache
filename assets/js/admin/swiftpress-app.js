@@ -253,8 +253,78 @@
 			if (st) { st.className = 'sp-keystate' + (has ? '' : ' none'); }
 			if (stt) stt.textContent = has ? ('Key active' + (src === 'constant' ? ' · set in wp-config.php' : '')) : 'No key set — standard recommendations only';
 			if (ks) ks.textContent = has && src === 'constant' ? 'set in wp-config.php (read-only)' : '';
-			var input = $('#sp-key-input'); if (input && src === 'constant') { input.disabled = true; input.placeholder = 'set via SWIFTPRESS_OPENROUTER_KEY'; }
+			var keyrow = $('#sp-keyrow'), kconst = $('#sp-key-constant'), input = $('#sp-key-input');
+			if (src === 'constant') { if (keyrow) keyrow.style.display = 'none'; if (kconst) kconst.style.display = 'flex'; }
+			else { if (keyrow) keyrow.style.display = 'flex'; if (kconst) kconst.style.display = 'none'; if (input) input.disabled = false; }
 		}).catch(function () {});
+	}
+
+	/* ── auto-save (toggles/selects/inputs save instantly) ── */
+	function flashSaved(row) {
+		var s = row && row.querySelector('.sp-saved'); if (!s) return;
+		s.classList.add('show'); setTimeout(function () { s.classList.remove('show'); }, 1600);
+	}
+	function autoSave(key, value, row) {
+		return post('swiftpress_app_save_setting', { key: key, value: value }, 'ajaxNonce').then(function (json) {
+			if (json && json.success) { flashSaved(row); }
+			else { toast((json && json.data && json.data.message) || APP.i18n.failed, true); }
+		}).catch(function () { toast(APP.i18n.failed, true); });
+	}
+	function bindAutoSave() {
+		var form = $('.swiftpress-app form'); if (!form) return;
+		$$('input[type=checkbox][name]', form).forEach(function (cb) {
+			if (cb.disabled) return;
+			cb.addEventListener('change', function () { autoSave(cb.name, cb.checked ? '1' : '0', cb.closest('.sp-row')); });
+		});
+		$$('select[name]', form).forEach(function (sel) {
+			if (sel.name === 'cache_timeout_interval') return;
+			sel.addEventListener('change', function () { autoSave(sel.name, sel.value, sel.closest('.sp-row')); });
+		});
+		var num = form.querySelector('input[name=cache_timeout]'), intv = form.querySelector('select[name=cache_timeout_interval]');
+		function saveTimeout() { if (!num) return; var n = parseInt(num.value || '0', 10) || 0; var mult = (intv && intv.value === 'DAY') ? 1440 : ((intv && intv.value === 'HOUR') ? 60 : 1); autoSave('cache_timeout', String(n * mult), num.closest('.sp-row')); }
+		if (num) num.addEventListener('change', saveTimeout);
+		if (intv) intv.addEventListener('change', saveTimeout);
+		$$('textarea[name]', form).forEach(function (ta) { ta.addEventListener('blur', function () { autoSave(ta.name, ta.value, ta.closest('.sp-row')); }); });
+	}
+
+	/* ── DNS-prefetch domain detection ── */
+	function currentDnsSet() {
+		var box = $('#sp-domains'); var raw = (box && box.getAttribute('data-current')) || '';
+		return raw.split(/[\r\n,]+/).map(function (s) { return s.trim().replace(/^\/\//, '').toLowerCase(); }).filter(Boolean);
+	}
+	function updateDns() {
+		var box = $('#sp-domains'); if (!box) return;
+		var hosts = [];
+		$$('.dom', box).forEach(function (d) { var cb = d.querySelector('input'); if (cb && cb.checked) hosts.push('//' + d.getAttribute('data-host')); });
+		var ta = document.querySelector('textarea[name=prefetch_dns]');
+		var manual = ta ? ta.value.split(/[\r\n,]+/).map(function (s) { return s.trim(); }).filter(function (s) { return s && hosts.indexOf(s) < 0 && hosts.indexOf('//' + s.replace(/^\/\//, '')) < 0; }) : [];
+		var all = hosts.concat(manual).join('\n');
+		if (ta) ta.value = all;
+		box.setAttribute('data-current', all);
+		autoSave('prefetch_dns', all, box.closest('.sp-row'));
+	}
+	function renderDomains(domains, note) {
+		var box = $('#sp-domains'); if (!box) return; box.innerHTML = '';
+		if (!domains || !domains.length) { box.innerHTML = '<div class="empty">' + esc(note || 'No third-party domains detected on the homepage.') + '</div>'; return; }
+		var current = currentDnsSet();
+		domains.forEach(function (host) {
+			var checked = current.indexOf(String(host).toLowerCase()) >= 0;
+			var div = document.createElement('div'); div.className = 'dom'; div.setAttribute('data-host', host);
+			div.innerHTML = '<label class="sp-toggle" style="transform:scale(.82);transform-origin:left"><input type="checkbox" ' + (checked ? 'checked' : '') + '><span class="track"></span><span class="knob"></span></label> <code>' + esc(host) + '</code><span class="src">DNS-prefetch</span>';
+			div.querySelector('input').addEventListener('change', updateDns);
+			box.appendChild(div);
+		});
+	}
+	function bindDomains() {
+		var btn = $('#sp-detect-domains'); if (!btn) return;
+		btn.addEventListener('click', function () {
+			btn.textContent = 'Scanning…'; btn.disabled = true;
+			post('swiftpress_app_detect_domains', {}, 'ajaxNonce').then(function (json) {
+				btn.textContent = 'Detect domains'; btn.disabled = false;
+				var d = (json && json.data) || {};
+				renderDomains(d.domains || [], d.note);
+			}).catch(function () { btn.textContent = 'Detect domains'; btn.disabled = false; toast(APP.i18n.failed, true); });
+		});
 	}
 	function bindKey() {
 		var save = $('#sp-key-save'); if (save) save.addEventListener('click', function () {
@@ -299,7 +369,7 @@
 	function init() {
 		if (!$('.swiftpress-app')) return;
 		var ring = $('#sp-ring'); if (ring) { ring.style.strokeDasharray = CIRC; ring.style.strokeDashoffset = CIRC; }
-		bindMisc(); bindKey(); refreshKeyState();
+		bindMisc(); bindKey(); bindAutoSave(); bindDomains(); refreshKeyState();
 	}
 	if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

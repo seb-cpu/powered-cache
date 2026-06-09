@@ -46,6 +46,153 @@ function setup() {
 	}
 	add_action( 'admin_enqueue_scripts', __NAMESPACE__ . '\\enqueue' );
 	add_filter( 'admin_body_class', __NAMESPACE__ . '\\body_class' );
+	add_action( 'wp_ajax_swiftpress_app_save_setting', __NAMESPACE__ . '\\ajax_save_setting' );
+	add_action( 'wp_ajax_swiftpress_app_detect_domains', __NAMESPACE__ . '\\ajax_detect_domains' );
+}
+
+/**
+ * Settings that may be toggled/changed with auto-save (key => type).
+ *
+ * @return array
+ */
+function auto_save_allowlist() {
+	return [
+		'enable_page_cache'                => 'bool',
+		'gzip_compression'                 => 'bool',
+		'cache_mobile'                     => 'bool',
+		'minify_css'                       => 'bool',
+		'minify_js'                        => 'bool',
+		'js_defer'                         => 'bool',
+		'js_delay'                         => 'bool',
+		'enable_font_optimization'         => 'bool',
+		'self_host_google_fonts'           => 'bool',
+		'font_display_swap'                => 'bool',
+		'font_preload'                     => 'bool',
+		'add_missing_image_dimensions'     => 'bool',
+		'enable_image_optimization'        => 'bool',
+		'enable_lcp_optimization'          => 'bool',
+		'prefetch_links'                   => 'bool',
+		'enable_cloudflare'                => 'bool',
+		'enable_google_tracking'           => 'bool',
+		'enable_fb_tracking'               => 'bool',
+		'enable_heartbeat'                 => 'bool',
+		'disable_emoji_scripts'            => 'bool',
+		'disable_wp_embeds'                => 'bool',
+		'image_optimizer_preferred_format' => [ '', 'webp', 'avif' ],
+		'cache_timeout'                    => 'int',
+		'prefetch_dns'                     => 'text',
+	];
+}
+
+/**
+ * Capability check helper.
+ *
+ * @return string
+ */
+function cap() {
+	return ( defined( 'SWIFTPRESS_IS_NETWORK' ) && SWIFTPRESS_IS_NETWORK ) ? 'manage_network' : 'manage_options';
+}
+
+/**
+ * AJAX: auto-save a single setting through the real save path.
+ *
+ * @return void
+ */
+function ajax_save_setting() {
+	check_ajax_referer( 'swiftpress_settings_ajax', 'nonce' );
+	if ( ! current_user_can( cap() ) ) {
+		wp_send_json_error( [ 'message' => esc_html__( 'Permission denied.', 'swiftpress' ) ], 403 );
+	}
+
+	$key   = isset( $_POST['key'] ) ? sanitize_key( wp_unslash( $_POST['key'] ) ) : '';
+	$allow = auto_save_allowlist();
+	if ( ! isset( $allow[ $key ] ) ) {
+		wp_send_json_error( [ 'message' => esc_html__( 'Unknown setting.', 'swiftpress' ) ], 400 );
+	}
+
+	$raw  = isset( $_POST['value'] ) ? wp_unslash( $_POST['value'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	$type = $allow[ $key ];
+
+	$old      = get_settings();
+	$settings = $old;
+
+	if ( 'bool' === $type ) {
+		$settings[ $key ] = ( '1' === $raw || 'true' === $raw );
+	} elseif ( 'int' === $type ) {
+		$settings[ $key ] = absint( $raw );
+	} elseif ( 'text' === $type ) {
+		$settings[ $key ] = sanitize_textarea_field( $raw );
+	} elseif ( is_array( $type ) ) {
+		$settings[ $key ] = in_array( $raw, $type, true ) ? $raw : $type[0];
+	}
+
+	if ( defined( 'SWIFTPRESS_IS_NETWORK' ) && SWIFTPRESS_IS_NETWORK ) {
+		update_site_option( \SwiftPress\Constants\SETTING_OPTION, $settings );
+	} else {
+		update_option( \SwiftPress\Constants\SETTING_OPTION, $settings );
+	}
+
+	Config::factory()->save_configuration( $settings, defined( 'SWIFTPRESS_IS_NETWORK' ) && SWIFTPRESS_IS_NETWORK );
+
+	/** Fires after settings are saved (parity with the full form save). */
+	do_action( 'swiftpress_settings_saved', $old, $settings );
+
+	wp_send_json_success( [ 'key' => $key, 'value' => $settings[ $key ] ] );
+}
+
+/**
+ * AJAX: detect external domains the homepage loads (for DNS-prefetch suggestions).
+ *
+ * @return void
+ */
+function ajax_detect_domains() {
+	check_ajax_referer( 'swiftpress_settings_ajax', 'nonce' );
+	if ( ! current_user_can( cap() ) ) {
+		wp_send_json_error( [ 'message' => esc_html__( 'Permission denied.', 'swiftpress' ) ], 403 );
+	}
+
+	$home = home_url( '/' );
+	$resp = wp_remote_get(
+		$home,
+		[
+			'timeout'     => 15,
+			'sslverify'   => true,
+			'redirection' => 3,
+			'headers'     => [ 'User-Agent' => 'Mozilla/5.0 (compatible; AICache/1.0; +https://webs.ie/aicache)' ],
+		]
+	);
+
+	if ( is_wp_error( $resp ) || 200 !== (int) wp_remote_retrieve_response_code( $resp ) ) {
+		wp_send_json_success(
+			[
+				'domains' => [],
+				'note'    => esc_html__( 'Could not fetch the homepage automatically — add domains manually below.', 'swiftpress' ),
+			]
+		);
+	}
+
+	$html = (string) wp_remote_retrieve_body( $resp );
+	$own  = strtolower( (string) wp_parse_url( $home, PHP_URL_HOST ) );
+
+	$found = [];
+	if ( preg_match_all( '#(?:src|href)\s*=\s*["\']https?://([a-z0-9.\-]+)#i', $html, $m ) ) {
+		foreach ( $m[1] as $host ) {
+			$host = strtolower( $host );
+			if ( '' === $host || $host === $own ) {
+				continue;
+			}
+			// Skip same-registrable-domain hosts (own subdomains/CDN of the site).
+			if ( $own && ( substr( $host, - ( strlen( $own ) + 1 ) ) === '.' . $own ) ) {
+				continue;
+			}
+			$found[ $host ] = true;
+		}
+	}
+
+	$domains = array_keys( $found );
+	sort( $domains );
+
+	wp_send_json_success( [ 'domains' => $domains ] );
 }
 
 /**
@@ -85,17 +232,11 @@ function enqueue( $hook ) {
 	// Self-host the three faces through SwiftPress's own pipeline ideally; for
 	// the admin we load from Google Fonts with display=swap (admin-only, no
 	// front-end / Lighthouse impact). A future pass self-hosts via FontOptimizer.
-	wp_enqueue_style(
-		'swiftpress-fonts',
-		'https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,360..600;1,9..144,360..560&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap',
-		[],
-		SWIFTPRESS_VERSION
-	);
-
+	// Native WordPress look — system fonts, no external font request.
 	wp_enqueue_style(
 		'swiftpress-app',
 		SWIFTPRESS_URL . 'assets/css/admin/swiftpress-app.css',
-		[ 'swiftpress-fonts' ],
+		[],
 		SWIFTPRESS_VERSION
 	);
 
@@ -348,7 +489,7 @@ function toggle_row( $key, $label, $desc, $settings, $stub = false ) {
 	?>
 	<div class="sp-row<?php echo $stub ? ' stub' : ''; ?>">
 		<div>
-			<div class="label"><?php echo esc_html( $label ); ?><?php if ( $stub ) : ?><span class="sp-pill-soon"><?php esc_html_e( 'engine pending', 'swiftpress' ); ?></span><?php endif; ?></div>
+			<div class="label"><?php echo esc_html( $label ); ?><?php if ( $stub ) : ?><span class="sp-pill-soon"><?php esc_html_e( 'engine pending', 'swiftpress' ); ?></span><?php endif; ?><span class="sp-saved">&#10003; <?php esc_html_e( 'saved', 'swiftpress' ); ?></span></div>
 			<?php if ( $desc ) : ?><div class="desc"><?php echo wp_kses( $desc, [ 'code' => [] ] ); ?></div><?php endif; ?>
 		</div>
 		<label class="sp-toggle">
@@ -438,10 +579,16 @@ function view_tune( $settings ) {
 				toggle_row( 'prefetch_links', __( 'Prefetch links on hover', 'swiftpress' ), __( 'Pre-load the next page when a visitor hovers a link.', 'swiftpress' ), $settings );
 				toggle_row( 'enable_cloudflare', __( 'Cloudflare integration', 'swiftpress' ), __( 'Purge Cloudflare when AICache clears cache (configure credentials in the classic settings for now).', 'swiftpress' ), $settings );
 				?>
-				<div class="sp-row">
-					<div><div class="label"><?php esc_html_e( 'DNS-prefetch domains', 'swiftpress' ); ?></div><div class="desc"><?php esc_html_e( 'One domain per line — resolves DNS early for third-party hosts.', 'swiftpress' ); ?></div></div>
+				<div class="sp-row" style="display:block">
+					<div class="label"><?php esc_html_e( 'DNS-prefetch domains', 'swiftpress' ); ?>
+						<button type="button" class="sp-btn ghost" id="sp-detect-domains" style="margin-left:10px;min-height:26px;line-height:1.8"><?php esc_html_e( 'Detect domains', 'swiftpress' ); ?></button>
+					</div>
+					<div class="desc"><?php esc_html_e( 'Let AICache scan your homepage for third-party hosts, then tick the ones to resolve early — no need to type them.', 'swiftpress' ); ?></div>
+					<div class="sp-domains" id="sp-domains" data-current="<?php echo esc_attr( $settings['prefetch_dns'] ); ?>" style="margin-top:10px"></div>
+					<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12px;color:var(--ink-3)"><?php esc_html_e( 'Add manually', 'swiftpress' ); ?></summary>
+						<textarea class="sp-textarea" name="prefetch_dns" rows="3" placeholder="//fonts.gstatic.com" style="margin-top:6px"><?php echo esc_textarea( $settings['prefetch_dns'] ); ?></textarea>
+					</details>
 				</div>
-				<textarea class="sp-textarea" name="prefetch_dns" rows="3" placeholder="//fonts.gstatic.com"><?php echo esc_textarea( $settings['prefetch_dns'] ); ?></textarea>
 			</div>
 		</div>
 
@@ -458,9 +605,10 @@ function view_tune( $settings ) {
 			</div>
 		</div>
 
-		<div style="display:flex;gap:10px;margin:8px 4px 0">
-			<button type="submit" class="sp-btn amber"><?php esc_html_e( 'Save changes', 'swiftpress' ); ?></button>
-			<button type="submit" name="swiftpress_form_action" value="save_settings_and_clear_cache" class="sp-btn"><?php esc_html_e( 'Save & clear cache', 'swiftpress' ); ?></button>
+		<div class="sp-note" style="margin:14px 2px 0;align-items:center">
+			<?php echo icon( 'shield' ); // phpcs:ignore ?>
+			<?php esc_html_e( 'Settings save automatically as you change them.', 'swiftpress' ); ?>
+			<button type="submit" name="swiftpress_form_action" value="save_settings_and_clear_cache" class="sp-btn ghost" style="margin-left:10px;min-height:26px;line-height:1.8"><?php esc_html_e( 'Save & clear cache', 'swiftpress' ); ?></button>
 		</div>
 	</form>
 	<?php
@@ -505,10 +653,14 @@ function view_copilot() {
 		<h2><?php esc_html_e( 'OpenRouter API key', 'swiftpress' ); ?><span class="hint" id="sp-key-source"></span></h2>
 		<div class="sp-panel-body" style="padding-bottom:18px">
 			<div class="sp-keystate none" id="sp-key-state" style="margin-bottom:12px"><span class="d"></span><span id="sp-key-state-text"><?php esc_html_e( 'No key set — standard recommendations only', 'swiftpress' ); ?></span></div>
-			<div class="sp-keyrow">
-				<input class="sp-input" type="password" id="sp-key-input" placeholder="sk-or-…" autocomplete="off" />
+			<div class="sp-keyrow" id="sp-keyrow">
+				<input class="sp-input" type="text" id="sp-key-input" placeholder="sk-or-…" autocomplete="off" spellcheck="false" />
 				<button type="button" class="sp-btn amber" id="sp-key-save"><?php esc_html_e( 'Save key', 'swiftpress' ); ?></button>
-				<button type="button" class="sp-btn" id="sp-key-clear"><?php esc_html_e( 'Remove', 'swiftpress' ); ?></button>
+				<button type="button" class="sp-btn ghost" id="sp-key-clear"><?php esc_html_e( 'Remove', 'swiftpress' ); ?></button>
+			</div>
+			<div id="sp-key-constant" class="sp-banner info" style="display:none;margin-top:10px">
+				<?php echo icon( 'shield' ); // phpcs:ignore ?>
+				<?php esc_html_e( 'Your key is set securely in wp-config.php (SWIFTPRESS_OPENROUTER_KEY) — nothing to enter here.', 'swiftpress' ); ?>
 			</div>
 			<div class="sp-note"><?php echo icon( 'shield' ); // phpcs:ignore ?> <?php esc_html_e( 'Encrypted at rest with your WordPress salts. For the strongest option, define', 'swiftpress' ); ?> <code style="font-family:var(--mono);background:var(--inset);padding:1px 6px;border-radius:4px">SWIFTPRESS_OPENROUTER_KEY</code> <?php esc_html_e( 'in wp-config.php (then it never touches the database).', 'swiftpress' ); ?></div>
 		</div>
