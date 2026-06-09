@@ -73,10 +73,12 @@
 		if (srcText) { var s = $('#sp-score-src'); if (s) s.textContent = srcText; }
 		var off = CIRC * (1 - target / 100);
 		var meter = $('.sp-score'); if (meter) meter.setAttribute('aria-valuenow', target);
-		if (reduce) { ring.style.transition = 'none'; ring.style.strokeDashoffset = off; num.textContent = target; return; }
+		// Reduced-motion or a backgrounded tab (rAF is throttled/paused when hidden,
+		// which would freeze the count-up on its first frame) → set the final value.
+		if (reduce || document.hidden) { ring.style.transition = 'none'; ring.style.strokeDashoffset = off; num.textContent = target; return; }
 		requestAnimationFrame(function () { ring.style.strokeDashoffset = off; });
 		var n = 0;
-		(function step() { n += Math.max(1, Math.round((target - n) / 8)); if (n >= target) n = target; num.textContent = n; if (n < target) requestAnimationFrame(step); })();
+		(function step() { n += Math.max(1, Math.round((target - n) / 8)); if (n >= target) n = target; num.textContent = n; if (n < target && !document.hidden) requestAnimationFrame(step); else num.textContent = target; })();
 	}
 
 	/* ── pulse strip from metrics ── */
@@ -145,15 +147,20 @@
 		var srcLabel = (src === 'local') ? 'local scan · estimate' : ((d.meta && d.meta.degraded) ? 'standard rules' : 'PageSpeed · mobile');
 		if (score != null) drawScore(score, srcLabel);
 
-		// Brief narrative.
+		// Brief narrative. Always replace the loading block, even when the model
+		// returned no summary text (otherwise the spinner would spin forever while
+		// the score + cards below it have already updated).
 		var content = $('#sp-brief-content');
-		if (content && d.summary) {
+		if (content) {
 			var degraded = d.meta && d.meta.degraded;
-			$('#sp-brief-eyebrow').textContent = degraded ? 'Standard recommendations' : 'AI Brief · just now';
+			var eb = $('#sp-brief-eyebrow'); if (eb) eb.textContent = degraded ? 'Standard recommendations' : 'AI Brief · just now';
 			var hint = '';
 			if (src === 'local') hint = '<p class="sp-lede" style="margin-top:10px;color:var(--ink-3)">Estimated from a quick on-site scan. Add a free Google PageSpeed key in <b>Copilot</b> for full Lighthouse metrics.</p>';
 			else if (degraded) hint = '<p class="sp-lede" style="margin-top:10px;color:var(--ink-3)">' + esc(APP.i18n.noKey) + '</p>';
-			content.innerHTML = '<h1>' + esc(d.summary.split('. ')[0]) + '.</h1><p class="sp-lede">' + esc(d.summary) + '</p>' + hint;
+			var summary = d.summary || (((d.recommended_changes && d.recommended_changes.appliable) || []).length
+				? 'I found a few optimizations you can apply below.'
+				: 'No new issues found — your site is in good shape.');
+			content.innerHTML = '<h1>' + esc(summary.split('. ')[0]) + '.</h1><p class="sp-lede">' + esc(summary) + '</p>' + hint;
 		}
 
 		// Cards: actionable changes first, then suggested, then context findings without a change.
@@ -177,23 +184,50 @@
 
 	/* ── run diagnostic ── */
 	var running = false;
+	function setRunBusy(busy) {
+		var btn = $('#sp-run-diagnostic'); if (!btn) return;
+		if (busy) {
+			if (!btn.dataset.label) btn.dataset.label = btn.innerHTML;
+			btn.disabled = true; btn.classList.add('busy');
+			btn.innerHTML = '<span class="sp-spin" aria-hidden="true"></span> ' + esc(APP.i18n.diagBtn || 'Analyzing…');
+		} else {
+			btn.disabled = false; btn.classList.remove('busy');
+			if (btn.dataset.label) btn.innerHTML = btn.dataset.label;
+		}
+	}
 	function runDiagnostic() {
-		if (running) return; running = true;
-		var btn = $('#sp-run-diagnostic'); if (btn) { btn.disabled = true; btn.style.opacity = '.6'; }
+		if (running) return;
 		var content = $('#sp-brief-content');
-		if (content) content.innerHTML = '<div class="loading"><span>' + esc(APP.i18n.analyzing) + '</span><span class="bar"></span></div>';
-		$('#sp-score-num').textContent = '—'; $('#sp-ring').style.strokeDashoffset = CIRC;
+		// The diagnostic's progress + results live on the Brief view. If the button
+		// was clicked from another view (it sits in the global top bar), navigate to
+		// the Brief and auto-run there so feedback is always visible.
+		if (!content) {
+			var u = new URL(location.href);
+			u.searchParams.set('page', 'swiftpress'); u.searchParams.delete('sp_view'); u.searchParams.set('sp_run', '1');
+			location.href = u.toString(); return;
+		}
+		running = true;
+		setRunBusy(true);
+		toast(APP.i18n.diagStart || 'Running diagnostic…');
+		// Staged status so a multi-second (sometimes up to a minute) run feels alive.
+		var stages = [APP.i18n.analyzing, APP.i18n.measuring, APP.i18n.writing].filter(Boolean);
+		var si = 0;
+		content.innerHTML = '<div class="loading"><span class="sp-spin big" aria-hidden="true"></span><span class="sp-load-msg">' + esc(stages[0] || 'Working…') + '</span><span class="bar"></span></div>';
+		var iv = setInterval(function () { si = Math.min(si + 1, stages.length - 1); var m = content.querySelector('.sp-load-msg'); if (m) m.textContent = stages[si]; }, 3500);
+		var num = $('#sp-score-num'); if (num) num.textContent = '—';
+		var ring = $('#sp-ring'); if (ring) ring.style.strokeDashoffset = CIRC;
+		var finish = function () { clearInterval(iv); running = false; setRunBusy(false); };
 		post('swiftpress_ai_run_diagnostic', { force: 1 }).then(function (json) {
-			running = false; if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+			finish();
 			var dd = (json && json.data) || {};
 			if (json && json.success && dd.meta && dd.meta.debounced) {
 				toast('Just analyzed — please wait a few seconds before re-running.');
-				if (content) content.innerHTML = '<p class="sp-lede" style="color:var(--ink-3)">' + esc('Diagnostic on cooldown to keep API spend near zero. Try again shortly.') + '</p>';
+				content.innerHTML = '<p class="sp-lede" style="color:var(--ink-3)">' + esc('Diagnostic on cooldown to keep API spend near zero. Try again shortly.') + '</p>';
 				return;
 			}
 			if (json && json.success) { renderResult(dd); refreshKeyState(); }
-			else { toast((dd && dd.message) || APP.i18n.failed, true); if (content) content.innerHTML = '<p class="sp-lede" style="color:var(--crit)">' + esc((dd && dd.message) || APP.i18n.failed) + '</p>'; }
-		}).catch(function () { running = false; if (btn) { btn.disabled = false; btn.style.opacity = ''; } toast(APP.i18n.failed, true); });
+			else { toast((dd && dd.message) || APP.i18n.failed, true); content.innerHTML = '<p class="sp-lede" style="color:var(--crit)">' + esc((dd && dd.message) || APP.i18n.failed) + '</p>'; }
+		}).catch(function () { finish(); toast(APP.i18n.failed, true); content.innerHTML = '<p class="sp-lede" style="color:var(--crit)">' + esc(APP.i18n.failed) + '</p>'; });
 	}
 
 	/* ── apply changes ── */
@@ -461,6 +495,15 @@
 		if (!$('.swiftpress-app')) return;
 		var ring = $('#sp-ring'); if (ring) { ring.style.strokeDasharray = CIRC; ring.style.strokeDashoffset = CIRC; }
 		bindMisc(); bindKey(); bindAutoSave(); bindDomains(); bindImageOptimize(); bindCloudflare(); refreshKeyState();
+		// Auto-run when arriving from a "Run Diagnostic" click on another view.
+		try {
+			if (new URLSearchParams(location.search).get('sp_run') === '1' && $('#sp-brief-content')) {
+				if (window.history && history.replaceState) {
+					var u = new URL(location.href); u.searchParams.delete('sp_run'); history.replaceState(null, '', u.toString());
+				}
+				setTimeout(runDiagnostic, 350);
+			}
+		} catch (e) {}
 	}
 	if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

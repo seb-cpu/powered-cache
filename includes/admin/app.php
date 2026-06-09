@@ -321,6 +321,10 @@ function enqueue( $hook ) {
 			'site'          => wp_parse_url( home_url(), PHP_URL_HOST ),
 			'i18n'       => [
 				'analyzing'  => esc_html__( 'Reading your site…', 'swiftpress' ),
+				'measuring'  => esc_html__( 'Measuring performance…', 'swiftpress' ),
+				'writing'    => esc_html__( 'Writing recommendations…', 'swiftpress' ),
+				'diagStart'  => esc_html__( 'Running diagnostic — this can take up to a minute.', 'swiftpress' ),
+				'diagBtn'    => esc_html__( 'Analyzing…', 'swiftpress' ),
 				'applied'    => esc_html__( 'Applied', 'swiftpress' ),
 				'applying'   => esc_html__( 'Applying…', 'swiftpress' ),
 				'noKey'      => esc_html__( 'Add your OpenRouter key in Copilot to get plain-language explanations. Standard recommendations are shown without a key.', 'swiftpress' ),
