@@ -330,6 +330,34 @@
 			}).catch(function () { btn.textContent = 'Detect domains'; btn.disabled = false; toast(APP.i18n.failed, true); });
 		});
 	}
+	function bindImageOptimize() {
+		var btn = $('#sp-optimize-images'); if (!btn) return;
+		var status = $('#sp-imgopt-status');
+		var orig = btn.textContent;
+		btn.addEventListener('click', function () {
+			if (btn.disabled) return;
+			btn.disabled = true; btn.textContent = 'Optimizing…';
+			var createdTotal = 0;
+			function step(offset) {
+				return post('swiftpress_app_optimize_images', { offset: offset }, 'ajaxNonce').then(function (json) {
+					if (!json || !json.success) { throw new Error((json && json.data && json.data.message) || ''); }
+					var d = json.data || {};
+					createdTotal += d.created || 0;
+					if (status) status.textContent = d.processed + ' / ' + d.total + ' images processed — ' + createdTotal + ' next-gen files created.';
+					if (d.finished) {
+						btn.disabled = false; btn.textContent = orig;
+						toast('Image optimization finished: ' + createdTotal + ' files created.');
+						return;
+					}
+					return step(d.nextOffset);
+				});
+			}
+			step(0).catch(function (e) {
+				btn.disabled = false; btn.textContent = orig;
+				toast((e && e.message) || APP.i18n.failed, true);
+			});
+		});
+	}
 	function bindKey() {
 		var input = $('#sp-key-input');
 		var busy = false;
@@ -399,7 +427,7 @@
 	function init() {
 		if (!$('.swiftpress-app')) return;
 		var ring = $('#sp-ring'); if (ring) { ring.style.strokeDasharray = CIRC; ring.style.strokeDashoffset = CIRC; }
-		bindMisc(); bindKey(); bindAutoSave(); bindDomains(); refreshKeyState();
+		bindMisc(); bindKey(); bindAutoSave(); bindDomains(); bindImageOptimize(); refreshKeyState();
 	}
 	if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

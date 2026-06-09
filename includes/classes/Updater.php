@@ -213,27 +213,69 @@ class Updater {
 			return $transient;
 		}
 
-		$release = $this->latest_release();
-		if ( ! empty( $release['error'] ) || empty( $release['version'] ) || empty( $release['package'] ) ) {
-			return $transient;
-		}
+		$headers = $this->plugin_headers();
+		$item    = [
+			'slug'         => $this->slug(),
+			'plugin'       => $this->basename(),
+			'new_version'  => SWIFTPRESS_VERSION,
+			'url'          => 'https://github.com/' . $this->repo(),
+			'package'      => '',
+			'requires'     => $headers['requires'],
+			'tested'       => $headers['tested'],
+			'requires_php' => $headers['requires_php'],
+		];
 
-		if ( version_compare( $release['version'], SWIFTPRESS_VERSION, '>' ) ) {
-			$item = [
-				'slug'        => $this->slug(),
-				'plugin'      => $this->basename(),
-				'new_version' => $release['version'],
-				'url'         => $release['html_url'],
-				'package'     => $release['package'],
-			];
+		$release    = $this->latest_release();
+		$has_update = empty( $release['error'] ) && ! empty( $release['version'] ) && ! empty( $release['package'] )
+			&& version_compare( $release['version'], SWIFTPRESS_VERSION, '>' );
+
+		if ( $has_update ) {
+			$item['new_version'] = $release['version'];
+			$item['package']     = $release['package'];
+			$item['url']         = ! empty( $release['html_url'] ) ? $release['html_url'] : $item['url'];
 
 			if ( ! isset( $transient->response ) || ! is_array( $transient->response ) ) {
 				$transient->response = [];
 			}
 			$transient->response[ $this->basename() ] = (object) $item;
+
+			return $transient;
 		}
 
+		// No update available: register in no_update so wp-admin shows real
+		// compatibility info (tested/requires) instead of "Compatibility unknown"
+		// and the auto-updates toggle works for this GitHub-updated plugin.
+		if ( ! isset( $transient->no_update ) || ! is_array( $transient->no_update ) ) {
+			$transient->no_update = [];
+		}
+		$transient->no_update[ $this->basename() ] = (object) $item;
+
 		return $transient;
+	}
+
+	/**
+	 * Compatibility headers from the main plugin file. Feeding these into the
+	 * update transient and the information popup is what lets wp-admin show
+	 * "Compatible with your version of WordPress" instead of "Compatibility
+	 * unknown" for a plugin that updates from GitHub instead of wordpress.org.
+	 *
+	 * @return array {requires, tested, requires_php}
+	 */
+	private function plugin_headers() {
+		$data = get_file_data(
+			SWIFTPRESS_PLUGIN_FILE,
+			[
+				'requires'     => 'Requires at least',
+				'tested'       => 'Tested up to',
+				'requires_php' => 'Requires PHP',
+			]
+		);
+
+		return [
+			'requires'     => ! empty( $data['requires'] ) ? $data['requires'] : '5.7',
+			'tested'       => ! empty( $data['tested'] ) ? $data['tested'] : '',
+			'requires_php' => ! empty( $data['requires_php'] ) ? $data['requires_php'] : '8.0',
+		];
 	}
 
 	/**
@@ -249,23 +291,40 @@ class Updater {
 			return $result;
 		}
 
-		$release = $this->latest_release();
-		if ( ! empty( $release['error'] ) ) {
-			return $result;
-		}
+		$headers = $this->plugin_headers();
 
-		return (object) [
-			'name'          => 'AICache',
-			'slug'          => $this->slug(),
-			'version'       => $release['version'],
-			'author'        => '<a href="https://webs.ie">Webs.ie</a>',
-			'homepage'      => $release['html_url'],
-			'download_link' => $release['package'],
-			'trytestreq'    => false,
-			'sections'      => [
-				'changelog' => wpautop( esc_html( $release['changelog'] ) ),
+		$info = [
+			'name'         => 'AICache',
+			'slug'         => $this->slug(),
+			'version'      => SWIFTPRESS_VERSION,
+			'author'       => '<a href="https://webs.ie">Webs.ie</a>',
+			'homepage'     => 'https://github.com/' . $this->repo(),
+			'requires'     => $headers['requires'],
+			'tested'       => $headers['tested'],
+			'requires_php' => $headers['requires_php'],
+			'sections'     => [
+				'description' => wpautop( esc_html__( 'AI-assisted WordPress performance & caching — page cache, CSS/JS & font optimization, image optimization, intelligent preloading, and an AI diagnostic that explains and one-click-fixes what is slowing your site.', 'swiftpress' ) ),
 			],
 		];
+
+		// Overlay the latest GitHub release only when it is actually newer than
+		// the installed version (otherwise the popup would "downgrade" the
+		// displayed version). Without a release the popup works from local data.
+		$release = $this->latest_release();
+		if ( empty( $release['error'] ) && ! empty( $release['version'] ) && version_compare( $release['version'], SWIFTPRESS_VERSION, '>' ) ) {
+			$info['version'] = $release['version'];
+			if ( ! empty( $release['package'] ) ) {
+				$info['download_link'] = $release['package'];
+			}
+			if ( ! empty( $release['html_url'] ) ) {
+				$info['homepage'] = $release['html_url'];
+			}
+			if ( ! empty( $release['changelog'] ) ) {
+				$info['sections']['changelog'] = wpautop( esc_html( $release['changelog'] ) );
+			}
+		}
+
+		return (object) $info;
 	}
 
 	/**

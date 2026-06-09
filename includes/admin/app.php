@@ -48,6 +48,7 @@ function setup() {
 	add_filter( 'admin_body_class', __NAMESPACE__ . '\\body_class' );
 	add_action( 'wp_ajax_swiftpress_app_save_setting', __NAMESPACE__ . '\\ajax_save_setting' );
 	add_action( 'wp_ajax_swiftpress_app_detect_domains', __NAMESPACE__ . '\\ajax_detect_domains' );
+	add_action( 'wp_ajax_swiftpress_app_optimize_images', __NAMESPACE__ . '\\ajax_optimize_images' );
 }
 
 /**
@@ -190,6 +191,59 @@ function ajax_detect_domains() {
 	sort( $domains );
 
 	wp_send_json_success( [ 'domains' => $domains ] );
+}
+
+/**
+ * AJAX: bulk-convert existing media to next-gen formats, one small batch per
+ * request. The client loops with an increasing offset until `finished`, so a
+ * large library can't hit the PHP time limit.
+ *
+ * @return void
+ */
+function ajax_optimize_images() {
+	check_ajax_referer( 'swiftpress_settings_ajax', 'nonce' );
+	if ( ! current_user_can( cap() ) ) {
+		wp_send_json_error( [ 'message' => esc_html__( 'Permission denied.', 'swiftpress' ) ], 403 );
+	}
+
+	$optimizer = \SwiftPress\ImageOptimizer::factory();
+	if ( ! $optimizer->is_active() ) {
+		wp_send_json_error( [ 'message' => esc_html__( 'Turn on Image optimization first (the server also needs a WebP or AVIF encoder in GD).', 'swiftpress' ) ], 400 );
+	}
+
+	$offset = isset( $_POST['offset'] ) ? max( 0, (int) $_POST['offset'] ) : 0;
+	$batch  = 5;
+
+	$query = new \WP_Query(
+		[
+			'post_type'      => 'attachment',
+			'post_mime_type' => [ 'image/jpeg', 'image/png' ],
+			'post_status'    => 'inherit',
+			'posts_per_page' => $batch,
+			'offset'         => $offset,
+			'fields'         => 'ids',
+			'orderby'        => 'ID',
+			'order'          => 'ASC',
+		]
+	);
+
+	$created = 0;
+	foreach ( $query->posts as $attachment_id ) {
+		$created += $optimizer->optimize_attachment( (int) $attachment_id );
+	}
+
+	$total = (int) $query->found_posts;
+	$done  = min( $offset + count( $query->posts ), $total );
+
+	wp_send_json_success(
+		[
+			'created'    => $created,
+			'processed'  => $done,
+			'total'      => $total,
+			'nextOffset' => $done,
+			'finished'   => $done >= $total || 0 === count( $query->posts ),
+		]
+	);
 }
 
 /**
@@ -553,7 +607,7 @@ function view_tune( $settings ) {
 			<div class="sp-panel-body">
 				<?php
 				toggle_row( 'add_missing_image_dimensions', __( 'Add missing image dimensions', 'swiftpress' ), __( 'Write width/height back into markup to stop layout shift (CLS).', 'swiftpress' ), $settings );
-				toggle_row( 'enable_image_optimization', __( 'Image optimization', 'swiftpress' ), __( 'Serve next-gen formats. Choose the preferred format below.', 'swiftpress' ), $settings );
+				toggle_row( 'enable_image_optimization', __( 'Image optimization', 'swiftpress' ), __( 'Convert JPEG/PNG to next-gen formats and serve them automatically wherever the converted file is smaller. New uploads convert on the fly; bulk-convert existing media with <code>wp swiftpress optimize-images</code>.', 'swiftpress' ), $settings );
 				?>
 				<div class="sp-row">
 					<div><div class="label"><?php esc_html_e( 'Preferred image format', 'swiftpress' ); ?></div></div>
@@ -562,6 +616,13 @@ function view_tune( $settings ) {
 						<option value="webp" <?php selected( $settings['image_optimizer_preferred_format'], 'webp' ); ?>>WebP</option>
 						<option value="avif" <?php selected( $settings['image_optimizer_preferred_format'], 'avif' ); ?>>AVIF</option>
 					</select>
+				</div>
+				<div class="sp-row">
+					<div>
+						<div class="label"><?php esc_html_e( 'Bulk convert existing media', 'swiftpress' ); ?></div>
+						<div class="hint" id="sp-imgopt-status"><?php esc_html_e( 'Generate next-gen versions of images already in the library. Safe to re-run.', 'swiftpress' ); ?></div>
+					</div>
+					<button type="button" class="sp-btn" id="sp-optimize-images"><?php esc_html_e( 'Optimize now', 'swiftpress' ); ?></button>
 				</div>
 				<?php
 				toggle_row( 'enable_font_optimization', __( 'Font optimization', 'swiftpress' ), __( 'Self-host Google Fonts (no call to Google — GDPR-friendlier) and control loading.', 'swiftpress' ), $settings );

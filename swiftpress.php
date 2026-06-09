@@ -3,10 +3,11 @@
  * Plugin Name:       AICache
  * Plugin URI:        https://webs.ie/aicache
  * Description:       AI-assisted WordPress performance &amp; caching — page cache, CSS/JS &amp; font optimization, intelligent preloading, and an AI diagnostic that explains and one-click-fixes what's slowing your site.
- * Version:           1.0.0
+ * Version:           1.1.0
  * Requires at least: 5.7
- * Tested up to:      6.7
- * Requires PHP:      7.4
+ * Tested up to:      7.0
+ * Requires PHP:      8.0
+ * Update URI:        https://github.com/seb-cpu/powered-cache
  * Author:            Webs.ie
  * Author URI:        https://webs.ie
  * License:           GPL-2.0-or-later
@@ -26,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Useful global constants.
-define( 'SWIFTPRESS_VERSION', '1.0.0' );
+define( 'SWIFTPRESS_VERSION', '1.1.0' );
 define( 'SWIFTPRESS_DB_VERSION', '3.8' );
 define( 'SWIFTPRESS_PLUGIN_FILE', __FILE__ );
 define( 'SWIFTPRESS_URL', plugin_dir_url( __FILE__ ) );
@@ -131,6 +132,7 @@ Preloader::factory();
 Async\SitemapPreloader::factory();
 FileOptimizer::factory();
 FontOptimizer::factory();
+ImageOptimizer::factory();
 Extensions::factory();
 
 // WP-CLI commands.

@@ -2,9 +2,9 @@
 Contributors: webs
 Tags: cache, performance, ai, page cache, core web vitals
 Requires at least: 5.7
-Tested up to: 6.7
+Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,7 +25,7 @@ AI-assisted WordPress caching & performance. Runs a real audit, explains in plai
 
 * **Page Cache** — full-page caching, gzip, separate mobile cache, logged-in users, configurable expiration; works on **nginx** (one-click config generator) and Apache (.htaccess), or via a pure-PHP drop-in with zero server config.
 * **File Optimization** — minify/combine HTML/CSS/JS, defer & delay JavaScript, exclusions.
-* **Font Optimization** — self-host Google Fonts (GDPR-friendly), preload above-the-fold fonts, force `font-display: swap`.
+* **Font Optimization** — self-host Google Fonts (GDPR-friendly), preload above-the-fold fonts, layout-shift-safe `font-display` handling (eliminates font-swap CLS).
 * **Cache Preloader** — sitemap auto-detection + recursive parsing, background preloading with progress tracking.
 * **Delivery & integrations** — CDN/Cloudflare purge, image optimization, LCP optimization, DNS-prefetch/preconnect, link prefetch, self-hosted analytics, Heartbeat control, Varnish.
 * **Modern admin** — the "Editorial Console": a dashboard-first UI with a live Performance Score, dark mode, and a command palette. WP-CLI and multisite supported.
@@ -93,6 +93,13 @@ AICache is a fork of **Powered Cache** and **Simple Cache** (by **Taylor Lovett*
 
 == Changelog ==
 
+= 1.1.0 =
+* Image optimization is now a real engine: JPEG/PNG uploads get next-gen (WebP/AVIF) versions automatically, the front end serves them wherever the converted file is smaller, and existing media can be bulk-converted with one click (or `wp swiftpress optimize-images`).
+* Layout-shift fix: self-hosted fonts now load with CLS-safe `font-display` (no more text reflow on first visit) — filterable via `swiftpress_font_display`.
+* Edge/CDN cache-busting: minified CSS/JS URLs now carry a content version (`?m=`), so style and script changes propagate through Cloudflare instantly instead of after the cache TTL.
+* WordPress 7.0 compatibility metadata: plugin now reports `Tested up to`, `Requires at least` and `Requires PHP` through the updater, so wp-admin shows real compatibility instead of "unknown"; added an `Update URI` header to protect against wordpress.org slug collisions.
+* Native WordPress admin re-skin, auto-saving toggles, OpenRouter key auto-validation on paste, DNS-prefetch auto-detection.
+
 = 1.0.0 =
 * AI Performance Diagnostic ("Explain & Fix"): PageSpeed audit → plain-language findings → one-click, validated, reversible fixes. BYO OpenRouter key with a no-key deterministic fallback.
 * New "Editorial Console" admin: dashboard-first UI, live Performance Score, optimization presets, command palette, dark mode.
@@ -101,6 +108,9 @@ AICache is a fork of **Powered Cache** and **Simple Cache** (by **Taylor Lovett*
 * Security hardening (encrypted key storage, secret-strip lists, validated AI apply path) and PHP 8.3 / WP 6.7 compatibility fixes.
 
 == Upgrade Notice ==
+
+= 1.1.0 =
+Real image optimization engine, CLS-safe font loading, edge cache-busting and WordPress 7.0 compatibility reporting.
 
 = 1.0.0 =
 Initial AICache release.

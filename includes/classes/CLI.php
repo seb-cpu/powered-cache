@@ -128,6 +128,84 @@ class CLI extends \WP_CLI_Command {
 	}
 
 	/**
+	 * Generate next-gen (WebP/AVIF) versions of existing media library images.
+	 *
+	 * Converts every JPEG/PNG attachment (original + all registered sizes) to
+	 * the preferred next-gen format configured in AICache. Siblings are kept
+	 * only when smaller than the source; existing up-to-date siblings are
+	 * skipped, so the command is safe to re-run.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--limit=<number>]
+	 * : Maximum number of attachments to process. Default: all.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     # Convert the whole media library
+	 *     $ wp swiftpress optimize-images
+	 *     Success: 214 next-gen files generated across 38 attachments (12 already up to date).
+	 *
+	 *     # Convert a first batch of 50
+	 *     $ wp swiftpress optimize-images --limit=50
+	 *
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Associative arguments.
+	 *
+	 * @subcommand optimize-images
+	 */
+	public function optimize_images( $args = [], $assoc_args = [] ) {
+		$optimizer = ImageOptimizer::factory();
+
+		if ( ! $optimizer->is_active() ) {
+			\WP_CLI::error( 'Image optimization is disabled (enable it in AICache → Tune) or this server\'s GD has no WebP/AVIF encoder.' );
+		}
+
+		$limit = isset( $assoc_args['limit'] ) ? (int) $assoc_args['limit'] : -1;
+
+		$attachment_ids = get_posts(
+			[
+				'post_type'      => 'attachment',
+				'post_mime_type' => [ 'image/jpeg', 'image/png' ],
+				'post_status'    => 'inherit',
+				'posts_per_page' => $limit > 0 ? $limit : -1,
+				'fields'         => 'ids',
+				'no_found_rows'  => true,
+			]
+		);
+
+		if ( empty( $attachment_ids ) ) {
+			\WP_CLI::success( 'No JPEG/PNG attachments found.' );
+			return;
+		}
+
+		$created   = 0;
+		$untouched = 0;
+		$progress  = \WP_CLI\Utils\make_progress_bar( 'Optimizing images', count( $attachment_ids ) );
+
+		foreach ( $attachment_ids as $attachment_id ) {
+			$n = $optimizer->optimize_attachment( $attachment_id );
+			if ( $n > 0 ) {
+				$created += $n;
+			} else {
+				$untouched++;
+			}
+			$progress->tick();
+		}
+
+		$progress->finish();
+
+		\WP_CLI::success(
+			sprintf(
+				'%d next-gen files generated across %d attachments (%d already up to date or not smaller).',
+				$created,
+				count( $attachment_ids ),
+				$untouched
+			)
+		);
+	}
+
+	/**
 	 * Manage cache preloading.
 	 *
 	 * ## OPTIONS
