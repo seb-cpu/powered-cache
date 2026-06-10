@@ -398,6 +398,11 @@ function sanitize_options( $options ) {
 	$sanitized_options['use_bunny_fonts']                  = ! empty( $options['use_bunny_fonts'] );
 	$sanitized_options['swap_google_fonts_display']        = ! empty( $options['swap_google_fonts_display'] );
 	$sanitized_options['optimize_admin']                   = ! empty( $options['optimize_admin'] );
+	$sanitized_options['db_scheduled_cleanup']             = ! empty( $options['db_scheduled_cleanup'] );
+	$sanitized_options['disable_xmlrpc']                   = ! empty( $options['disable_xmlrpc'] );
+	$sanitized_options['disable_jquery_migrate']           = ! empty( $options['disable_jquery_migrate'] );
+	$sanitized_options['disable_dashicons_guests']         = ! empty( $options['disable_dashicons_guests'] );
+	$sanitized_options['disable_cart_fragments']           = ! empty( $options['disable_cart_fragments'] );
 	$sanitized_options['minify_css']                       = ! empty( $options['minify_css'] );
 	$sanitized_options['combine_css']                      = ! empty( $options['combine_css'] );
 	$sanitized_options['critical_css']                     = ! empty( $options['critical_css'] );

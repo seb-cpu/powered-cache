@@ -160,7 +160,11 @@
 			var summary = d.summary || (((d.recommended_changes && d.recommended_changes.appliable) || []).length
 				? 'I found a few optimizations you can apply below.'
 				: 'No new issues found — your site is in good shape.');
-			content.innerHTML = '<h1>' + esc(summary.split('. ')[0]) + '.</h1><p class="sp-lede">' + esc(summary) + '</p>' + hint;
+			// Headline = first sentence (without double-dotting); only repeat the
+			// full summary below when it actually says more than the headline.
+			var first = summary.split('. ')[0].replace(/[.\s]+$/, '');
+			var rest = summary.slice(first.length).replace(/^[.\s]+/, '');
+			content.innerHTML = '<h1>' + esc(first) + '.</h1>' + (rest ? '<p class="sp-lede">' + esc(rest) + '</p>' : '') + hint;
 		}
 
 		// Cards: actionable changes first, then suggested, then context findings without a change.
@@ -406,6 +410,22 @@
 			});
 		});
 	}
+	function bindDbClean() {
+		var btn = $('#sp-db-clean'); if (!btn) return;
+		var orig = btn.textContent;
+		btn.addEventListener('click', function () {
+			if (btn.disabled) return;
+			btn.disabled = true; btn.innerHTML = '<span class="sp-spin" aria-hidden="true"></span> Cleaning…';
+			post('swiftpress_app_db_clean', {}, 'ajaxNonce').then(function (j) {
+				btn.disabled = false; btn.textContent = orig; btn.classList.remove('amber');
+				if (j && j.success) {
+					toast(j.data.message);
+					var s = $('#sp-db-stats'), st = j.data.stats || {};
+					if (s) s.textContent = 'Found: ' + (st.revisions||0) + ' old revisions · ' + (st.auto_drafts||0) + ' auto-drafts · ' + (st.trashed_posts||0) + ' old trashed posts · ' + (st.spam_comments||0) + ' spam/trash comments · ' + (st.expired_transients||0) + ' expired transients. Tables are optimized on every run.';
+				} else { toast((j && j.data && j.data.message) || APP.i18n.failed, true); }
+			}).catch(function () { btn.disabled = false; btn.textContent = orig; toast(APP.i18n.failed, true); });
+		});
+	}
 	function bindCloudflare() {
 		$$('[data-cf]').forEach(function (el) {
 			var save = function () {
@@ -574,7 +594,7 @@
 		// (DOM ready) so lastResult/hasKey/clearToken are actually populated.
 		AI = window.swiftpressAI || AI;
 		var ring = $('#sp-ring'); if (ring) { ring.style.strokeDasharray = CIRC; ring.style.strokeDashoffset = CIRC; }
-		bindMisc(); bindCmdk(); bindKey(); bindAutoSave(); bindDomains(); bindImageOptimize(); bindCloudflare(); refreshKeyState();
+		bindMisc(); bindCmdk(); bindKey(); bindAutoSave(); bindDomains(); bindImageOptimize(); bindDbClean(); bindCloudflare(); refreshKeyState();
 		// Auto-run when arriving from a "Run Diagnostic" click on another view;
 		// otherwise re-render the last saved diagnostic so results survive navigation.
 		try {

@@ -225,5 +225,45 @@
 .sp-reveal{opacity:0;animation:sp-in .35s ease forwards}
 @keyframes sp-in{to{opacity:1}}
 
-@media (max-width:980px){ .sp-shell{grid-template-columns:1fr} .sp-rail{display:none} .sp-brief{grid-template-columns:1fr} .sp-pulse{grid-template-columns:repeat(3,1fr)} }
+/* ── ACCESSIBILITY: visible keyboard focus everywhere interactive ── */
+.swiftpress-app .sp-btn:focus-visible,
+.swiftpress-app .sp-ask:focus-visible,
+.swiftpress-app .sp-chip:focus-visible,
+.swiftpress-app .sp-input:focus-visible,
+.swiftpress-app .sp-select:focus-visible,
+.swiftpress-app .sp-textarea:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+.swiftpress-app .sp-toggle input:focus-visible ~ .track{outline:2px solid var(--blue);outline-offset:2px}
+.sp-cmdk .cmd-row:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+
+/* ── RESPONSIVE ── */
+@media (max-width:1180px){
+  .sp-brief{grid-template-columns:1fr;gap:18px}
+  .sp-score{margin:0 auto}
+}
+@media (max-width:980px){
+  .sp-shell{grid-template-columns:1fr}
+  .sp-pulse{grid-template-columns:repeat(3,1fr)}
+  .sp-top{flex-wrap:wrap;row-gap:8px;padding:10px 16px}
+  .sp-top .sp-crumbs{display:none}
+  .sp-ask{min-width:0;flex:1 1 180px}
+  .sp-wrap{padding-left:16px;padding-right:16px}
+}
+@media (max-width:782px){
+  .swiftpress-app{margin-left:-10px;min-height:calc(100vh - 46px)}
+  .sp-top{position:static}
+  .sp-brand .ver{display:none}
+  .sp-pulse{grid-template-columns:repeat(2,1fr)}
+  .sp-row{flex-wrap:wrap;gap:8px}
+  .sp-row > div:first-child{flex:1 1 100%}
+  .sp-panel-body{padding:12px 14px}
+  .sp-score svg{width:150px;height:150px}
+  .sp-cmdk{padding-top:6vh}
+  .sp-cmdk .panel{width:94vw}
+  .sp-findings .sp-fix{width:100%}
+}
+@media (max-width:520px){
+  .sp-pulse{grid-template-columns:1fr 1fr}
+  .sp-top .sp-btn.amber{flex:1 1 100%;justify-content:center}
+  .sp-ask{flex-basis:100%}
+}
 @media (prefers-reduced-motion:reduce){ .swiftpress-app *{animation:none!important;transition:none!important} }

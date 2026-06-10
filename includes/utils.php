@@ -107,6 +107,13 @@ function get_settings( $force_network_wide = false ) {
 		'swap_google_fonts_display'        => false,
 		// wp-admin backend speed
 		'optimize_admin'                   => false,
+		// database
+		'db_scheduled_cleanup'             => false,
+		// bloat control
+		'disable_xmlrpc'                   => false,
+		'disable_jquery_migrate'           => false,
+		'disable_dashicons_guests'         => false,
+		'disable_cart_fragments'           => false,
 		// preload
 		'enable_cache_preload'             => false,
 		'preload_homepage'                 => true,

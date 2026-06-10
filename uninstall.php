@@ -104,6 +104,7 @@ function swiftpress_uninstall_site() {
 
 	// Self-hosted tracking copies + their refresh cron.
 	wp_clear_scheduled_hook( 'swiftpress_tracking_refresh' );
+	wp_clear_scheduled_hook( 'swiftpress_db_cleanup' );
 	\SwiftPress\Utils\remove_dir( WP_CONTENT_DIR . '/cache/swiftpress/tracking/' );
 
 	// Diagnostic response cache is a family of hashed transients — clear both the

@@ -136,6 +136,8 @@ ImageOptimizer::factory();
 UnusedCSS::factory();
 TrackingOptimizer::factory();
 AdminOptimizer::factory();
+DatabaseOptimizer::factory();
+BloatControl::factory();
 Extensions::factory();
 
 // WP-CLI commands.

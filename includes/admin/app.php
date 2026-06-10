@@ -49,6 +49,7 @@ function setup() {
 	add_action( 'wp_ajax_swiftpress_app_save_setting', __NAMESPACE__ . '\\ajax_save_setting' );
 	add_action( 'wp_ajax_swiftpress_app_detect_domains', __NAMESPACE__ . '\\ajax_detect_domains' );
 	add_action( 'wp_ajax_swiftpress_app_optimize_images', __NAMESPACE__ . '\\ajax_optimize_images' );
+	add_action( 'wp_ajax_swiftpress_app_db_clean', __NAMESPACE__ . '\\ajax_db_clean' );
 }
 
 /**
@@ -62,6 +63,11 @@ function auto_save_allowlist() {
 		'gzip_compression'                 => 'bool',
 		'minify_html'                      => 'bool',
 		'optimize_admin'                   => 'bool',
+		'db_scheduled_cleanup'             => 'bool',
+		'disable_xmlrpc'                   => 'bool',
+		'disable_jquery_migrate'           => 'bool',
+		'disable_dashicons_guests'         => 'bool',
+		'disable_cart_fragments'           => 'bool',
 		'cache_mobile'                     => 'bool',
 		'minify_css'                       => 'bool',
 		'combine_css'                      => 'bool',
@@ -252,6 +258,39 @@ function ajax_optimize_images() {
 			'total'      => $total,
 			'nextOffset' => $done,
 			'finished'   => $done >= $total || 0 === count( $query->posts ),
+		]
+	);
+}
+
+/**
+ * AJAX: run the database cleanup and return what was removed.
+ *
+ * @return void
+ */
+function ajax_db_clean() {
+	check_ajax_referer( 'swiftpress_settings_ajax', 'nonce' );
+	if ( ! current_user_can( cap() ) ) {
+		wp_send_json_error( [ 'message' => esc_html__( 'Permission denied.', 'swiftpress' ) ], 403 );
+	}
+
+	$optimizer = \SwiftPress\DatabaseOptimizer::factory();
+	$removed   = $optimizer->run_all();
+	$stats     = $optimizer->stats();
+
+	wp_send_json_success(
+		[
+			'removed' => $removed,
+			'message' => sprintf(
+				/* translators: 1: revisions, 2: drafts, 3: trashed, 4: comments, 5: transients, 6: tables */
+				esc_html__( 'Cleaned: %1$d revisions, %2$d auto-drafts, %3$d trashed posts, %4$d spam/trash comments, %5$d expired transients · %6$d tables optimized.', 'swiftpress' ),
+				(int) $removed['revisions'],
+				(int) $removed['auto_drafts'],
+				(int) $removed['trashed_posts'],
+				(int) $removed['spam_comments'],
+				(int) $removed['expired_transients'],
+				(int) $removed['optimize_tables']
+			),
+			'stats'   => $stats,
 		]
 	);
 }
@@ -726,6 +765,36 @@ function view_tune( $settings ) {
 		</div>
 
 		<div class="sp-panel">
+			<h2><?php esc_html_e( 'Database', 'swiftpress' ); ?><span class="hint"><?php esc_html_e( 'Keep the tables lean', 'swiftpress' ); ?></span></h2>
+			<div class="sp-panel-body">
+				<?php
+				$db_stats = \SwiftPress\DatabaseOptimizer::factory()->stats();
+				$db_total = array_sum( $db_stats );
+				?>
+				<div class="sp-row">
+					<div>
+						<div class="label"><?php esc_html_e( 'Clean the database now', 'swiftpress' ); ?></div>
+						<div class="desc" id="sp-db-stats"><?php
+							printf(
+								/* translators: 1-5: item counts */
+								esc_html__( 'Found: %1$s old revisions · %2$s auto-drafts · %3$s old trashed posts · %4$s spam/trash comments · %5$s expired transients. Tables are optimized on every run.', 'swiftpress' ),
+								(int) $db_stats['revisions'],
+								(int) $db_stats['auto_drafts'],
+								(int) $db_stats['trashed_posts'],
+								(int) $db_stats['spam_comments'],
+								(int) $db_stats['expired_transients']
+							);
+						?></div>
+					</div>
+					<button type="button" class="sp-btn <?php echo $db_total > 0 ? 'amber' : ''; ?>" id="sp-db-clean"><?php esc_html_e( 'Clean now', 'swiftpress' ); ?></button>
+				</div>
+				<?php
+				toggle_row( 'db_scheduled_cleanup', __( 'Weekly automatic cleanup', 'swiftpress' ), __( 'Run the same cleanup every week via WP-Cron (keeps the newest 3 revisions per post; trashed content older than 30 days is removed — same as WordPress itself does).', 'swiftpress' ), $settings );
+				?>
+			</div>
+		</div>
+
+		<div class="sp-panel">
 			<h2><?php esc_html_e( 'Integrations & bloat control', 'swiftpress' ); ?></h2>
 			<div class="sp-panel-body">
 				<?php
@@ -734,6 +803,12 @@ function view_tune( $settings ) {
 				toggle_row( 'enable_heartbeat', __( 'Heartbeat control', 'swiftpress' ), __( 'Throttle the WordPress Heartbeat API to cut admin/server load.', 'swiftpress' ), $settings );
 				toggle_row( 'disable_emoji_scripts', __( 'Disable emoji scripts', 'swiftpress' ), __( 'Remove the emoji polyfill most modern sites don’t need.', 'swiftpress' ), $settings );
 				toggle_row( 'disable_wp_embeds', __( 'Disable WordPress embeds', 'swiftpress' ), __( 'Remove the wp-embed script if you don’t embed other WP posts.', 'swiftpress' ), $settings );
+				toggle_row( 'disable_xmlrpc', __( 'Disable XML-RPC', 'swiftpress' ), __( 'Turns off the legacy XML-RPC API and pingbacks — a common brute-force target almost no modern site needs. The REST API is unaffected.', 'swiftpress' ), $settings );
+				toggle_row( 'disable_jquery_migrate', __( 'Remove jQuery Migrate', 'swiftpress' ), __( 'Drop the legacy-jQuery shim on the front end (the admin keeps it). Safe unless a very old plugin script breaks — easy to flip back.', 'swiftpress' ), $settings );
+				toggle_row( 'disable_dashicons_guests', __( 'Remove Dashicons for visitors', 'swiftpress' ), __( 'Stop loading the WordPress icon font for logged-out visitors (themes rarely use it; ~36 KB saved).', 'swiftpress' ), $settings );
+				if ( class_exists( 'WooCommerce' ) ) {
+					toggle_row( 'disable_cart_fragments', __( 'Limit Woo cart fragments', 'swiftpress' ), __( 'Stop the cart-fragments AJAX call on pages without a cart — a classic uncached-request tax on every WooCommerce pageview.', 'swiftpress' ), $settings );
+				}
 				?>
 			</div>
 		</div>
@@ -838,7 +913,7 @@ function view_copilot() {
 /** Command palette markup. */
 function render_cmdk() {
 	?>
-	<div class="sp-cmdk" id="sp-cmdk">
+	<div class="sp-cmdk" id="sp-cmdk" role="dialog" aria-modal="true" aria-label="<?php esc_attr_e( 'AICache command palette', 'swiftpress' ); ?>">
 		<div class="panel">
 			<div class="in"><?php echo icon( 'spark' ); // phpcs:ignore ?><input id="sp-cmd-input" placeholder="<?php esc_attr_e( 'Type a command, search a setting, or ask a question…', 'swiftpress' ); ?>" autocomplete="off" /></div>
 			<div class="cmd-list" id="sp-cmd-list"></div>
@@ -846,6 +921,6 @@ function render_cmdk() {
 			<div class="foot"><span>↑↓ <?php esc_html_e( 'choose', 'swiftpress' ); ?></span><span>↵ <?php esc_html_e( 'run', 'swiftpress' ); ?></span><span>esc <?php esc_html_e( 'close', 'swiftpress' ); ?></span></div>
 		</div>
 	</div>
-	<div class="sp-toasts" id="sp-toasts"></div>
+	<div class="sp-toasts" id="sp-toasts" aria-live="polite" role="status"></div>
 	<?php
 }
