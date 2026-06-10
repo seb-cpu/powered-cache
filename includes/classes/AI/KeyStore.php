@@ -105,7 +105,7 @@ class KeyStore {
 			return update_site_option( self::OPTION, $store );
 		}
 
-		return update_option( self::OPTION, $store );
+		return update_option( self::OPTION, $store, false );
 	}
 
 	/* -----------------------------------------------------------------

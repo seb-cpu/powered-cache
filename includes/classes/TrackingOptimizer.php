@@ -279,6 +279,14 @@ class TrackingOptimizer {
 	 * @return void
 	 */
 	private function download( $remote, $path ) {
+		// Back off after a failure: without this, a blocked/unreachable tracker
+		// host would be retried synchronously (up to 10s) on EVERY uncached
+		// pageview. The cron refresh still retries on schedule.
+		$backoff_key = 'swiftpress_trk_fail_' . md5( $remote );
+		if ( get_transient( $backoff_key ) ) {
+			return;
+		}
+
 		if ( ! wp_mkdir_p( dirname( $path ) ) ) {
 			return;
 		}
@@ -293,11 +301,13 @@ class TrackingOptimizer {
 		);
 
 		if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+			set_transient( $backoff_key, 1, 2 * HOUR_IN_SECONDS );
 			return;
 		}
 
 		$body = (string) wp_remote_retrieve_body( $response );
 		if ( strlen( $body ) < 512 ) {
+			set_transient( $backoff_key, 1, 2 * HOUR_IN_SECONDS );
 			return; // Suspiciously small — keep whatever we had.
 		}
 

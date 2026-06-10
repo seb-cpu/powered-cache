@@ -89,7 +89,9 @@ class Diagnostic {
 		$model = $this->current_model();
 
 		// --- Response cache (only meaningful when PSI gave real data) ---
-		$cache_key = self::CACHE_PREFIX . md5( wp_json_encode( [ $metrics, $whitelisted_settings, $model ] ) );
+		// The key embeds a version salt so invalidation is a cheap counter bump
+		// that works identically with or without an external object cache.
+		$cache_key = self::CACHE_PREFIX . (int) get_option( 'swiftpress_ai_diag_ver', 1 ) . '_' . md5( wp_json_encode( [ $metrics, $whitelisted_settings, $model ] ) );
 		if ( ! $force && ! $psi_failed ) {
 			$cached = get_transient( $cache_key );
 			if ( is_array( $cached ) ) {
@@ -321,16 +323,21 @@ class Diagnostic {
 	public function invalidate_cache() {
 		global $wpdb;
 
-		// Transients are keyed by hash; clear the family. Direct cleanup is the most
-		// reliable way to drop an unknown set of transient keys.
-		if ( isset( $wpdb ) ) {
+		// Bump the key salt: every previously cached diagnostic becomes
+		// unreachable immediately, on plain installs AND under Redis/memcached.
+		// (The old wp_cache_flush() here wiped the ENTIRE object cache site-wide
+		// on every settings save — a self-inflicted performance hit.)
+		update_option( 'swiftpress_ai_diag_ver', (int) get_option( 'swiftpress_ai_diag_ver', 1 ) + 1, false );
+
+		// DB hygiene for non-object-cache installs: drop the orphaned transient
+		// rows (under an external object cache transients don't live here, and
+		// the versioned keys above already make them unreachable).
+		if ( isset( $wpdb ) && ! wp_using_ext_object_cache() ) {
 			$like = $wpdb->esc_like( '_transient_' . self::CACHE_PREFIX ) . '%';
 			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s", $like ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 
 			$like_timeout = $wpdb->esc_like( '_transient_timeout_' . self::CACHE_PREFIX ) . '%';
 			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s", $like_timeout ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		}
-
-		wp_cache_flush();
 	}
 }

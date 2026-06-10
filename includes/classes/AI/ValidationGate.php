@@ -385,18 +385,23 @@ class ValidationGate {
 	 * @return bool
 	 */
 	private function engine_available( $engine ) {
+		// The UnusedCSS class ships both the Critical-CSS (safe) and the
+		// remove-unused-CSS (aggressive) engines since 1.2; gate on its
+		// presence so the AI can actually apply these once they exist.
+		$default = in_array( $engine, [ 'ucss', 'critical_css' ], true ) && class_exists( '\SwiftPress\UnusedCSS' );
+
 		/**
 		 * Filters whether a named AI-gated optimization engine is available.
 		 *
 		 * @hook   swiftpress_ai_engine_available
 		 *
-		 * @param  {bool}   $available Default false (generators are stubs in v1).
+		 * @param  {bool}   $available Engine presence (class-based detection).
 		 * @param  {string} $engine    Engine identifier.
 		 *
 		 * @return {bool} New value.
 		 * @since  1.0
 		 */
-		return (bool) apply_filters( 'swiftpress_ai_engine_available', false, $engine );
+		return (bool) apply_filters( 'swiftpress_ai_engine_available', $default, $engine );
 	}
 
 	/**

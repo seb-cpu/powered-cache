@@ -170,7 +170,7 @@ class Budget {
 		if ( $this->is_network() ) {
 			update_site_option( self::USAGE_OPTION, $usage );
 		} else {
-			update_option( self::USAGE_OPTION, $usage );
+			update_option( self::USAGE_OPTION, $usage, false );
 		}
 	}
 

@@ -138,7 +138,8 @@ function ajax_save_setting() {
 	} elseif ( 'int' === $type ) {
 		$settings[ $key ] = absint( $raw );
 	} elseif ( 'text' === $type ) {
-		$settings[ $key ] = sanitize_textarea_field( $raw );
+		// Mirror the canonical sanitizer's per-field rules where they differ.
+		$settings[ $key ] = ( 'cloudflare_email' === $key ) ? sanitize_email( $raw ) : sanitize_textarea_field( $raw );
 	} elseif ( is_array( $type ) ) {
 		$settings[ $key ] = in_array( $raw, $type, true ) ? $raw : $type[0];
 	}
@@ -150,6 +151,10 @@ function ajax_save_setting() {
 	}
 
 	Config::factory()->save_configuration( $settings, defined( 'SWIFTPRESS_IS_NETWORK' ) && SWIFTPRESS_IS_NETWORK );
+
+	// Run the same transition side-effects as the full form save (preloader
+	// start/stop, cache cleanup on disable, cron rescheduling).
+	\SwiftPress\Admin\Dashboard\apply_settings_transitions( $old, $settings );
 
 	/** Fires after settings are saved (parity with the full form save). */
 	do_action( 'swiftpress_settings_saved', $old, $settings );
@@ -364,6 +369,49 @@ function enqueue( $hook ) {
 
 	$admin_base = SWIFTPRESS_IS_NETWORK ? network_admin_url( 'admin.php?page=' ) : admin_url( 'admin.php?page=' );
 
+	// Single source of truth for human-readable setting labels (the JS palette,
+	// preset dialogs, AI cards and toasts all render from this — no hand-copied
+	// duplicate map in the bundle drifting out of date).
+	$setting_labels = [
+		'enable_page_cache'            => __( 'Page cache', 'swiftpress' ),
+		'gzip_compression'             => __( 'Gzip compression', 'swiftpress' ),
+		'cache_mobile'                 => __( 'Mobile cache', 'swiftpress' ),
+		'cache_timeout'                => __( 'Cache expiration', 'swiftpress' ),
+		'minify_html'                  => __( 'Minify HTML', 'swiftpress' ),
+		'minify_css'                   => __( 'Minify CSS', 'swiftpress' ),
+		'combine_css'                  => __( 'Combine CSS', 'swiftpress' ),
+		'critical_css'                 => __( 'Optimize CSS delivery (Critical CSS)', 'swiftpress' ),
+		'remove_unused_css'            => __( 'Remove unused CSS', 'swiftpress' ),
+		'minify_js'                    => __( 'Minify JavaScript', 'swiftpress' ),
+		'combine_js'                   => __( 'Combine JavaScript', 'swiftpress' ),
+		'js_defer'                     => __( 'Defer JavaScript', 'swiftpress' ),
+		'js_delay'                     => __( 'Delay JavaScript', 'swiftpress' ),
+		'js_delay_timeout'             => __( 'JS delay timeout', 'swiftpress' ),
+		'enable_font_optimization'     => __( 'Font optimization', 'swiftpress' ),
+		'self_host_google_fonts'       => __( 'Self-host Google Fonts', 'swiftpress' ),
+		'font_preload'                 => __( 'Preload fonts', 'swiftpress' ),
+		'font_display_swap'            => __( 'Stabilize font loading', 'swiftpress' ),
+		'add_missing_image_dimensions' => __( 'Add missing image dimensions', 'swiftpress' ),
+		'enable_image_optimization'    => __( 'Image optimization', 'swiftpress' ),
+		'enable_lcp_optimization'      => __( 'LCP optimization', 'swiftpress' ),
+		'prefetch_links'               => __( 'Prefetch links on hover', 'swiftpress' ),
+		'enable_cloudflare'            => __( 'Cloudflare integration', 'swiftpress' ),
+		'enable_google_tracking'       => __( 'Self-host Google Analytics / Tag Manager', 'swiftpress' ),
+		'enable_fb_tracking'           => __( 'Self-host Facebook Pixel', 'swiftpress' ),
+		'enable_heartbeat'             => __( 'Heartbeat control', 'swiftpress' ),
+		'disable_emoji_scripts'        => __( 'Disable emoji scripts', 'swiftpress' ),
+		'disable_wp_embeds'            => __( 'Disable WordPress embeds', 'swiftpress' ),
+		'disable_xmlrpc'               => __( 'Disable XML-RPC', 'swiftpress' ),
+		'disable_jquery_migrate'       => __( 'Remove jQuery Migrate', 'swiftpress' ),
+		'disable_dashicons_guests'     => __( 'Remove Dashicons for visitors', 'swiftpress' ),
+		'disable_cart_fragments'       => __( 'Limit Woo cart fragments', 'swiftpress' ),
+		'optimize_admin'               => __( 'Speed up the WordPress admin', 'swiftpress' ),
+		'db_scheduled_cleanup'         => __( 'Weekly database cleanup', 'swiftpress' ),
+		'enable_cache_preload'         => __( 'Cache preloading', 'swiftpress' ),
+		'ucss_safelist'                => __( 'Used-CSS safelist', 'swiftpress' ),
+		'prefetch_dns'                 => __( 'DNS-prefetch domains', 'swiftpress' ),
+	];
+
 	wp_localize_script(
 		'swiftpress-app',
 		'swiftpressApp',
@@ -380,6 +428,7 @@ function enqueue( $hook ) {
 				'copilot' => $admin_base . MENU_SLUG . '-copilot',
 			],
 			'boolState'     => $bool_state,
+			'labels'        => $setting_labels,
 			'i18n'       => [
 				'analyzing'  => esc_html__( 'Reading your site…', 'swiftpress' ),
 				'measuring'  => esc_html__( 'Measuring performance…', 'swiftpress' ),
@@ -390,6 +439,12 @@ function enqueue( $hook ) {
 				'applying'   => esc_html__( 'Applying…', 'swiftpress' ),
 				'noKey'      => esc_html__( 'Add your OpenRouter key in Copilot to get plain-language explanations. Standard recommendations are shown without a key.', 'swiftpress' ),
 				'failed'     => esc_html__( 'Something went wrong. Please try again.', 'swiftpress' ),
+				'detect'     => esc_html__( 'Detect domains', 'swiftpress' ),
+				'scanning'   => esc_html__( 'Scanning…', 'swiftpress' ),
+				'copy'       => esc_html__( 'Copy', 'swiftpress' ),
+				'copied'     => esc_html__( '✓ Copied', 'swiftpress' ),
+				'flushAll'   => esc_html__( 'Flush all', 'swiftpress' ),
+				'openCopilot' => esc_html__( 'Open Copilot →', 'swiftpress' ),
 			],
 		]
 	);
@@ -637,7 +692,7 @@ function toggle_row( $key, $label, $desc, $settings, $stub = false ) {
 			<?php if ( $desc ) : ?><div class="desc"><?php echo wp_kses( $desc, [ 'code' => [] ] ); ?></div><?php endif; ?>
 		</div>
 		<label class="sp-toggle">
-			<input type="checkbox" name="<?php echo esc_attr( $key ); ?>" value="1" <?php checked( $checked ); ?> <?php disabled( $stub ); ?> />
+			<input type="checkbox" name="<?php echo esc_attr( $key ); ?>" value="1" aria-label="<?php echo esc_attr( $label ); ?>" <?php checked( $checked ); ?> <?php disabled( $stub ); ?> />
 			<span class="track"></span><span class="knob"></span>
 		</label>
 	</div>
@@ -685,6 +740,14 @@ function view_tune( $settings ) {
 				toggle_row( 'combine_css', __( 'Combine CSS', 'swiftpress' ), __( 'Merge stylesheets to cut requests (HTTP/2 makes this optional).', 'swiftpress' ), $settings );
 				toggle_row( 'critical_css', __( 'Optimize CSS delivery (Critical CSS)', 'swiftpress' ), __( 'Inline the CSS each page uses and load the full stylesheets without blocking render — biggest win on sites with large, render-blocking CSS and a slow First Contentful Paint. Static analysis, so always check your pages (especially layout/CLS) after enabling. Fonts are left untouched.', 'swiftpress' ), $settings );
 				toggle_row( 'remove_unused_css', __( 'Remove unused CSS', 'swiftpress' ), __( 'Aggressive: serve only the used CSS and drop the rest for maximum byte savings. Trusts static analysis fully, so JS-added classes may need adding to the safelist below — test thoroughly. Overrides Critical CSS.', 'swiftpress' ), $settings );
+				?>
+				<div class="sp-row" style="display:block">
+					<div class="label"><?php esc_html_e( 'Used-CSS safelist', 'swiftpress' ); ?></div>
+					<div class="desc"><?php esc_html_e( 'Selectors (one per line) the CSS engines must never strip — e.g. classes your JavaScript adds after page load.', 'swiftpress' ); ?></div>
+					<textarea class="sp-textarea" name="ucss_safelist" rows="3" placeholder=".my-js-toggle&#10;.lightbox-open" aria-label="<?php esc_attr_e( 'Used-CSS safelist', 'swiftpress' ); ?>"><?php echo esc_textarea( isset( $settings['ucss_safelist'] ) ? $settings['ucss_safelist'] : '' ); ?></textarea>
+				</div>
+				<?php
+				tune_managed_keys( 'ucss_safelist' );
 				toggle_row( 'minify_js', __( 'Minify JavaScript', 'swiftpress' ), __( 'Shrink scripts.', 'swiftpress' ), $settings );
 				toggle_row( 'js_defer', __( 'Defer JavaScript', 'swiftpress' ), __( 'Add <code>defer</code> so scripts stop blocking render.', 'swiftpress' ), $settings );
 				toggle_row( 'js_delay', __( 'Delay JavaScript', 'swiftpress' ), __( 'Hold non-critical scripts (analytics, chat) until the visitor interacts — the single biggest LCP win for script-heavy themes.', 'swiftpress' ), $settings );
@@ -727,8 +790,8 @@ function view_tune( $settings ) {
 			<h2><?php esc_html_e( 'Delivery & resource hints', 'swiftpress' ); ?><span class="hint"><?php esc_html_e( 'Previously hidden — now surfaced', 'swiftpress' ); ?></span></h2>
 			<div class="sp-panel-body">
 				<?php
-				toggle_row( 'enable_lcp_optimization', __( 'LCP optimization', 'swiftpress' ), __( 'Prioritise the largest above-the-fold image (fetchpriority, no lazy-load).', 'swiftpress' ), $settings );
-				toggle_row( 'prefetch_links', __( 'Prefetch links on hover', 'swiftpress' ), __( 'Pre-load the next page when a visitor hovers a link.', 'swiftpress' ), $settings );
+				toggle_row( 'enable_lcp_optimization', __( 'LCP optimization', 'swiftpress' ), __( 'Prioritise the largest above-the-fold image (fetchpriority, no lazy-load).', 'swiftpress' ), $settings, true );
+				toggle_row( 'prefetch_links', __( 'Prefetch links on hover', 'swiftpress' ), __( 'Pre-load the next page when a visitor hovers a link.', 'swiftpress' ), $settings, true );
 				toggle_row( 'enable_cloudflare', __( 'Cloudflare integration', 'swiftpress' ), __( 'Purge Cloudflare’s edge cache automatically whenever AICache clears its own cache. Enter an API token (recommended) or email + global key, plus the Zone ID.', 'swiftpress' ), $settings );
 				?>
 				<div class="sp-row" style="display:block">
@@ -744,7 +807,7 @@ function view_tune( $settings ) {
 
 				<div class="sp-row" style="display:block">
 					<div class="label"><?php esc_html_e( 'DNS-prefetch domains', 'swiftpress' ); ?>
-						<button type="button" class="sp-btn ghost" id="sp-detect-domains" style="margin-left:10px;min-height:26px;line-height:1.8"><?php esc_html_e( 'Detect domains', 'swiftpress' ); ?></button>
+						<button type="button" class="sp-btn ghost sm" id="sp-detect-domains"><?php esc_html_e( 'Detect domains', 'swiftpress' ); ?></button>
 					</div>
 					<div class="desc"><?php esc_html_e( 'Let AICache scan your homepage for third-party hosts, then tick the ones to resolve early — no need to type them.', 'swiftpress' ); ?></div>
 					<div class="sp-domains" id="sp-domains" data-current="<?php echo esc_attr( $settings['prefetch_dns'] ); ?>" style="margin-top:10px"></div>
@@ -826,7 +889,7 @@ function view_tune( $settings ) {
 		<div class="sp-note" style="margin:14px 2px 0;align-items:center">
 			<?php echo icon( 'shield' ); // phpcs:ignore ?>
 			<?php esc_html_e( 'Settings save automatically as you change them.', 'swiftpress' ); ?>
-			<button type="submit" name="swiftpress_form_action" value="save_settings_and_clear_cache" class="sp-btn ghost" style="margin-left:10px;min-height:26px;line-height:1.8"><?php esc_html_e( 'Save & clear cache', 'swiftpress' ); ?></button>
+			<button type="submit" name="swiftpress_form_action" value="save_settings_and_clear_cache" class="sp-btn ghost sm"><?php esc_html_e( 'Save & clear cache', 'swiftpress' ); ?></button>
 		</div>
 	</form>
 	<?php
@@ -841,6 +904,12 @@ function view_server( $server ) {
 	?>
 	<div class="sp-page-head"><h1><?php esc_html_e( 'Server', 'swiftpress' ); ?></h1><p><?php esc_html_e( 'Serve cache files straight from the web server, before PHP even starts.', 'swiftpress' ); ?></p></div>
 
+	<?php if ( 'apache' === $server ) : ?>
+	<div class="sp-banner info">
+		<?php echo icon( 'shield' ); // phpcs:ignore ?>
+		<?php esc_html_e( 'Detected server: Apache. Good news — AICache writes its rewrite rules into your .htaccess automatically, so there is nothing to paste. The nginx block below is only relevant if you ever move to nginx.', 'swiftpress' ); ?>
+	</div>
+	<?php else : ?>
 	<div class="sp-banner info">
 		<?php echo icon( 'shield' ); // phpcs:ignore ?>
 		<?php
@@ -848,15 +917,16 @@ function view_server( $server ) {
 		printf( esc_html__( 'Detected server: %s. The page cache already works on any server via the PHP drop-in — these rules make anonymous hits bypass PHP entirely for maximum speed.', 'swiftpress' ), '<b style="color:var(--ink)">' . esc_html( $server ) . '</b>' );
 		?>
 	</div>
+	<?php endif; ?>
 
 	<div class="sp-panel">
 		<h2>nginx<span class="hint"><?php esc_html_e( 'Paste into your server block, then reload nginx', 'swiftpress' ); ?></span></h2>
 		<div class="sp-panel-body" style="padding-bottom:18px">
 			<div class="sp-codeblock">
-				<div class="head">swiftpress.conf <a class="sp-btn ghost copy" id="sp-copy-nginx" style="padding:4px 10px"><?php esc_html_e( 'Copy', 'swiftpress' ); ?></a> <a class="sp-btn ghost" href="<?php echo esc_url( $dl_url ); ?>" style="padding:4px 10px"><?php esc_html_e( 'Download', 'swiftpress' ); ?></a></div>
+				<div class="head">swiftpress.conf <button type="button" class="sp-btn ghost xs copy" id="sp-copy-nginx"><?php esc_html_e( 'Copy', 'swiftpress' ); ?></button> <a class="sp-btn ghost xs" href="<?php echo esc_url( $dl_url ); ?>"><?php esc_html_e( 'Download', 'swiftpress' ); ?></a></div>
 				<pre id="sp-nginx-pre"><?php echo esc_html( $nginx ); ?></pre>
 			</div>
-			<div class="sp-note" style="margin-top:14px">↳ <?php esc_html_e( 'After pasting, run', 'swiftpress' ); ?> <code style="font-family:var(--mono);background:var(--inset);padding:1px 6px;border-radius:4px">sudo nginx -t && sudo systemctl reload nginx</code></div>
+			<div class="sp-note" style="margin-top:14px">↳ <?php esc_html_e( 'After pasting, run', 'swiftpress' ); ?> <code class="sp-code">sudo nginx -t && sudo systemctl reload nginx</code></div>
 		</div>
 	</div>
 	<?php
@@ -880,7 +950,7 @@ function view_copilot() {
 				<?php echo icon( 'shield' ); // phpcs:ignore ?>
 				<?php esc_html_e( 'Your key is set securely in wp-config.php (SWIFTPRESS_OPENROUTER_KEY) — nothing to enter here.', 'swiftpress' ); ?>
 			</div>
-			<div class="sp-note"><?php echo icon( 'shield' ); // phpcs:ignore ?> <?php esc_html_e( 'Encrypted at rest with your WordPress salts. For the strongest option, define', 'swiftpress' ); ?> <code style="font-family:var(--mono);background:var(--inset);padding:1px 6px;border-radius:4px">SWIFTPRESS_OPENROUTER_KEY</code> <?php esc_html_e( 'in wp-config.php (then it never touches the database).', 'swiftpress' ); ?></div>
+			<div class="sp-note"><?php echo icon( 'shield' ); // phpcs:ignore ?> <?php esc_html_e( 'Encrypted at rest with your WordPress salts. For the strongest option, define', 'swiftpress' ); ?> <code class="sp-code">SWIFTPRESS_OPENROUTER_KEY</code> <?php esc_html_e( 'in wp-config.php (then it never touches the database).', 'swiftpress' ); ?></div>
 		</div>
 	</div>
 

@@ -341,9 +341,9 @@ function swiftpress_page_buffer( $buffer, $flags ) {
 	if ( array_key_exists( 'cache_footprint', $GLOBALS['swiftpress_options'] ) && true === $GLOBALS['swiftpress_options']['cache_footprint'] ) {
 		if ( preg_match( '#</html>#i', $buffer ) ) {
 			$buffer .= PHP_EOL;
-			$buffer .= "<!-- Cache served by SwiftPress -->";
+			$buffer .= "<!-- Cache served by AICache -->";
 			$buffer .= PHP_EOL;
-			$buffer .= "<!-- If you like fast websites like this, visit: https://swiftpress.dev -->";
+			$buffer .= "<!-- If you like fast websites like this, visit: https://webs.ie/aicache -->";
 			$buffer .= PHP_EOL;
 			$buffer .= "<!-- Last modified: " . gmdate( 'D, d M Y H:i:s', $modified_time ) . " GMT -->";
 			$buffer .= PHP_EOL;

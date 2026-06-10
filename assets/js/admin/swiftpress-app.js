@@ -32,7 +32,9 @@
 		image_optimizer_preferred_format: 'Preferred image format', add_missing_image_dimensions: 'Add image dimensions',
 		disable_emoji_scripts: 'Disable emoji scripts', disable_wp_embeds: 'Disable WP embeds', minify_html: 'Minify HTML'
 	};
-	function label(k) { return LABELS[k] || k; }
+	// Labels come from the localized PHP map (single source of truth); the
+	// inline LABELS object is only a fallback for keys the payload misses.
+	function label(k) { return (APP.labels && APP.labels[k]) || LABELS[k] || String(k).replace(/_/g, ' '); }
 	function valueText(v) { return v === true ? 'on' : v === false ? 'off' : String(v); }
 
 	// Preset maps (explicit — never a mystery bundle).
@@ -155,8 +157,9 @@
 			var degraded = d.meta && d.meta.degraded;
 			var eb = $('#sp-brief-eyebrow'); if (eb) eb.textContent = degraded ? 'Standard recommendations' : 'AI Brief · just now';
 			var hint = '';
-			if (src === 'local') hint = '<p class="sp-lede" style="margin-top:10px;color:var(--ink-3)">Estimated from a quick on-site scan. Add a free Google PageSpeed key in <b>Copilot</b> for full Lighthouse metrics.</p>';
-			else if (degraded) hint = '<p class="sp-lede" style="margin-top:10px;color:var(--ink-3)">' + esc(APP.i18n.noKey) + '</p>';
+			var copilotUrl = (APP.urls && APP.urls.copilot) || '#';
+			if (src === 'local') hint = '<p class="sp-lede" style="margin-top:10px;color:var(--ink-3)">Estimated from a quick on-site scan. Add a free Google PageSpeed key in <a href="' + esc(copilotUrl) + '">Copilot</a> for full Lighthouse metrics.</p>';
+			else if (degraded) hint = '<p class="sp-lede" style="margin-top:10px;color:var(--ink-3)">' + esc(APP.i18n.noKey) + ' <a href="' + esc(copilotUrl) + '">' + esc(APP.i18n.openCopilot || 'Open Copilot →') + '</a></p>';
 			var summary = d.summary || (((d.recommended_changes && d.recommended_changes.appliable) || []).length
 				? 'I found a few optimizations you can apply below.'
 				: 'No new issues found — your site is in good shape.');
@@ -293,7 +296,7 @@
 			AI.hasKey = !!has; AI.keySource = src;
 			var pill = $('#sp-key-pill'); if (pill) pill.style.display = has ? '' : 'none';
 			var hint = $('#sp-key-hint');
-			if (hint) hint.innerHTML = has ? '' : esc(APP.i18n.noKey);
+			if (hint) hint.innerHTML = has ? '' : esc(APP.i18n.noKey) + ' <a href="' + esc((APP.urls && APP.urls.copilot) || '#') + '">' + esc(APP.i18n.openCopilot || 'Open Copilot →') + '</a>';
 			var st = $('#sp-key-state'), stt = $('#sp-key-state-text'), ks = $('#sp-key-source');
 			if (st) { st.className = 'sp-keystate' + (has ? '' : ' none'); }
 			if (stt) stt.textContent = has ? ('Key active' + (src === 'constant' ? ' · set in wp-config.php' : '')) : 'No key set — standard recommendations only';
@@ -366,7 +369,7 @@
 		domains.forEach(function (host) {
 			var checked = current.indexOf(String(host).toLowerCase()) >= 0;
 			var div = document.createElement('div'); div.className = 'dom'; div.setAttribute('data-host', host);
-			div.innerHTML = '<label class="sp-toggle" style="transform:scale(.82);transform-origin:left"><input type="checkbox" ' + (checked ? 'checked' : '') + '><span class="track"></span><span class="knob"></span></label> <code>' + esc(host) + '</code><span class="src">DNS-prefetch</span>';
+			div.innerHTML = '<label class="sp-toggle" style="transform:scale(.82);transform-origin:left"><input type="checkbox" aria-label="' + esc('DNS-prefetch ' + host) + '" ' + (checked ? 'checked' : '') + '><span class="track"></span><span class="knob"></span></label> <code>' + esc(host) + '</code><span class="src">DNS-prefetch</span>';
 			div.querySelector('input').addEventListener('change', updateDns);
 			box.appendChild(div);
 		});
@@ -374,12 +377,13 @@
 	function bindDomains() {
 		var btn = $('#sp-detect-domains'); if (!btn) return;
 		btn.addEventListener('click', function () {
-			btn.textContent = 'Scanning…'; btn.disabled = true;
+			var orig = btn.textContent;
+			btn.textContent = APP.i18n.scanning || 'Scanning…'; btn.disabled = true;
 			post('swiftpress_app_detect_domains', {}, 'ajaxNonce').then(function (json) {
-				btn.textContent = 'Detect domains'; btn.disabled = false;
+				btn.textContent = orig; btn.disabled = false;
 				var d = (json && json.data) || {};
 				renderDomains(d.domains || [], d.note);
-			}).catch(function () { btn.textContent = 'Detect domains'; btn.disabled = false; toast(APP.i18n.failed, true); });
+			}).catch(function () { btn.textContent = orig; btn.disabled = false; toast(APP.i18n.failed, true); });
 		});
 	}
 	function bindImageOptimize() {
@@ -506,12 +510,14 @@
 		$$('.sp-chip').forEach(function (c) { c.addEventListener('click', function () { applyPreset(c.getAttribute('data-preset'), c); }); });
 		var copy = $('#sp-copy-nginx'); if (copy) copy.addEventListener('click', function () {
 			var pre = $('#sp-nginx-pre'); if (!pre) return;
-			navigator.clipboard.writeText(pre.textContent).then(function () { copy.textContent = '✓ Copied'; setTimeout(function () { copy.textContent = 'Copy'; }, 1600); });
+			var copyOrig = copy.textContent;
+			navigator.clipboard.writeText(pre.textContent).then(function () { copy.textContent = APP.i18n.copied || '✓ Copied'; setTimeout(function () { copy.textContent = copyOrig; }, 1600); });
 		});
 		var flush = $('#sp-flush-all'); if (flush) flush.addEventListener('click', function () {
+			var flushOrig = flush.textContent;
 			flush.textContent = '…'; post('swiftpress_clear_cache', {}, 'ajaxNonce').then(function (json) {
-				flush.textContent = 'Flush all'; toast((json && json.data && json.data.message) || 'Cache cleared.');
-			}).catch(function () { flush.textContent = 'Flush all'; });
+				flush.textContent = flushOrig; toast((json && json.data && json.data.message) || 'Cache cleared.');
+			}).catch(function () { flush.textContent = flushOrig; });
 		});
 	}
 
@@ -521,7 +527,7 @@
 		var cmds = [
 			{ label: 'Run Diagnostic', kw: 'run diagnostic analyze audit test scan', run: function (close) { close(); runDiagnostic(); } },
 			{ label: 'Flush all cache', kw: 'flush clear purge cache empty', run: function (close) { close(); var f = $('#sp-flush-all'); if (f) { f.click(); } else { post('swiftpress_clear_cache', {}, 'ajaxNonce').then(function () { toast('Cache cleared.'); }); } } },
-			{ label: 'Optimize images now (bulk WebP)', kw: 'optimize images webp convert media bulk', run: function (close) { var b = $('#sp-optimize-images'); if (b) { close(); b.click(); } else if (U.tune) { location.href = U.tune; } } },
+			{ label: 'Optimize images now (bulk WebP)', kw: 'optimize images webp convert media bulk', run: function (close) { var b = $('#sp-optimize-images'); if (b) { close(); b.click(); } else if (U.tune) { location.href = U.tune + '&sp_optimize=1'; } } },
 			{ label: 'Open: The Brief', kw: 'open brief home dashboard score', run: function () { if (U.brief) location.href = U.brief; } },
 			{ label: 'Open: Settings', kw: 'open settings tune options toggles', run: function () { if (U.tune) location.href = U.tune; } },
 			{ label: 'Open: Server (nginx rules)', kw: 'open server nginx apache rules config htaccess', run: function () { if (U.server) location.href = U.server; } },
@@ -543,21 +549,41 @@
 		if (!input || !list) return;
 		var all = cmdkCommands(), filtered = [], sel = 0;
 		var bs = APP.boolState || {};
+		// Accessible combobox/listbox wiring (screen readers follow the active row).
+		list.setAttribute('role', 'listbox');
+		list.id = list.id || 'sp-cmd-list';
+		input.setAttribute('role', 'combobox');
+		input.setAttribute('aria-expanded', 'false');
+		input.setAttribute('aria-controls', 'sp-cmd-list');
+		input.setAttribute('aria-autocomplete', 'list');
 		function labelFor(c) { return c.setting ? ((bs[c.setting] ? 'Turn OFF: ' : 'Turn ON: ') + label(c.setting)) : c.label; }
-		function open() { cmdk.classList.add('open'); input.value = ''; render(''); setTimeout(function () { input.focus(); }, 40); }
-		function close() { cmdk.classList.remove('open'); if (answer) { answer.hidden = true; answer.textContent = ''; } }
+		function open() { cmdk.classList.add('open'); input.setAttribute('aria-expanded', 'true'); input.value = ''; render(''); setTimeout(function () { input.focus(); }, 40); }
+		function close() {
+			cmdk.classList.remove('open');
+			input.setAttribute('aria-expanded', 'false');
+			if (answer) { answer.hidden = true; answer.textContent = ''; }
+			var trigger = $('#sp-ask-trigger'); if (trigger) trigger.focus(); // return focus
+		}
+		function markActive() {
+			Array.prototype.forEach.call(rowsEls(), function (el, i) {
+				el.classList.toggle('sel', i === sel);
+				el.setAttribute('aria-selected', i === sel ? 'true' : 'false');
+			});
+			var act = rowsEls()[sel];
+			if (act) input.setAttribute('aria-activedescendant', act.id);
+		}
 		function render(q) {
 			if (answer) answer.hidden = true;
 			var ql = (q || '').toLowerCase().trim();
 			filtered = !ql ? all.slice(0, 8) : all.filter(function (c) { return (labelFor(c) + ' ' + c.kw).toLowerCase().indexOf(ql) > -1; }).slice(0, 8);
 			sel = 0;
-			var rows = filtered.map(function (c, i) { return '<div class="cmd-row' + (i === 0 ? ' sel' : '') + '" data-i="' + i + '"><span class="t">' + esc(labelFor(c)) + '</span><span class="go">↵</span></div>'; });
-			if (ql.length > 7 && AI.hasKey) rows.push('<div class="cmd-row ask' + (!filtered.length ? ' sel' : '') + '" data-ask="1"><span class="t">✦ Ask AICache: “' + esc(q) + '”</span><span class="go">↵</span></div>');
+			var rows = filtered.map(function (c, i) { return '<div class="cmd-row' + (i === 0 ? ' sel' : '') + '" role="option" id="sp-cmd-opt-' + i + '" aria-selected="' + (i === 0 ? 'true' : 'false') + '" data-i="' + i + '"><span class="t">' + esc(labelFor(c)) + '</span><span class="go">↵</span></div>'; });
+			if (ql.length > 7 && AI.hasKey) rows.push('<div class="cmd-row ask' + (!filtered.length ? ' sel' : '') + '" role="option" id="sp-cmd-opt-ask" aria-selected="' + (!filtered.length ? 'true' : 'false') + '" data-ask="1"><span class="t">✦ Ask AICache: “' + esc(q) + '”</span><span class="go">↵</span></div>');
 			if (!rows.length) rows.push('<div class="cmd-empty">' + esc('Nothing matches — try “flush”, “images”, a setting name, or ask a question.') + '</div>');
 			list.innerHTML = rows.join('');
+			markActive();
 		}
 		function rowsEls() { return list.querySelectorAll('.cmd-row'); }
-		function markSel() { Array.prototype.forEach.call(rowsEls(), function (el, i) { el.classList.toggle('sel', i === sel); }); }
 		function runSel() {
 			var els = rowsEls(); var el = els[sel] || els[0]; if (!el) return;
 			if (el.getAttribute('data-ask')) { askAI(input.value); return; }
@@ -574,9 +600,10 @@
 		input.addEventListener('input', function () { render(input.value); });
 		input.addEventListener('keydown', function (e) {
 			var n = rowsEls().length;
-			if (e.key === 'ArrowDown') { e.preventDefault(); sel = Math.min(sel + 1, n - 1); markSel(); }
-			else if (e.key === 'ArrowUp') { e.preventDefault(); sel = Math.max(sel - 1, 0); markSel(); }
+			if (e.key === 'ArrowDown') { e.preventDefault(); sel = Math.min(sel + 1, n - 1); markActive(); }
+			else if (e.key === 'ArrowUp') { e.preventDefault(); sel = Math.max(sel - 1, 0); markActive(); }
 			else if (e.key === 'Enter') { e.preventDefault(); runSel(); }
+			else if (e.key === 'Tab') { e.preventDefault(); } // modal: keep focus in the combobox
 		});
 		list.addEventListener('click', function (e) {
 			var r = e.target.closest('.cmd-row'); if (!r) return;
@@ -614,6 +641,17 @@
 				}
 			}
 		} catch (e) {}
+		// Deep-link from the palette on another view: auto-run the bulk image
+		// optimization on arrival (mirrors the sp_run diagnostic pattern).
+		try {
+			if (new URLSearchParams(location.search).get('sp_optimize') === '1') {
+				var ob = $('#sp-optimize-images');
+				if (window.history && history.replaceState) {
+					var ou = new URL(location.href); ou.searchParams.delete('sp_optimize'); history.replaceState(null, '', ou.toString());
+				}
+				if (ob) setTimeout(function () { ob.click(); }, 350);
+			}
+		} catch (e2) {}
 	}
 	if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

@@ -315,11 +315,14 @@ class UnusedCSS {
 				$tag_href = $hm[2];
 
 				// Match against the originals we inlined. The printed href may be a
-				// file-optimizer concat URL, so also match by the source filename.
-				$is_ours = false;
+				// file-optimizer concat URL, so also match by URL PATH — never by a
+				// bare basename substring, which falsely matched excluded/external
+				// stylesheets that merely share a filename (e.g. two style.css).
+				$tag_path = (string) wp_parse_url( html_entity_decode( $tag_href ), PHP_URL_PATH );
+				$is_ours  = false;
 				foreach ( $hrefs as $href ) {
-					$base = basename( wp_parse_url( $href, PHP_URL_PATH ) ?: $href );
-					if ( $tag_href === $href || ( '' !== $base && false !== strpos( $tag_href, $base ) ) ) {
+					$href_path = (string) wp_parse_url( $href, PHP_URL_PATH );
+					if ( $tag_href === $href || ( '' !== $href_path && ( $tag_path === $href_path || false !== strpos( $tag_href, $href_path ) ) ) ) {
 						$is_ours = true;
 						break;
 					}

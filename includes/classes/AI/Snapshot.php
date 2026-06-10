@@ -88,7 +88,7 @@ class Snapshot {
 		if ( $this->is_network() ) {
 			update_site_option( self::OPTION, $snapshots );
 		} else {
-			update_option( self::OPTION, $snapshots );
+			update_option( self::OPTION, $snapshots, false ); // never autoload 5 full settings arrays
 		}
 	}
 
@@ -244,6 +244,12 @@ class Snapshot {
 		}
 
 		\SwiftPress\Config::factory()->save_configuration( $new, defined( 'SWIFTPRESS_IS_NETWORK' ) && SWIFTPRESS_IS_NETWORK );
+
+		// Same transition side-effects as a manual save (preloader start/stop,
+		// cache cleanup, cron) — AI apply/undo must not skip them.
+		if ( function_exists( '\\SwiftPress\\Admin\\Dashboard\\apply_settings_transitions' ) ) {
+			\SwiftPress\Admin\Dashboard\apply_settings_transitions( $old, $new );
+		}
 
 		/**
 		 * Fires after saving configurations (identical to a manual save).

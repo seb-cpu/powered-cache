@@ -67,11 +67,9 @@ function maybe_display_plugin_compatibility_notices() {
 		'wp-optimize'                       => 'wp-optimize/wp-optimize.php',
 	);
 
-	if ( $settings['prefetch_links'] ) {
-		$plugins['quicklink']    = 'quicklink/quicklink.php';
-		$plugins['flying-pages'] = 'flying-pages/flying-pages.php';
-		$plugins['instant-page'] = 'instant-page/instantpage.php';
-	}
+	// Note: do NOT list Quicklink/Flying Pages/instant.page here — AICache's
+	// prefetch_links toggle has no shipped engine yet, so urging users to
+	// deactivate plugins that actually do that job would be a downgrade.
 
 	$callback = SWIFTPRESS_IS_NETWORK ? 'is_plugin_active_for_network' : 'is_plugin_active';
 
@@ -84,7 +82,7 @@ function maybe_display_plugin_compatibility_notices() {
 
 	<?php if ( current_user_can( 'activate_plugins' ) ) : ?>
 		<div class="error">
-			<p><?php esc_html_e( 'The following plugins are not compatible with SwiftPress and may cause unintended results:', 'swiftpress' ); ?></p>
+			<p><?php esc_html_e( 'The following plugins are not compatible with AICache and may cause unintended results:', 'swiftpress' ); ?></p>
 			<ul class="incompatible-plugin-list">
 				<?php
 				foreach ( $plugins as $plugin ) {
@@ -125,10 +123,10 @@ function maybe_display_advanced_cache_notices() {
 
 	if ( ! $settings['enable_page_cache'] ) {
 
-		$settings_page = SWIFTPRESS_IS_NETWORK ? network_admin_url( 'admin.php?page=swiftpress#basic-options' ) : admin_url( 'admin.php?page=swiftpress#basic-options' );
+		$settings_page = SWIFTPRESS_IS_NETWORK ? network_admin_url( 'admin.php?page=swiftpress-tune' ) : admin_url( 'admin.php?page=swiftpress-tune' );
 
-		/* translators: %s: SwiftPress settings page URL */
-		$message = sprintf( __( '<strong>SwiftPress:</strong> Page caching needs to be activated in order to speed up your website. Please activate it on <a href="%s">settings page</a>', 'swiftpress' ), esc_url( $settings_page ) );
+		/* translators: %s: AICache settings page URL */
+		$message = sprintf( __( '<strong>AICache:</strong> Page caching needs to be activated in order to speed up your website. Please activate it on the <a href="%s">Settings page</a>.', 'swiftpress' ), esc_url( $settings_page ) );
 		?>
 		<div class="notice notice-warning">
 			<p>

@@ -91,17 +91,23 @@ class Heartbeat {
 		$status_key   = sprintf( 'heartbeat_%s_status', $this->current_location );
 		$interval_key = sprintf( 'heartbeat_%s_interval', $this->current_location );
 
-		if ( ! isset( $this->settings[ $status_key ] ) ) {
-			return $settings;
+		$status = isset( $this->settings[ $status_key ] ) ? $this->settings[ $status_key ] : 'enable';
+
+		if ( 'disable' === $status ) {
+			return $settings; // maybe_stop_heartbeat() already deregistered it.
 		}
 
-		if ( 'modify' !== $this->settings[ $status_key ] ) {
-			return $settings;
-		}
-
-		if ( ! empty( $this->settings[ $interval_key ] ) ) {
+		if ( 'modify' === $status && ! empty( $this->settings[ $interval_key ] ) ) {
 			$settings['interval'] = absint( $this->settings[ $interval_key ] );
+
+			return $settings;
 		}
+
+		// The per-location statuses default to 'enable' and the app UI exposes
+		// only the master toggle — without this default throttle the toggle was
+		// a documented no-op. Editor keeps a fast pulse (autosave/post locking);
+		// dashboard and front end drop to a calm 120s.
+		$settings['interval'] = 'editor' === $this->current_location ? 30 : 120;
 
 		return $settings;
 	}

@@ -146,6 +146,60 @@ function settings_page() {
 }
 
 /**
+ * Side effects of a settings change that must run on EVERY persist path
+ * (classic form, app auto-save, AI apply/undo): preloader start/stop, cache
+ * directory cleanup on disabling, cron rescheduling, dev-mode flush. Before
+ * this helper existed only the classic form ran them, so e.g. enabling the
+ * preloader from the AI never actually started preloading.
+ *
+ * @param array $old_options Settings before the change.
+ * @param array $options     Settings after the change.
+ *
+ * @return void
+ */
+function apply_settings_transitions( $old_options, $options ) {
+	$old = static function ( $key ) use ( $old_options ) {
+		return ! empty( $old_options[ $key ] );
+	};
+	$new = static function ( $key ) use ( $options ) {
+		return ! empty( $options[ $key ] );
+	};
+
+	// Flush cache when Dev Mode is turned OFF.
+	if ( $old( 'dev_mode' ) && ! $new( 'dev_mode' ) ) {
+		wp_cache_flush();
+	}
+
+	if ( $old( 'enable_cache_preload' ) && ! $new( 'enable_cache_preload' ) ) {
+		cancel_preloading();
+	}
+
+	if ( ! $old( 'enable_cache_preload' ) && $new( 'enable_cache_preload' ) ) {
+		start_preloading();
+	}
+
+	if ( $old( 'async_cache_cleaning' ) && ! $new( 'async_cache_cleaning' ) ) {
+		cancel_async_cache_cleaning();
+	}
+
+	// Cleanup existing cache on disabling page cache / changing optimized URLs.
+	if ( $old( 'enable_page_cache' ) && ! $new( 'enable_page_cache' ) ) {
+		clean_site_cache_dir();
+	}
+
+	if ( $old( 'rewrite_file_optimizer' ) && ! $new( 'rewrite_file_optimizer' ) ) {
+		clean_site_cache_dir();
+	}
+
+	$old_timeout = isset( $old_options['cache_timeout'] ) ? $old_options['cache_timeout'] : null;
+	$new_timeout = isset( $options['cache_timeout'] ) ? $options['cache_timeout'] : null;
+	if ( $old_timeout !== $new_timeout ) {
+		$timestamp = wp_next_scheduled( PURGE_CACHE_CRON_NAME );
+		wp_unschedule_event( $timestamp, PURGE_CACHE_CRON_NAME );
+	}
+}
+
+/**
  * Process settings form action
  *
  * @since 2.0
@@ -297,40 +351,7 @@ function process_form_submit() {
 
 		Config::factory()->save_configuration( $options, SWIFTPRESS_IS_NETWORK );
 
-		// Flush cache when Dev Mode is turned OFF
-		if ( ! empty( $old_options['dev_mode'] ) && empty( $options['dev_mode'] ) ) {
-			wp_cache_flush();
-		}
-
-		// maybe cancel preloading process when it turned off
-		if ( $old_options['enable_cache_preload'] && ! $options['enable_cache_preload'] ) {
-			cancel_preloading();
-		}
-
-		// start the preloading process when it is turned on
-		if ( ! $old_options['enable_cache_preload'] && $options['enable_cache_preload'] ) {
-			start_preloading();
-		}
-
-		if ( $old_options['async_cache_cleaning'] && ! $options['async_cache_cleaning'] ) {
-			cancel_async_cache_cleaning();
-		}
-
-		// cleanup existing cache on toggling cache option
-		if ( $old_options['enable_page_cache'] && ! $options['enable_page_cache'] ) {
-			clean_site_cache_dir();
-		}
-
-		// cleanup existing cache due to optimized URL changes
-		if ( $old_options['rewrite_file_optimizer'] && ! $options['rewrite_file_optimizer'] ) {
-			clean_site_cache_dir();
-		}
-
-		if ( $old_options['cache_timeout'] !== $options['cache_timeout'] ) {
-			$timestamp = wp_next_scheduled( PURGE_CACHE_CRON_NAME );
-
-			wp_unschedule_event( $timestamp, PURGE_CACHE_CRON_NAME );
-		}
+		apply_settings_transitions( $old_options, $options );
 
 		/**
 		 * Fires after saving configurations.
@@ -394,6 +415,10 @@ function sanitize_options( $options ) {
 	$sanitized_options['self_host_google_fonts']            = ! empty( $options['self_host_google_fonts'] );
 	$sanitized_options['font_preload']                     = ! empty( $options['font_preload'] );
 	$sanitized_options['font_display_swap']                = ! empty( $options['font_display_swap'] );
+	// Legacy/back-compat keys with live consumers (nginx/htaccess CORS, FileOptimizer
+	// CDN flag): pass them through so a full-form save can't silently reset them.
+	$sanitized_options['enable_cdn']                       = ! empty( $options['enable_cdn'] );
+	$sanitized_options['ssl_cache']                        = ! empty( $options['ssl_cache'] );
 	$sanitized_options['combine_google_fonts']             = ! empty( $options['combine_google_fonts'] );
 	$sanitized_options['use_bunny_fonts']                  = ! empty( $options['use_bunny_fonts'] );
 	$sanitized_options['swap_google_fonts_display']        = ! empty( $options['swap_google_fonts_display'] );
@@ -580,23 +605,14 @@ function maybe_display_message() {
 		'flush_cf_cache_failed'                   => esc_html__( 'Could not flush Cloudflare cache. Please make sure you entered the correct credentials and zone id!', 'swiftpress' ),
 	];
 
+	// Always print directly: the app screens never call settings_errors(), so
+	// notices queued via add_settings_error() silently vanished there. WP core
+	// relocates .notice divs to the standard position on every admin page.
 	if ( isset( $success_messages[ $_GET['sp_action'] ] ) ) {
-		if ( MENU_SLUG === $screen->parent_base ) { // display with shared-ui on plugin page
-			add_settings_error( $screen->parent_file, MENU_SLUG, $success_messages[ $_GET['sp_action'] ], 'success' ); // phpcs:ignore
-
-			return;
-		}
-
 		printf( '<div class="notice notice-success is-dismissible"><p>%s</p></div>', $success_messages[ $_GET['sp_action'] ] ); // phpcs:ignore
 	}
 
 	if ( isset( $err_messages[ $_GET['sp_action'] ] ) ) {
-		if ( MENU_SLUG === $screen->parent_base ) { // display with shared-ui on plugin page
-			add_settings_error( $screen->parent_file, MENU_SLUG, $err_messages[ $_GET['sp_action'] ], 'error' ); // phpcs:ignore
-
-			return;
-		}
-
 		printf( '<div class="notice notice-error is-dismissible"><p>%s</p></div>', $err_messages[ $_GET['sp_action'] ] ); // phpcs:ignore
 	}
 	// phpcs:enable WordPress.Security.NonceVerification.Recommended

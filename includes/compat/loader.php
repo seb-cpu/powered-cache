@@ -57,7 +57,7 @@ function add_conflict_message( $plugin_name, $feature ) {
 		<p>
 			<?php
 			/* translators: %1$s plugin name,  %2$s conflicted feature name (Eg lazyload) */
-			printf( esc_html__( 'It seems %1$s is activated on your site. SwiftPress works perfectly fine with %1$s but you cannot use %2$s functionalities that conflict with %1$s plugin unless you deactivate it.', 'swiftpress' ), esc_html( $plugin_name ), esc_html( $feature ) );
+			printf( esc_html__( 'It seems %1$s is activated on your site. AICache works perfectly fine with %1$s but you cannot use %2$s functionalities that conflict with %1$s plugin unless you deactivate it.', 'swiftpress' ), esc_html( $plugin_name ), esc_html( $feature ) );
 			?>
 		</p>
 	</div>

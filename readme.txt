@@ -4,7 +4,7 @@ Tags: cache, performance, ai, page cache, core web vitals
 Requires at least: 5.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -28,7 +28,7 @@ AI-assisted WordPress caching & performance. Runs a real audit, explains in plai
 * **Font Optimization** — self-host Google Fonts (GDPR-friendly), preload above-the-fold fonts, layout-shift-safe `font-display` handling (eliminates font-swap CLS).
 * **Cache Preloader** — sitemap auto-detection + recursive parsing, background preloading with progress tracking.
 * **Delivery & integrations** — CDN/Cloudflare purge, image optimization, LCP optimization, DNS-prefetch/preconnect, link prefetch, self-hosted analytics, Heartbeat control, Varnish.
-* **Modern admin** — the "Editorial Console": a dashboard-first UI with a live Performance Score, dark mode, and a command palette. WP-CLI and multisite supported.
+* **Native admin** — a dashboard-first UI in WordPress's own design language: live Performance Score, native submenus, auto-saving toggles and a real command palette. WP-CLI and multisite supported.
 
 == Installation ==
 
@@ -92,6 +92,13 @@ If you do not configure an API key and do not run the diagnostic, the plugin mak
 AICache is a fork of **Powered Cache** and **Simple Cache** (by **Taylor Lovett** / 10up, with contributions from the Frontity project), distributed under the GNU General Public License v2.0 or later. The original authors' copyright notices are preserved. AICache adds the AI Performance Diagnostic, the "Editorial Console" admin UI, an nginx config generator, and assorted hardening on top of that GPL foundation.
 
 == Changelog ==
+
+= 1.3.0 =
+* New: Database optimization — one-click cleanup of old revisions (keeps the newest 3), stale auto-drafts, expired trash, spam comments and expired transients, plus OPTIMIZE TABLE on every run; optional weekly schedule via WP-Cron.
+* New: Bloat control switches — disable XML-RPC (and its pingback surface), remove jQuery Migrate on the front end, stop loading Dashicons for logged-out visitors, and limit WooCommerce cart-fragments AJAX to cart/checkout pages.
+* Admin app is now responsive (usable down to phone widths) with visible keyboard-focus styles, an accessible command palette (combobox/listbox semantics, focus trap & return) and screen-reader-announced toasts; fixed the admin being unusable under prefers-reduced-motion.
+* Full-plugin audit (39 confirmed findings fixed): settings saved from the AI or auto-save now run the same side-effects as the form (preloader start/stop, cache cleanup); saving settings no longer flushes the whole object cache; failed tracker downloads back off instead of blocking pageviews; the Heartbeat toggle actually throttles; Critical CSS/RUCSS are AI-appliable with a Used-CSS safelist field; LCP/prefetch toggles honestly marked engine-pending; accurate Apache guidance on the Server screen; setting labels come from one translatable map; better contrast and many copy/branding cleanups.
+* Polish: the Brief headline no longer double-dots or repeats its first sentence; icons are size-locked outside the app stylesheet.
 
 = 1.2.0 =
 * Navigation moved into native WordPress submenus (The Brief / Settings / Server / Copilot) — the custom side rail is gone, screens are deep-linkable and feel at home in wp-admin.
