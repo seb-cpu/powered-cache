@@ -134,6 +134,7 @@ FileOptimizer::factory();
 FontOptimizer::factory();
 ImageOptimizer::factory();
 UnusedCSS::factory();
+TrackingOptimizer::factory();
 Extensions::factory();
 
 // WP-CLI commands.

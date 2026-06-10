@@ -706,8 +706,8 @@ function view_tune( $settings ) {
 			<h2><?php esc_html_e( 'Integrations & bloat control', 'swiftpress' ); ?></h2>
 			<div class="sp-panel-body">
 				<?php
-				toggle_row( 'enable_google_tracking', __( 'Self-host Google Analytics', 'swiftpress' ), __( 'Serve the GA script locally to remove a render-blocking third-party request.', 'swiftpress' ), $settings, true );
-				toggle_row( 'enable_fb_tracking', __( 'Self-host Facebook Pixel', 'swiftpress' ), __( 'Serve the Pixel locally.', 'swiftpress' ), $settings, true );
+				toggle_row( 'enable_google_tracking', __( 'Self-host Google Analytics / Tag Manager', 'swiftpress' ), __( 'Serve gtag.js / the GTM container / analytics.js from your own domain — removes a third-party DNS+TLS round-trip and fixes the "short cache lifetime" audit. Auto-refreshed twice daily; falls back to Google\'s copy if a download ever fails. Tags inside a GTM container still load from their own domains.', 'swiftpress' ), $settings );
+				toggle_row( 'enable_fb_tracking', __( 'Self-host Facebook Pixel', 'swiftpress' ), __( 'Serve Meta\'s fbevents.js from your own domain. Auto-refreshed twice daily; falls back to Meta\'s copy if a download ever fails.', 'swiftpress' ), $settings );
 				toggle_row( 'enable_heartbeat', __( 'Heartbeat control', 'swiftpress' ), __( 'Throttle the WordPress Heartbeat API to cut admin/server load.', 'swiftpress' ), $settings );
 				toggle_row( 'disable_emoji_scripts', __( 'Disable emoji scripts', 'swiftpress' ), __( 'Remove the emoji polyfill most modern sites don’t need.', 'swiftpress' ), $settings );
 				toggle_row( 'disable_wp_embeds', __( 'Disable WordPress embeds', 'swiftpress' ), __( 'Remove the wp-embed script if you don’t embed other WP posts.', 'swiftpress' ), $settings );

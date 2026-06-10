@@ -95,12 +95,16 @@ function swiftpress_uninstall_site() {
 	// file docblock and readme both promise "all plugin data" is removed and that
 	// the key can be deleted, so these must go too (they are autoloaded options
 	// that WP core never cleans up on its own).
-	foreach ( [ 'swiftpress_ai_secrets', 'swiftpress_ai_snapshots', 'swiftpress_ai_usage' ] as $ai_option ) {
+	foreach ( [ 'swiftpress_ai_secrets', 'swiftpress_ai_snapshots', 'swiftpress_ai_usage', 'swiftpress_ai_model', 'swiftpress_tracking_sources' ] as $ai_option ) {
 		delete_option( $ai_option );
 		delete_site_option( $ai_option );
 	}
 	delete_transient( 'swiftpress_ai_debounce' );
 	delete_transient( 'swiftpress_github_release' );
+
+	// Self-hosted tracking copies + their refresh cron.
+	wp_clear_scheduled_hook( 'swiftpress_tracking_refresh' );
+	\SwiftPress\Utils\remove_dir( WP_CONTENT_DIR . '/cache/swiftpress/tracking/' );
 
 	// Diagnostic response cache is a family of hashed transients — clear both the
 	// values and their timeouts directly.

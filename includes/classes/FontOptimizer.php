@@ -552,21 +552,38 @@ class FontOptimizer {
 			$this->collect_all_cached_preload_fonts();
 		}
 
+		$groups = array_values( array_filter( $this->preload_fonts, 'is_array' ) );
+
 		/**
 		 * Filters how many font files to preload.
 		 *
 		 * @hook   swiftpress_font_preload_count
 		 *
-		 * @param  {int} $count Number of fonts to preload. Default 2.
+		 * @param  {int} $count Number of fonts to preload. Default: one per font
+		 *                      family bundle (min 2, max 4).
 		 *
 		 * @return {int} New value.
 		 * @since  3.8
 		 */
-		$count = apply_filters( 'swiftpress_font_preload_count', 2 );
+		$count = apply_filters( 'swiftpress_font_preload_count', min( 4, max( 2, count( $groups ) ) ) );
 		$count = max( 0, intval( $count ) );
 
-		$fonts = array_unique( $this->preload_fonts );
-		$fonts = array_slice( $fonts, 0, $count );
+		// Round-robin across families: first file of each family, then second of
+		// each, … so every family gets a preload before any family gets two.
+		$fonts   = [];
+		$maxlen  = 0;
+		foreach ( $groups as $group ) {
+			$maxlen = max( $maxlen, count( $group ) );
+		}
+		for ( $i = 0; $i < $maxlen; $i++ ) {
+			foreach ( $groups as $group ) {
+				if ( isset( $group[ $i ] ) ) {
+					$fonts[] = $group[ $i ];
+				}
+			}
+		}
+
+		$fonts = array_slice( array_unique( $fonts ), 0, $count );
 
 		foreach ( $fonts as $font_url ) {
 			$type = $this->get_font_type( $font_url );
@@ -594,12 +611,16 @@ class FontOptimizer {
 			return;
 		}
 
-		// Extract all url() values from @font-face blocks
+		// Extract all url() values from @font-face blocks, grouped by source CSS
+		// (= font family bundle) so the preload picker can take one file from
+		// EACH family instead of N files from the first family only. A family
+		// that gets no preload arrives inside font-display's apply window and
+		// reflows the page (CLS) — exactly what preloading is meant to prevent.
 		if ( preg_match_all( "/url\(\s*['\"]?([^'\")\s]+)['\"]?\s*\)/i", $css, $matches ) ) {
 			foreach ( $matches[1] as $url ) {
 				// Only collect font file URLs (woff2, woff, ttf, etc.), skip data URIs
 				if ( preg_match( '/\.(woff2?|ttf|otf|eot)(\?|$)/i', $url ) && 0 !== strpos( $url, 'data:' ) ) {
-					$this->preload_fonts[] = $url;
+					$this->preload_fonts[ $css_file ][] = $url;
 				}
 			}
 		}
