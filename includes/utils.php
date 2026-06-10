@@ -105,6 +105,8 @@ function get_settings( $force_network_wide = false ) {
 		'combine_google_fonts'             => false,
 		'use_bunny_fonts'                  => false,
 		'swap_google_fonts_display'        => false,
+		// wp-admin backend speed
+		'optimize_admin'                   => false,
 		// preload
 		'enable_cache_preload'             => false,
 		'preload_homepage'                 => true,

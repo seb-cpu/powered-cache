@@ -55,6 +55,49 @@ class PageSpeed {
 	}
 
 	/**
+	 * Validate a PageSpeed Insights API key with a minimal live request.
+	 *
+	 * Uses the `fields=id` projection so Google returns a tiny response; an
+	 * invalid/restricted key comes back as HTTP 400 with API_KEY_INVALID.
+	 *
+	 * @param string $key Candidate API key.
+	 *
+	 * @return true|\WP_Error
+	 */
+	public function validate_psi_key( $key ) {
+		$key = trim( (string) $key );
+		if ( strlen( $key ) < 20 ) {
+			return new \WP_Error( 'psi_key_invalid', __( 'That does not look like a Google API key.', 'swiftpress' ) );
+		}
+
+		$request_url = self::ENDPOINT
+			. '?url=' . rawurlencode( 'https://example.com/' )
+			. '&key=' . rawurlencode( $key )
+			. '&strategy=mobile&fields=id';
+
+		$response = wp_remote_get( $request_url, [ 'timeout' => 25, 'sslverify' => true ] );
+
+		if ( is_wp_error( $response ) ) {
+			return new \WP_Error( 'psi_unreachable', __( 'Could not reach Google to validate the key — try again.', 'swiftpress' ) );
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		if ( 200 === $code ) {
+			return true;
+		}
+
+		$body = json_decode( (string) wp_remote_retrieve_body( $response ), true );
+		$msg  = isset( $body['error']['message'] ) ? (string) $body['error']['message'] : '';
+
+		if ( false !== stripos( $msg, 'API key' ) || in_array( $code, [ 400, 403 ], true ) ) {
+			return new \WP_Error( 'psi_key_invalid', __( 'Google rejected this key — check it was created for the PageSpeed Insights API.', 'swiftpress' ) );
+		}
+
+		// Quota or transient errors: the key itself is fine — accept it.
+		return true;
+	}
+
+	/**
 	 * Audit a URL with PageSpeed Insights and return a normalized Metrics object.
 	 *
 	 * @param string $url      Public URL to audit.

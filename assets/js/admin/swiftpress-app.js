@@ -301,6 +301,13 @@
 			var d = (json && json.data) || {};
 			var cap = $('#sp-ai-cap'); if (cap && typeof d.monthly_cap !== 'undefined' && cap !== document.activeElement) cap.value = d.monthly_cap;
 			var model = $('#sp-ai-model'); if (model && d.model) model.value = d.model;
+			// PageSpeed key state (mirrors the OpenRouter key state row).
+			var hasPsi = !!d.has_psi_key;
+			var ps = $('#sp-psi-state'), pst = $('#sp-psi-state-text');
+			if (ps) ps.className = 'sp-keystate' + (hasPsi ? '' : ' none');
+			if (pst) pst.textContent = hasPsi
+				? 'PageSpeed key active — every diagnostic uses full Lighthouse metrics'
+				: 'No PageSpeed key — quick on-site scan is used';
 		}).catch(function () {});
 	}
 
@@ -436,17 +443,23 @@
 		}
 		var psi = $('#sp-psi-input');
 		if (psi) {
-			var pt;
+			var pt, psiBusy = false;
 			var savePsi = function () {
-				var v = (psi.value || '').trim(); if (v.length < 20) return;
+				var v = (psi.value || '').trim(); if (v.length < 20 || psiBusy) return;
+				psiBusy = true;
+				var pst = $('#sp-psi-state-text'); if (pst) pst.textContent = 'Validating PageSpeed key with Google…';
 				post('swiftpress_ai_save_key', { psi_key: v }).then(function (json) {
-					if (json && json.success) { var s = $('#sp-psi-saved'); if (s) { s.classList.add('show'); setTimeout(function () { s.classList.remove('show'); }, 1600); } toast('PageSpeed key saved.'); }
-					else toast((json && json.data && json.data.message) || 'Invalid key.', true);
-				});
+					psiBusy = false;
+					if (json && json.success) { psi.value = ''; toast('PageSpeed key validated & saved — diagnostics now use full Lighthouse metrics.'); refreshKeyState(); }
+					else { toast((json && json.data && json.data.message) || 'Invalid key.', true); refreshKeyState(); }
+				}).catch(function () { psiBusy = false; toast(APP.i18n.failed, true); refreshKeyState(); });
 			};
 			psi.addEventListener('input', function () { clearTimeout(pt); pt = setTimeout(savePsi, 900); });
 			psi.addEventListener('paste', function () { clearTimeout(pt); pt = setTimeout(savePsi, 400); });
 		}
+		var psiClr = $('#sp-psi-clear'); if (psiClr) psiClr.addEventListener('click', function () {
+			post('swiftpress_ai_save_key', { psi_key: (AI.clearToken || '__CLEAR__') }).then(function () { toast('PageSpeed key removed.'); refreshKeyState(); });
+		});
 		var clr = $('#sp-key-clear'); if (clr) clr.addEventListener('click', function () {
 			post('swiftpress_ai_save_key', { openrouter_key: '__CLEAR__' }).then(function () { toast('Key removed.'); refreshKeyState(); });
 		});
@@ -468,9 +481,6 @@
 
 	/* ── misc ── */
 	function bindMisc() {
-		var tb = $('#sp-theme-btn'); if (tb) tb.addEventListener('click', function () {
-			var app = $('.swiftpress-app'); app.setAttribute('data-sp-theme', app.getAttribute('data-sp-theme') === 'dark' ? 'light' : 'dark');
-		});
 		var rd = $('#sp-run-diagnostic'); if (rd) rd.addEventListener('click', runDiagnostic);
 		var aa = $('#sp-apply-all'); if (aa) aa.addEventListener('click', function () { if (lastChanges.length) applyChanges(lastChanges.filter(function (c) { return (c.risk || 'low') !== 'high'; }), null); });
 		$$('.sp-chip').forEach(function (c) { c.addEventListener('click', function () { applyPreset(c.getAttribute('data-preset'), c); }); });
@@ -483,25 +493,105 @@
 				flush.textContent = 'Flush all'; toast((json && json.data && json.data.message) || 'Cache cleared.');
 			}).catch(function () { flush.textContent = 'Flush all'; });
 		});
-		// command palette
-		var open = function () { var c = $('#sp-cmdk'); if (c) { c.classList.add('open'); setTimeout(function () { var i = $('#sp-cmd-input'); if (i) i.focus(); }, 50); } };
-		var close = function () { var c = $('#sp-cmdk'); if (c) c.classList.remove('open'); };
-		var at = $('#sp-ask-trigger'); if (at) at.addEventListener('click', open);
-		var cmdk = $('#sp-cmdk'); if (cmdk) cmdk.addEventListener('click', function (e) { if (e.target.id === 'sp-cmdk') close(); });
-		document.addEventListener('keydown', function (e) { if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); open(); } if (e.key === 'Escape') close(); });
+	}
+
+	/* ── command palette (real commands + AI ask) ── */
+	function cmdkCommands() {
+		var U = APP.urls || {};
+		var cmds = [
+			{ label: 'Run Diagnostic', kw: 'run diagnostic analyze audit test scan', run: function (close) { close(); runDiagnostic(); } },
+			{ label: 'Flush all cache', kw: 'flush clear purge cache empty', run: function (close) { close(); var f = $('#sp-flush-all'); if (f) { f.click(); } else { post('swiftpress_clear_cache', {}, 'ajaxNonce').then(function () { toast('Cache cleared.'); }); } } },
+			{ label: 'Optimize images now (bulk WebP)', kw: 'optimize images webp convert media bulk', run: function (close) { var b = $('#sp-optimize-images'); if (b) { close(); b.click(); } else if (U.tune) { location.href = U.tune; } } },
+			{ label: 'Open: The Brief', kw: 'open brief home dashboard score', run: function () { if (U.brief) location.href = U.brief; } },
+			{ label: 'Open: Settings', kw: 'open settings tune options toggles', run: function () { if (U.tune) location.href = U.tune; } },
+			{ label: 'Open: Server (nginx rules)', kw: 'open server nginx apache rules config htaccess', run: function () { if (U.server) location.href = U.server; } },
+			{ label: 'Open: Copilot (AI keys & budget)', kw: 'open copilot ai key openrouter pagespeed budget model', run: function () { if (U.copilot) location.href = U.copilot; } }
+		];
+		var bs = APP.boolState || {};
+		Object.keys(bs).forEach(function (k) {
+			cmds.push({ label: '', setting: k, kw: 'toggle turn on off enable disable setting ' + k.replace(/_/g, ' ') + ' ' + label(k), run: function (close) {
+				var on = !!bs[k];
+				autoSave(k, on ? '0' : '1', null).then(function () { bs[k] = !on; toast(label(k) + (on ? ' disabled.' : ' enabled.')); });
+				close();
+			} });
+		});
+		return cmds;
+	}
+	function bindCmdk() {
+		var cmdk = $('#sp-cmdk'); if (!cmdk) return;
+		var input = $('#sp-cmd-input'), list = $('#sp-cmd-list'), answer = $('#sp-cmd-answer');
+		if (!input || !list) return;
+		var all = cmdkCommands(), filtered = [], sel = 0;
+		var bs = APP.boolState || {};
+		function labelFor(c) { return c.setting ? ((bs[c.setting] ? 'Turn OFF: ' : 'Turn ON: ') + label(c.setting)) : c.label; }
+		function open() { cmdk.classList.add('open'); input.value = ''; render(''); setTimeout(function () { input.focus(); }, 40); }
+		function close() { cmdk.classList.remove('open'); if (answer) { answer.hidden = true; answer.textContent = ''; } }
+		function render(q) {
+			if (answer) answer.hidden = true;
+			var ql = (q || '').toLowerCase().trim();
+			filtered = !ql ? all.slice(0, 8) : all.filter(function (c) { return (labelFor(c) + ' ' + c.kw).toLowerCase().indexOf(ql) > -1; }).slice(0, 8);
+			sel = 0;
+			var rows = filtered.map(function (c, i) { return '<div class="cmd-row' + (i === 0 ? ' sel' : '') + '" data-i="' + i + '"><span class="t">' + esc(labelFor(c)) + '</span><span class="go">↵</span></div>'; });
+			if (ql.length > 7 && AI.hasKey) rows.push('<div class="cmd-row ask' + (!filtered.length ? ' sel' : '') + '" data-ask="1"><span class="t">✦ Ask AICache: “' + esc(q) + '”</span><span class="go">↵</span></div>');
+			if (!rows.length) rows.push('<div class="cmd-empty">' + esc('Nothing matches — try “flush”, “images”, a setting name, or ask a question.') + '</div>');
+			list.innerHTML = rows.join('');
+		}
+		function rowsEls() { return list.querySelectorAll('.cmd-row'); }
+		function markSel() { Array.prototype.forEach.call(rowsEls(), function (el, i) { el.classList.toggle('sel', i === sel); }); }
+		function runSel() {
+			var els = rowsEls(); var el = els[sel] || els[0]; if (!el) return;
+			if (el.getAttribute('data-ask')) { askAI(input.value); return; }
+			var c = filtered[parseInt(el.getAttribute('data-i'), 10)];
+			if (c) c.run(close);
+		}
+		function askAI(q) {
+			if (!answer) return;
+			answer.hidden = false; answer.textContent = 'Thinking…';
+			post('swiftpress_ai_ask', { q: q }).then(function (j) {
+				answer.textContent = (j && j.success && j.data && j.data.answer) ? j.data.answer : ((j && j.data && j.data.message) || APP.i18n.failed);
+			}).catch(function () { answer.textContent = APP.i18n.failed; });
+		}
+		input.addEventListener('input', function () { render(input.value); });
+		input.addEventListener('keydown', function (e) {
+			var n = rowsEls().length;
+			if (e.key === 'ArrowDown') { e.preventDefault(); sel = Math.min(sel + 1, n - 1); markSel(); }
+			else if (e.key === 'ArrowUp') { e.preventDefault(); sel = Math.max(sel - 1, 0); markSel(); }
+			else if (e.key === 'Enter') { e.preventDefault(); runSel(); }
+		});
+		list.addEventListener('click', function (e) {
+			var r = e.target.closest('.cmd-row'); if (!r) return;
+			sel = Array.prototype.indexOf.call(rowsEls(), r); runSel();
+		});
+		var at = $('#sp-ask-trigger');
+		if (at) { at.addEventListener('click', open); at.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } }); }
+		cmdk.addEventListener('click', function (e) { if (e.target.id === 'sp-cmdk') close(); });
+		document.addEventListener('keydown', function (e) { if ((e.metaKey || e.ctrlKey) && String(e.key).toLowerCase() === 'k') { e.preventDefault(); open(); } if (e.key === 'Escape') close(); });
 	}
 
 	function init() {
 		if (!$('.swiftpress-app')) return;
+		// The AI config script can print after this bundle — re-resolve it now
+		// (DOM ready) so lastResult/hasKey/clearToken are actually populated.
+		AI = window.swiftpressAI || AI;
 		var ring = $('#sp-ring'); if (ring) { ring.style.strokeDasharray = CIRC; ring.style.strokeDashoffset = CIRC; }
-		bindMisc(); bindKey(); bindAutoSave(); bindDomains(); bindImageOptimize(); bindCloudflare(); refreshKeyState();
-		// Auto-run when arriving from a "Run Diagnostic" click on another view.
+		bindMisc(); bindCmdk(); bindKey(); bindAutoSave(); bindDomains(); bindImageOptimize(); bindCloudflare(); refreshKeyState();
+		// Auto-run when arriving from a "Run Diagnostic" click on another view;
+		// otherwise re-render the last saved diagnostic so results survive navigation.
 		try {
-			if (new URLSearchParams(location.search).get('sp_run') === '1' && $('#sp-brief-content')) {
+			var autoRun = new URLSearchParams(location.search).get('sp_run') === '1' && $('#sp-brief-content');
+			if (autoRun) {
 				if (window.history && history.replaceState) {
 					var u = new URL(location.href); u.searchParams.delete('sp_run'); history.replaceState(null, '', u.toString());
 				}
 				setTimeout(runDiagnostic, 350);
+			} else if (AI.lastResult && $('#sp-brief-content')) {
+				renderResult(AI.lastResult);
+				var eb = $('#sp-brief-eyebrow');
+				if (eb && AI.lastResultAt) {
+					var now = parseInt(AI.nowTs, 10) || Math.floor(Date.now() / 1000);
+					var mins = Math.max(1, Math.round((now - parseInt(AI.lastResultAt, 10)) / 60));
+					eb.textContent = 'AI Brief · ' + (mins < 60 ? (mins + ' min ago') : (Math.round(mins / 60) + ' h ago'));
+				}
 			}
 		} catch (e) {}
 	}

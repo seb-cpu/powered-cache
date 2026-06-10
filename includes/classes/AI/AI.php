@@ -102,6 +102,7 @@ class AI {
 		add_action( 'wp_ajax_swiftpress_ai_undo', [ $this, 'ajax_undo' ] );
 		add_action( 'wp_ajax_swiftpress_ai_save_key', [ $this, 'ajax_save_key' ] );
 		add_action( 'wp_ajax_swiftpress_ai_status', [ $this, 'ajax_status' ] );
+		add_action( 'wp_ajax_swiftpress_ai_ask', [ $this, 'ajax_ask' ] );
 
 		// Enqueue + localize on the settings page only.
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue' ] );
@@ -157,13 +158,19 @@ class AI {
 	public function enqueue( $hook ) {
 		unset( $hook ); // gate on the page query var to match core.php behavior.
 
-		if ( empty( $_GET['page'] ) || MENU_SLUG !== $_GET['page'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		// All app screens share the MENU_SLUG prefix (swiftpress, swiftpress-tune…).
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( '' === $page || 0 !== strpos( $page, MENU_SLUG ) ) {
 			return;
 		}
 
 		$key_store = KeyStore::factory();
 		$budget    = Budget::factory();
 		$snapshot  = Snapshot::factory();
+
+		// Last diagnostic result, so the Brief can re-render it after navigation
+		// instead of looking like the run never happened.
+		$last = get_option( 'swiftpress_ai_last_result', [] );
 
 		// Register a handle without a physical file dependency so localize has a target.
 		// The real UI bundle is wired by the dashboard revamp; this only carries config.
@@ -180,10 +187,14 @@ class AI {
 				'nonce'       => wp_create_nonce( self::NONCE_ACTION ),
 				'hasKey'      => $key_store->has_key(),
 				'keySource'   => $key_store->source(),
+				'hasPsiKey'   => '' !== (string) $key_store->get_psi_key(),
 				'hasSnapshot' => $snapshot->has_snapshot(),
 				'monthlyCap'  => $budget->monthly_cap(),
 				'spend'       => round( $budget->month_to_date(), 4 ),
 				'clearToken'  => self::CLEAR_SENTINEL,
+				'lastResult'  => is_array( $last ) && ! empty( $last['payload'] ) ? $last['payload'] : null,
+				'lastResultAt' => is_array( $last ) && ! empty( $last['at'] ) ? (int) $last['at'] : 0,
+				'nowTs'       => time(),
 				'i18n'        => [
 					'analyzing'   => esc_html__( 'Analyzing your site…', 'swiftpress' ),
 					'applying'    => esc_html__( 'Applying…', 'swiftpress' ),
@@ -225,6 +236,10 @@ class AI {
 		$budget->start_debounce();
 
 		$payload = Diagnostic::factory()->run( (bool) $force );
+
+		// Persist the result so the Brief can show it again after navigating away
+		// (results otherwise vanished on the next page load — felt like amnesia).
+		update_option( 'swiftpress_ai_last_result', [ 'payload' => $payload, 'at' => time() ], false );
 
 		wp_send_json_success( $payload );
 	}
@@ -354,13 +369,20 @@ class AI {
 			}
 		}
 
-		// Optional PSI key, same conventions.
+		// Optional PSI key, same conventions — validated against the live API
+		// before saving so a typo'd key is rejected immediately, like the
+		// OpenRouter key is.
 		if ( isset( $_POST['psi_key'] ) ) {
 			$raw_psi = trim( (string) wp_unslash( $_POST['psi_key'] ) );
 
 			if ( self::CLEAR_SENTINEL === $raw_psi ) {
 				$key_store->clear_psi_key();
 			} elseif ( '' !== $raw_psi ) {
+				$valid = PageSpeed::factory()->validate_psi_key( $raw_psi );
+				if ( is_wp_error( $valid ) ) {
+					wp_send_json_error( [ 'message' => $valid->get_error_message() ], 400 );
+				}
+
 				$result = $key_store->set_psi_key( $raw_psi );
 				if ( is_wp_error( $result ) ) {
 					wp_send_json_error( [ 'message' => $result->get_error_message() ], 400 );
@@ -407,6 +429,7 @@ class AI {
 			[
 				'has_key'            => $key_store->has_key(),
 				'source'             => $key_store->source(),
+				'has_psi_key'        => '' !== (string) $key_store->get_psi_key(),
 				'model'              => (string) get_option( 'swiftpress_ai_model', Client::DEFAULT_MODEL ),
 				'spend'              => round( $budget->month_to_date(), 4 ),
 				'monthly_cap'        => $budget->monthly_cap(),
@@ -416,6 +439,70 @@ class AI {
 				'decryption_failed'  => $key_store->decryption_failed(),
 			]
 		);
+	}
+
+	/**
+	 * One-shot Q&A for the command palette: answer a plain-language question
+	 * about the site's performance using current settings as context. Reuses
+	 * the diagnostic budget/debounce guards, so palette questions can never
+	 * outspend the monthly cap.
+	 *
+	 * @return void
+	 */
+	public function ajax_ask() {
+		$this->guard();
+
+		$question = isset( $_POST['q'] ) ? sanitize_text_field( wp_unslash( $_POST['q'] ) ) : '';
+		$question = trim( mb_substr( $question, 0, 400 ) );
+		if ( '' === $question ) {
+			wp_send_json_error( [ 'message' => esc_html__( 'Ask a question first.', 'swiftpress' ) ], 400 );
+		}
+
+		$key_store = KeyStore::factory();
+		if ( ! $key_store->has_key() ) {
+			wp_send_json_error( [ 'message' => esc_html__( 'Add your OpenRouter key in Copilot to ask questions.', 'swiftpress' ) ], 400 );
+		}
+
+		$budget = Budget::factory();
+		if ( ! $budget->can_spend() ) {
+			wp_send_json_error( [ 'message' => esc_html__( 'Monthly AI spend cap reached — raise it in Copilot.', 'swiftpress' ) ], 429 );
+		}
+
+		// Compact site context: which optimizations are on.
+		$settings = \SwiftPress\Utils\get_settings();
+		$on       = [];
+		foreach ( $settings as $k => $v ) {
+			if ( true === $v ) {
+				$on[] = $k;
+			}
+		}
+
+		global $is_apache;
+		$messages = [
+			[
+				'role'    => 'system',
+				'content' => 'You are AICache, a WordPress performance plugin assistant inside wp-admin. Answer the admin\'s question in plain language, max 110 words, actionable. When relevant, reference AICache settings by their exact names. Site: ' . wp_parse_url( home_url(), PHP_URL_HOST ) . ', server: ' . ( ! empty( $is_apache ) ? 'apache' : 'nginx' ) . ', PHP ' . PHP_VERSION . '. Currently enabled AICache settings: ' . implode( ', ', array_slice( $on, 0, 40 ) ) . '. Respond as JSON: {"answer": "..."}',
+			],
+			[ 'role' => 'user', 'content' => $question ],
+		];
+
+		$schema = [
+			'type'       => 'object',
+			'required'   => [ 'answer' ],
+			'properties' => [ 'answer' => [ 'type' => 'string' ] ],
+		];
+
+		$result = Client::factory()->complete( $messages, $schema, 'ask' );
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( [ 'message' => esc_html__( 'The AI is unavailable right now — try again shortly.', 'swiftpress' ) ], 502 );
+		}
+
+		$answer = is_array( $result ) && ! empty( $result['answer'] ) && is_string( $result['answer'] )
+			? $result['answer']
+			: ( is_array( $result ) ? (string) wp_json_encode( $result ) : (string) $result );
+
+		wp_send_json_success( [ 'answer' => mb_substr( wp_strip_all_tags( $answer ), 0, 1200 ) ] );
 	}
 
 	/* -----------------------------------------------------------------
@@ -428,7 +515,7 @@ class AI {
 	 * @return void
 	 */
 	public function maybe_decryption_notice() {
-		if ( empty( $_GET['page'] ) || MENU_SLUG !== $_GET['page'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( empty( $_GET['page'] ) || 0 !== strpos( sanitize_key( wp_unslash( $_GET['page'] ) ), MENU_SLUG ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			return;
 		}
 

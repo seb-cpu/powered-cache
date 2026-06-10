@@ -166,7 +166,7 @@ function admin_scripts( $hook ) {
 		);
 	}
 
-	if ( empty( $_GET['page'] ) || MENU_SLUG !== $_GET['page'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	if ( empty( $_GET['page'] ) || 0 !== strpos( sanitize_key( wp_unslash( $_GET['page'] ) ), MENU_SLUG ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		return;
 	}
 
@@ -252,8 +252,8 @@ function block_editor_assets() {
  * @return void
  */
 function admin_styles() {
-	// load on the swiftpress page only
-	if ( empty( $_GET['page'] ) || MENU_SLUG !== $_GET['page'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	// load on any swiftpress app screen (slug prefix covers all submenus)
+	if ( empty( $_GET['page'] ) || 0 !== strpos( sanitize_key( wp_unslash( $_GET['page'] ) ), MENU_SLUG ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		return;
 	}
 

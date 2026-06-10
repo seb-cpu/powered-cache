@@ -95,7 +95,7 @@ function swiftpress_uninstall_site() {
 	// file docblock and readme both promise "all plugin data" is removed and that
 	// the key can be deleted, so these must go too (they are autoloaded options
 	// that WP core never cleans up on its own).
-	foreach ( [ 'swiftpress_ai_secrets', 'swiftpress_ai_snapshots', 'swiftpress_ai_usage', 'swiftpress_ai_model', 'swiftpress_tracking_sources' ] as $ai_option ) {
+	foreach ( [ 'swiftpress_ai_secrets', 'swiftpress_ai_snapshots', 'swiftpress_ai_usage', 'swiftpress_ai_model', 'swiftpress_ai_last_result', 'swiftpress_tracking_sources' ] as $ai_option ) {
 		delete_option( $ai_option );
 		delete_site_option( $ai_option );
 	}

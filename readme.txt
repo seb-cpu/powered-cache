@@ -4,7 +4,7 @@ Tags: cache, performance, ai, page cache, core web vitals
 Requires at least: 5.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -92,6 +92,15 @@ If you do not configure an API key and do not run the diagnostic, the plugin mak
 AICache is a fork of **Powered Cache** and **Simple Cache** (by **Taylor Lovett** / 10up, with contributions from the Frontity project), distributed under the GNU General Public License v2.0 or later. The original authors' copyright notices are preserved. AICache adds the AI Performance Diagnostic, the "Editorial Console" admin UI, an nginx config generator, and assorted hardening on top of that GPL foundation.
 
 == Changelog ==
+
+= 1.2.0 =
+* Navigation moved into native WordPress submenus (The Brief / Settings / Server / Copilot) — the custom side rail is gone, screens are deep-linkable and feel at home in wp-admin.
+* The command palette is real: type to run commands (diagnostic, flush, bulk image optimize, open screens, toggle any setting) or ask AICache a question — answered by the AI within your spend cap.
+* Diagnostic results now persist: the Brief re-shows your last analysis (with its age) after navigating away.
+* PageSpeed Insights key is validated with Google on paste and shows an active/inactive status, like the OpenRouter key.
+* New: Speed up the WordPress admin — removes remote-fetching dashboard widgets, throttles Heartbeat outside the editor, stops synchronous update checks from blocking admin pageloads.
+* New: Minify HTML toggle surfaced in Settings; self-host GA/Tag Manager + Meta Pixel engine (twice-daily refreshed local copies); per-family font preloading (layout-shift guard).
+* Critical CSS / Remove Unused CSS engine (off by default, test per site); icons can no longer render oversized outside the app's stylesheet.
 
 = 1.1.0 =
 * Image optimization is now a real engine: JPEG/PNG uploads get next-gen (WebP/AVIF) versions automatically, the front end serves them wherever the converted file is smaller, and existing media can be bulk-converted with one click (or `wp swiftpress optimize-images`).

@@ -29,29 +29,16 @@
 .swiftpress-app *{box-sizing:border-box}
 .swiftpress-app a{color:var(--blue)} .swiftpress-app a:hover{color:var(--blue-h)}
 
-.sp-shell{display:grid; grid-template-columns:220px 1fr; min-height:calc(100vh - 32px)}
+/* Navigation lives in the native WP submenu now — single-column shell. */
+.sp-shell{display:block; min-height:calc(100vh - 32px)}
 
-/* ── NAV RAIL (light, native) ── */
-.sp-rail{background:var(--surface); border-right:1px solid var(--line); display:flex; flex-direction:column; padding:16px 12px; position:sticky; top:32px; height:calc(100vh - 32px)}
-.sp-brand{display:flex; align-items:center; gap:9px; padding:4px 8px 14px; border-bottom:1px solid var(--line-2); margin-bottom:8px}
+/* ── BRAND (in the top bar) ── */
+.sp-brand{display:flex; align-items:center; gap:8px; padding-right:14px; border-right:1px solid var(--line-2)}
 .sp-brand .glyph{width:24px; height:24px; flex:none; display:grid; place-items:center; background:var(--blue); border-radius:var(--r); color:#fff}
 .sp-brand .glyph svg{width:15px;height:15px}
-.sp-brand .name{font-size:15px; font-weight:600; color:var(--ink)}
-.sp-brand .ver{font-size:11px; color:var(--ink-3); margin-left:auto}
-.sp-nav{display:flex; flex-direction:column; gap:1px}
-.sp-nav .lbl{font-size:11px; font-weight:600; letter-spacing:.02em; text-transform:uppercase; color:var(--ink-4); padding:12px 10px 4px}
-.sp-nav a{display:flex; align-items:center; gap:9px; padding:7px 10px; border-radius:var(--r); color:var(--ink-2); text-decoration:none; font-size:13px; position:relative; transition:background .12s,color .12s}
-.sp-nav a .ic{width:16px;height:16px;flex:none;opacity:.7}
-.sp-nav a .dot{width:7px;height:7px;border-radius:50%;flex:none;background:var(--ink-4)}
-.sp-nav a .dot.on{background:var(--good)} .sp-nav a .dot.part{background:var(--warn)} .sp-nav a .dot.off{background:var(--ink-4)}
-.sp-nav a:hover{background:var(--surface-2); color:var(--ink)}
-.sp-nav a.active{color:#fff; background:var(--blue); font-weight:500}
-.sp-nav a.active .ic{opacity:1} .sp-nav a.active .dot{box-shadow:0 0 0 2px rgba(255,255,255,.4)}
-.sp-nav a .spark{margin-left:auto;font-size:10px;color:#fff;border:1px solid rgba(255,255,255,.5);padding:0 5px;border-radius:9px;background:rgba(255,255,255,.15)}
-.sp-nav a:not(.active) .spark{color:var(--good);border-color:var(--good);background:transparent}
-.sp-nav a .tag{margin-left:auto;font-size:11px;color:var(--ink-4)}
-.sp-rail .foot{margin-top:auto;display:flex;align-items:center;gap:8px;padding-top:12px;border-top:1px solid var(--line-2)}
-.sp-rail .foot .sp-btn{flex:1}
+.sp-brand .name{font-size:14px; font-weight:600; color:var(--ink)}
+.sp-brand .ver{font-size:11px; color:var(--ink-4)}
+.sp-brand .spark{font-size:10px;font-weight:600;color:var(--good);border:1px solid var(--good);padding:0 5px;border-radius:9px}
 
 /* ── BUTTONS (WP-native) ── */
 .sp-btn{font:inherit;font-size:13px;line-height:2;min-height:30px;color:var(--blue);background:var(--surface);border:1px solid var(--blue);border-radius:var(--r);padding:0 10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:.12s;text-decoration:none;white-space:nowrap}
@@ -218,10 +205,16 @@
 .sp-cmdk .in .ic{width:18px;height:18px;color:var(--blue)}
 .sp-cmdk input{flex:1;background:none;border:none;outline:none;color:var(--ink);font:inherit;font-size:15px}
 .sp-cmdk input::placeholder{color:var(--ink-4)}
-.sp-cmdk .hints{padding:10px 12px}
-.sp-cmdk .hint{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--r);color:var(--ink-2);font-size:13px;cursor:pointer}
-.sp-cmdk .hint:hover{background:var(--surface-2)}
-.sp-cmdk .hint .q{color:var(--ink-3)}
+.sp-cmdk .cmd-list{padding:8px;max-height:340px;overflow:auto}
+.sp-cmdk .cmd-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r);color:var(--ink-2);font-size:13px;cursor:pointer}
+.sp-cmdk .cmd-row .t{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sp-cmdk .cmd-row .go{opacity:0;font-size:11px;color:var(--ink-4)}
+.sp-cmdk .cmd-row:hover{background:var(--surface-2)}
+.sp-cmdk .cmd-row.sel{background:var(--blue-soft);color:var(--ink)}
+.sp-cmdk .cmd-row.sel .go{opacity:1}
+.sp-cmdk .cmd-row.ask{color:var(--blue);font-weight:500}
+.sp-cmdk .cmd-empty{padding:14px 12px;color:var(--ink-4);font-size:13px}
+.sp-cmdk .cmd-answer{padding:12px 16px;border-top:1px solid var(--line-2);background:var(--inset);color:var(--ink-2);font-size:13px;line-height:1.6;max-height:220px;overflow:auto}
 .sp-cmdk .foot{padding:9px 16px;border-top:1px solid var(--line-2);font-size:11px;color:var(--ink-4);display:flex;gap:16px}
 
 /* ── TOAST ── */

@@ -60,6 +60,8 @@ function auto_save_allowlist() {
 	return [
 		'enable_page_cache'                => 'bool',
 		'gzip_compression'                 => 'bool',
+		'minify_html'                      => 'bool',
+		'optimize_admin'                   => 'bool',
 		'cache_mobile'                     => 'bool',
 		'minify_css'                       => 'bool',
 		'combine_css'                      => 'bool',
@@ -313,6 +315,16 @@ function enqueue( $hook ) {
 
 	$settings = get_settings();
 
+	// Boolean settings the palette can toggle (same allowlist the auto-save uses).
+	$bool_state = [];
+	foreach ( auto_save_allowlist() as $allow_key => $allow_type ) {
+		if ( 'bool' === $allow_type ) {
+			$bool_state[ $allow_key ] = ! empty( $settings[ $allow_key ] );
+		}
+	}
+
+	$admin_base = SWIFTPRESS_IS_NETWORK ? network_admin_url( 'admin.php?page=' ) : admin_url( 'admin.php?page=' );
+
 	wp_localize_script(
 		'swiftpress-app',
 		'swiftpressApp',
@@ -322,6 +334,13 @@ function enqueue( $hook ) {
 			'ajaxNonce'     => wp_create_nonce( 'swiftpress_settings_ajax' ),
 			'settingsNonce' => wp_create_nonce( 'swiftpress_update_settings' ),
 			'site'          => wp_parse_url( home_url(), PHP_URL_HOST ),
+			'urls'          => [
+				'brief'   => $admin_base . MENU_SLUG,
+				'tune'    => $admin_base . MENU_SLUG . '-tune',
+				'server'  => $admin_base . MENU_SLUG . '-server',
+				'copilot' => $admin_base . MENU_SLUG . '-copilot',
+			],
+			'boolState'     => $bool_state,
 			'i18n'       => [
 				'analyzing'  => esc_html__( 'Reading your site…', 'swiftpress' ),
 				'measuring'  => esc_html__( 'Measuring performance…', 'swiftpress' ),
@@ -352,15 +371,30 @@ function render() {
 
 	global $is_apache;
 	$settings = get_settings();
-	$view     = isset( $_GET['sp_view'] ) ? sanitize_key( wp_unslash( $_GET['sp_view'] ) ) : 'brief'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	$server   = ! empty( $is_apache ) ? 'apache' : 'nginx';
-	$cache    = cache_stats();
+
+	// View comes from the WP submenu page slug (swiftpress, swiftpress-tune,
+	// swiftpress-server, swiftpress-copilot); the legacy sp_view query arg is
+	// still honoured for old links and the diagnostic auto-run redirect.
+	$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : MENU_SLUG; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$view = 'brief';
+	if ( 0 === strpos( $page, MENU_SLUG . '-' ) ) {
+		$suffix = substr( $page, strlen( MENU_SLUG ) + 1 );
+		$view   = in_array( $suffix, [ 'tune', 'server', 'copilot' ], true ) ? $suffix : 'brief';
+	}
+	if ( isset( $_GET['sp_view'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$legacy = sanitize_key( wp_unslash( $_GET['sp_view'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( in_array( $legacy, [ 'brief', 'tune', 'server', 'copilot' ], true ) ) {
+			$view = $legacy;
+		}
+	}
+
+	$server = ! empty( $is_apache ) ? 'apache' : 'nginx';
+	$cache  = cache_stats();
 
 	$base_url = SWIFTPRESS_IS_NETWORK ? network_admin_url( 'admin.php?page=' . MENU_SLUG ) : admin_url( 'admin.php?page=' . MENU_SLUG );
 
-	echo '<div class="wrap swiftpress-app" data-sp-theme="dark">';
+	echo '<div class="wrap swiftpress-app">';
 	echo '<div class="sp-shell">';
-	render_rail( $view, $settings, $base_url );
 	echo '<div class="sp-main">';
 	render_topbar( $server, $cache );
 	echo '<div class="sp-scroll"><div class="sp-wrap">';
@@ -438,46 +472,24 @@ function icon( $name ) {
 		'refresh' => '<path d="M21 12a9 9 0 1 1-3-6.7M21 4v4h-4"/>',
 		'shield'  => '<path d="M12 2 3 7v6c0 5 9 9 9 9s9-4 9-9V7l-9-5z"/>',
 	];
-	return '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">' . ( $p[ $name ] ?? '' ) . '</svg>';
+	// Inline width/height so the icon can never render at intrinsic (huge) size
+	// in contexts the scoped stylesheet doesn't reach (admin notices, FOUC).
+	return '<svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">' . ( $p[ $name ] ?? '' ) . '</svg>';
 }
 
-/** Nav rail. */
-function render_rail( $view, $settings, $base ) {
-	$item = function ( $slug, $label, $dotclass, $right = '' ) use ( $view, $base ) {
-		$active = ( $view === $slug || ( 'brief' === $slug && 'brief' === $view ) ) ? ' active' : '';
-		$url    = esc_url( add_query_arg( 'sp_view', $slug, $base ) );
-		$dot    = $dotclass ? '<span class="dot ' . esc_attr( $dotclass ) . '"></span>' : '';
-		echo '<a class="' . esc_attr( ltrim( $active ) ) . '" href="' . $url . '">' . $dot . esc_html( $label ) . $right . '</a>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-	};
-	?>
-	<aside class="sp-rail">
-		<div class="sp-brand">
-			<span class="glyph"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2 4 14h6l-1 8 10-13h-7l1-7z" fill="currentColor"/></svg></span>
-			<span class="name">AICache</span>
-			<span class="ver"><?php echo esc_html( SWIFTPRESS_VERSION ); ?></span>
-		</div>
-		<nav class="sp-nav">
-			<a class="<?php echo ( 'brief' === $view ) ? 'active' : ''; ?>" href="<?php echo esc_url( add_query_arg( 'sp_view', 'brief', $base ) ); ?>"><?php echo icon( 'brief' ); // phpcs:ignore ?> The Brief</a>
-			<div class="lbl"><?php esc_html_e( 'Tune', 'swiftpress' ); ?></div>
-			<?php $item( 'tune', __( 'Settings', 'swiftpress' ), $settings['enable_page_cache'] ? 'on' : 'off' ); ?>
-			<div class="lbl"><?php esc_html_e( 'Operate', 'swiftpress' ); ?></div>
-			<?php $item( 'server', __( 'Server', 'swiftpress' ), 'on', '<span class="tag">' . esc_html( ! empty( $GLOBALS['is_apache'] ) ? 'apache' : 'nginx' ) . '</span>' ); ?>
-			<a class="<?php echo ( 'copilot' === $view ) ? 'active' : ''; ?>" href="<?php echo esc_url( add_query_arg( 'sp_view', 'copilot', $base ) ); ?>"><span class="dot on"></span> Copilot <span class="spark" id="sp-key-pill" style="display:none">KEY SET</span></a>
-		</nav>
-		<div class="foot">
-			<button type="button" class="sp-btn ghost" id="sp-theme-btn">◐ <?php esc_html_e( 'Theme', 'swiftpress' ); ?></button>
-			<button type="button" class="sp-btn" id="sp-flush-all"><?php esc_html_e( 'Flush all', 'swiftpress' ); ?></button>
-		</div>
-	</aside>
-	<?php
-}
-
-/** Top bar. */
+/** Top bar — brand, environment, command palette trigger and global actions.
+ *  (Navigation lives in the native WP submenu, like other plugins.) */
 function render_topbar( $server, $cache ) {
 	$php   = PHP_VERSION;
 	$redis = ( class_exists( 'Redis' ) || defined( 'WP_REDIS_HOST' ) || wp_using_ext_object_cache() ) ? true : false;
 	?>
 	<header class="sp-top">
+		<div class="sp-brand">
+			<span class="glyph"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M13 2 4 14h6l-1 8 10-13h-7l1-7z" fill="currentColor"/></svg></span>
+			<span class="name">AICache</span>
+			<span class="ver"><?php echo esc_html( SWIFTPRESS_VERSION ); ?></span>
+			<span class="spark" id="sp-key-pill" style="display:none">AI</span>
+		</div>
 		<div class="sp-crumbs">
 			<b><?php echo esc_html( wp_parse_url( home_url(), PHP_URL_HOST ) ); ?></b><span class="sep">·</span>
 			<span><?php echo esc_html( $server ); ?></span><span class="sep">·</span>
@@ -485,11 +497,12 @@ function render_topbar( $server, $cache ) {
 			<span><?php esc_html_e( 'Object cache', 'swiftpress' ); ?> <?php echo $redis ? '<span class="ok">✓</span>' : '<span style="color:var(--ink-4)">—</span>'; // phpcs:ignore ?></span>
 		</div>
 		<div class="spacer"></div>
-		<div class="sp-ask" id="sp-ask-trigger">
+		<div class="sp-ask" id="sp-ask-trigger" role="button" tabindex="0" aria-label="<?php esc_attr_e( 'Open the AICache command palette', 'swiftpress' ); ?>">
 			<?php echo icon( 'spark' ); // phpcs:ignore ?>
 			<?php esc_html_e( 'Ask AICache, or type a command…', 'swiftpress' ); ?>
-			<span class="kbd">⌘K</span>
+			<span class="kbd">Ctrl K</span>
 		</div>
+		<button type="button" class="sp-btn ghost" id="sp-flush-all"><?php esc_html_e( 'Flush all', 'swiftpress' ); ?></button>
 		<button type="button" class="sp-btn amber" id="sp-run-diagnostic"><?php echo icon( 'refresh' ); // phpcs:ignore ?> <?php esc_html_e( 'Run Diagnostic', 'swiftpress' ); ?></button>
 	</header>
 	<?php
@@ -628,6 +641,7 @@ function view_tune( $settings ) {
 			<h2><?php esc_html_e( 'Optimize CSS & JavaScript', 'swiftpress' ); ?></h2>
 			<div class="sp-panel-body">
 				<?php
+				toggle_row( 'minify_html', __( 'Minify HTML', 'swiftpress' ), __( 'Strip whitespace and comments from the page HTML itself.', 'swiftpress' ), $settings );
 				toggle_row( 'minify_css', __( 'Minify CSS', 'swiftpress' ), __( 'Strip whitespace and comments from stylesheets.', 'swiftpress' ), $settings );
 				toggle_row( 'combine_css', __( 'Combine CSS', 'swiftpress' ), __( 'Merge stylesheets to cut requests (HTTP/2 makes this optional).', 'swiftpress' ), $settings );
 				toggle_row( 'critical_css', __( 'Optimize CSS delivery (Critical CSS)', 'swiftpress' ), __( 'Inline the CSS each page uses and load the full stylesheets without blocking render — biggest win on sites with large, render-blocking CSS and a slow First Contentful Paint. Static analysis, so always check your pages (especially layout/CLS) after enabling. Fonts are left untouched.', 'swiftpress' ), $settings );
@@ -699,6 +713,15 @@ function view_tune( $settings ) {
 						<textarea class="sp-textarea" name="prefetch_dns" rows="3" placeholder="//fonts.gstatic.com" style="margin-top:6px"><?php echo esc_textarea( $settings['prefetch_dns'] ); ?></textarea>
 					</details>
 				</div>
+			</div>
+		</div>
+
+		<div class="sp-panel">
+			<h2><?php esc_html_e( 'WP Admin speed', 'swiftpress' ); ?><span class="hint"><?php esc_html_e( 'Make the backend snappier too', 'swiftpress' ); ?></span></h2>
+			<div class="sp-panel-body">
+				<?php
+				toggle_row( 'optimize_admin', __( 'Speed up the WordPress admin', 'swiftpress' ), __( 'Three real backend wins: removes the dashboard widgets that call home on load (WordPress News & Events, Quick Draft), throttles the Heartbeat API outside the editor (15s → 120s), and stops synchronous update checks from blocking admin pageloads (WP-Cron still checks twice daily). The editor keeps its normal autosave heartbeat.', 'swiftpress' ), $settings );
+				?>
 			</div>
 		</div>
 
@@ -793,8 +816,15 @@ function view_copilot() {
 				<select class="sp-select" id="sp-ai-model" style="min-width:240px"><option value="google/gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite</option><option value="google/gemini-2.5-flash">Gemini 2.5 Flash</option></select></div>
 			<div class="sp-row"><div><div class="label"><?php esc_html_e( 'Monthly spend cap', 'swiftpress' ); ?></div><div class="desc"><?php esc_html_e( 'Calls refuse past this. On-demand only — never per page view.', 'swiftpress' ); ?></div></div>
 				<div style="display:flex;align-items:center;gap:6px"><span style="color:var(--ink-3)">$</span><input class="sp-input" type="number" id="sp-ai-cap" value="2" min="0" step="1" /></div></div>
-			<div class="sp-row"><div><div class="label"><?php esc_html_e( 'PageSpeed Insights key', 'swiftpress' ); ?> <span style="font-weight:400;color:var(--ink-3)">(<?php esc_html_e( 'optional', 'swiftpress' ); ?>)</span> <span id="sp-psi-saved" class="sp-saved">&#10003; <?php esc_html_e( 'saved', 'swiftpress' ); ?></span></div><div class="desc"><?php esc_html_e( 'A free Google key unlocks full Lighthouse metrics and avoids the shared rate limit. Without it, AICache runs a quick on-site scan.', 'swiftpress' ); ?> <a href="https://developers.google.com/speed/docs/insights/v5/get-started" target="_blank" rel="noopener">Get a key</a></div></div>
-				<input class="sp-input" type="text" id="sp-psi-input" placeholder="AIza…" autocomplete="off" spellcheck="false" style="min-width:230px;font-family:var(--mono)" /></div>
+			<div class="sp-row" style="display:block">
+				<div class="label"><?php esc_html_e( 'PageSpeed Insights key', 'swiftpress' ); ?> <span style="font-weight:400;color:var(--ink-3)">(<?php esc_html_e( 'optional', 'swiftpress' ); ?>)</span></div>
+				<div class="desc"><?php esc_html_e( 'A free Google key unlocks full Lighthouse metrics and avoids the shared rate limit. Without it, AICache runs a quick on-site scan.', 'swiftpress' ); ?> <a href="https://developers.google.com/speed/docs/insights/v5/get-started" target="_blank" rel="noopener">Get a key</a></div>
+				<div class="sp-keystate none" id="sp-psi-state" style="margin:10px 0 8px"><span class="d"></span><span id="sp-psi-state-text"><?php esc_html_e( 'No PageSpeed key — quick on-site scan is used', 'swiftpress' ); ?></span></div>
+				<div class="sp-keyrow" id="sp-psi-row">
+					<input class="sp-input" type="text" id="sp-psi-input" placeholder="AIza…" autocomplete="off" spellcheck="false" style="min-width:230px;font-family:var(--mono)" />
+					<button type="button" class="sp-btn ghost" id="sp-psi-clear"><?php esc_html_e( 'Remove', 'swiftpress' ); ?></button>
+				</div>
+			</div>
 		</div>
 	</div>
 
@@ -810,13 +840,10 @@ function render_cmdk() {
 	?>
 	<div class="sp-cmdk" id="sp-cmdk">
 		<div class="panel">
-			<div class="in"><?php echo icon( 'spark' ); // phpcs:ignore ?><input id="sp-cmd-input" placeholder="<?php esc_attr_e( 'Ask, or command in plain English…', 'swiftpress' ); ?>" autocomplete="off" /></div>
-			<div class="hints">
-				<div class="hint"><span style="color:var(--amber)">↳</span> <span class="q">“speed it up but don’t cache the members area”</span></div>
-				<div class="hint"><span style="color:var(--amber)">↳</span> <span class="q">“why is my LCP so slow?”</span></div>
-				<div class="hint"><span style="color:var(--amber)">↳</span> <span class="q">“generate my nginx config”</span></div>
-			</div>
-			<div class="foot"><span>↵ <?php esc_html_e( 'to run', 'swiftpress' ); ?></span><span>esc <?php esc_html_e( 'to close', 'swiftpress' ); ?></span><span><?php esc_html_e( 'every command shows a diff before it applies', 'swiftpress' ); ?></span></div>
+			<div class="in"><?php echo icon( 'spark' ); // phpcs:ignore ?><input id="sp-cmd-input" placeholder="<?php esc_attr_e( 'Type a command, search a setting, or ask a question…', 'swiftpress' ); ?>" autocomplete="off" /></div>
+			<div class="cmd-list" id="sp-cmd-list"></div>
+			<div class="cmd-answer" id="sp-cmd-answer" hidden></div>
+			<div class="foot"><span>↑↓ <?php esc_html_e( 'choose', 'swiftpress' ); ?></span><span>↵ <?php esc_html_e( 'run', 'swiftpress' ); ?></span><span>esc <?php esc_html_e( 'close', 'swiftpress' ); ?></span></div>
 		</div>
 	</div>
 	<div class="sp-toasts" id="sp-toasts"></div>

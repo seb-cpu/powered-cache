@@ -97,14 +97,40 @@ function admin_menu() {
 	);
 
 	/**
-	 * Different name submenu item, url point same address with parent.
+	 * Native WP submenu items — one per app view (the in-app nav rail was
+	 * removed in favour of these, matching how other plugins structure
+	 * their screens). All render through the same settings_page() dispatcher.
 	 */
 	add_submenu_page(
 		MENU_SLUG,
-		esc_html__( 'AICache Settings', 'swiftpress' ),
-		esc_html__( 'Settings', 'swiftpress' ),
+		esc_html__( 'AICache — The Brief', 'swiftpress' ),
+		esc_html__( 'The Brief', 'swiftpress' ),
 		$capability,
 		MENU_SLUG
+	);
+	add_submenu_page(
+		MENU_SLUG,
+		esc_html__( 'AICache — Settings', 'swiftpress' ),
+		esc_html__( 'Settings', 'swiftpress' ),
+		$capability,
+		MENU_SLUG . '-tune',
+		__NAMESPACE__ . '\settings_page'
+	);
+	add_submenu_page(
+		MENU_SLUG,
+		esc_html__( 'AICache — Server', 'swiftpress' ),
+		esc_html__( 'Server', 'swiftpress' ),
+		$capability,
+		MENU_SLUG . '-server',
+		__NAMESPACE__ . '\settings_page'
+	);
+	add_submenu_page(
+		MENU_SLUG,
+		esc_html__( 'AICache — Copilot', 'swiftpress' ),
+		esc_html__( 'Copilot', 'swiftpress' ),
+		$capability,
+		MENU_SLUG . '-copilot',
+		__NAMESPACE__ . '\settings_page'
 	);
 }
 
@@ -371,6 +397,7 @@ function sanitize_options( $options ) {
 	$sanitized_options['combine_google_fonts']             = ! empty( $options['combine_google_fonts'] );
 	$sanitized_options['use_bunny_fonts']                  = ! empty( $options['use_bunny_fonts'] );
 	$sanitized_options['swap_google_fonts_display']        = ! empty( $options['swap_google_fonts_display'] );
+	$sanitized_options['optimize_admin']                   = ! empty( $options['optimize_admin'] );
 	$sanitized_options['minify_css']                       = ! empty( $options['minify_css'] );
 	$sanitized_options['combine_css']                      = ! empty( $options['combine_css'] );
 	$sanitized_options['critical_css']                     = ! empty( $options['critical_css'] );
